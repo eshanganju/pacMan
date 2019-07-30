@@ -5,6 +5,15 @@ PAC - Particle Analysis Code
 
 Analyze static CT scans for particle properties
 
+Thing classes
+    1. Particle
+    2. Aggregate
+
+Worker classes
+    1. Filter
+    2. Segment
+    3. Measure
+
 Features: 
     1. Filter tiff stack
     2. Binarize tiff stack
