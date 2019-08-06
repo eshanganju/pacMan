@@ -6,6 +6,7 @@ PAC - Particle Analysis Code I wanted to call it PACman, but cant find any way o
 Contact me ganju.eshan@gmail.com if you do. This code analyzes static CT scans for particle properties 
 (does not track particle)
 
+---
 Features:
     1. Filter tiff stack of CT data
     2. Binarize tiff stack of CT data
@@ -15,6 +16,7 @@ Features:
     6. Determine particle contacts and fabric tensor of segmented data
     7. Determine particle and void orientation
 
+---
 Classes:
     1. Particle
     2. Aggregate
@@ -24,10 +26,12 @@ Classes:
     5. Measure
     6. Visualize
 
+---
 Naming conventions:
     Class names: concatenated words each starting with upper case
     Objects, ivars, methods: concatenated words, first word all lower case, subsequent words starting with upper case
 
+---
 References [All reference will be cited in the method or class]:
     [1] Tengattini, Alessandro, and Edward Andò. 2015. "Kalisphera: An Analytical Tool to Reproduce the Partial Volume Effect of Spheres Imaged in 3D."
     Measurement Science and Technology 26 (9).https://doi.org/10.1088/0957-0233/26/9/095606.
@@ -53,12 +57,24 @@ import spam.datasets as sdata
 import spam.kalisphera as skali
 
 # Contructed libraries
-import Particle             # Used to store information about particle
 import Aggregate            # Used to store information about aggregate
 import Filter               # Contains methods that filter image data
 import Segment              # Contains methods that segment particles
 import Measure              # Contains methods that particle and aggregate properties
-import Visualize            # Contains methods to plot data
+import LemmeC               # Contains methods to plot data
+
+#---#---#---#
+# TODO: Minimize unnesary commenting
+
+#%% Activate tools
+
+cleanUp = Filter.Filter()       # Filter tool
+segment = Segment.Segment()     # Segment tool
+measure = Measure.Measure()     # Measure tool
+lemmeC = LemmeC.LemmeC()        # Visualization tool
+
+#---#---#---#
+# TODO: Minimize unnesary commenting
 
 # %% DATA option #1 - Kalisphera spheres
 
@@ -82,19 +98,16 @@ rMax = np.amax(radii)                                                   # Get ma
 boxSize = boxSizeDEM + 3 * rMax                                         # Make the box such that there are no particle cutting the edges
 centres[:, :] = centres[:, :] + 1.5 * rMax                              # Move the positions to the new center of the image
 
-# turn the mm measures into pixels
 boxSize = int(math.ceil(np.max(boxSize[:]) / pixelSize))
 centres = centres / pixelSize
 radii = radii / pixelSize
 
-# Kalisphera sphere
 Box = np.zeros((boxSize, boxSize, boxSize), dtype="<f8")                # Box holding the 3D CT data, Datatype is a 64-bit floating-point number, "<" not sure
 skali.makeSphere(Box, centres, radii)                                   # Kalisphera [1] used to genetrate the spheres - Accounting for PVE. particle = 1, void = 0
 
-# Kalisphera sphere, cleaning and ploting
 Box1 = Box
-Box1[np.where(Box > 1.0)] = 1.0                                         # Checking for outliers voxels x|1<x; DEM uses overlap to compute forces hence vox > 1
-Box1[np.where(Box < 0.0)] = 0.0                                         # Checking for outliers voxels x|0>x; Why this will be needed is unclear
+Box1[np.where(Box1 > 1.0)] = 1.0                                        # Checking for outliers voxels x|1<x; DEM uses overlap to compute forces hence vox > 1
+Box1[np.where(Box1 < 0.0)] = 0.0                                        # Checking for outliers voxels x|0>x; Why this will be needed is unclear
 Box2 = Box1 * 0.5                                                       # All voxles are squeezed from 0-1 to 0-0.5 
 Box2 = Box2 + 0.25                                                      # All voxels are shifted from 0-0.5 to 0.25-0.75
 Box3 = scipy.ndimage.filters.gaussian_filter(Box2, sigma=blurSTD)       # Applies a gaussian blur. Good example in [3]
@@ -102,64 +115,47 @@ Box4 = np.random.normal(Box3, scale=noiseSTD)                           # Applie
 
 aggregate = Aggregate.Aggregate(Box4, pixelSize)                        # Box 4 dataset is passed (PVE'd DEM data; blurred and filtered)
 
-#TODO: Compute analytically the contact normals
+
+#---#---#---#
+
+# TODO: Compute analytically the contact normals
+# TODO: Add visualization at this stage
 
 # %% DATA option #2 - CT data in aggregate object
 '''
 In this section we upload data from CT scans 
+This will need some pre-processing to filter the images
+Visualization wil be very useful in this case. 
 '''
 
-# Filtering image data in aggregate
-flt = Filter()
-
-# Creating aggregate object
-
+#---#---#---#
+# TODO: Add visualization at this stage
 
 # %% Segment CT data
 
-# Create segmetation object
-segment = Segment.Segment()
 
-# Binarization using OTSU
-aggregate.globalThreshold, aggregate.binaryMap = segment.binarizeOtsu(aggregate.greyLevelMap)
+segment = Segment.Segment()                 # Create segmetation object
+segment.binarizeOtsu(aggregate)             # Binarization using OTSU
+segment.euclidDistanceMap(aggregate)        # Euclidean distance map
+segment.localMaximaMarkers(aggregate)       # Location of markers (particle)
+segment.topoWatershed(aggregate)            # Topological watershed and create a list of particles
 
-# Euclidean distance map
-aggregate.euclidDistanceMap = segment.euclidDistanceMap(aggregate.binaryMap)
 
-# Location of markers (particle)
-'''
-1. Use the edm and local maxima from 
-    from skimage.morphology import local_maxima as localMaxima
-    locMax = localMaxima(aggregate.euclidDistanceMap) # gives true value for local maxima
-2. Read through locMax and assign each True value a integer number (starting from 1) and each False 0
-3. Pass locMax and edm to watershed algorithm
-    from skimage.morphology import watershed as wsd
-    labelled = wsd()
-'''
+#---#---#---#
 
-# Topological watershed
-
-# Correction of oversegmentation
-
-# TODO: Random Walker segmentation
-
+# Number of particles keeps changing - check segment.localMaximaMarkers
+# TODO: Correction of oversegmentation - long contact edge detection
+# TODO: Implement random Walker segmentation, manual checks
 
 # %% Measure data [size, morphology, fabric]
 
-# Create measure object
-mes = Measure()
+measure.measureParticleSizeDistribution(aggregate)      # Size
+measure.measureMorphology(aggregate)                    # Morphology
+measure.measureContactNormalsSpam(aggregate)            # Fabric
 
-# Size
-
-# Morphology
-
-# Fabric
-
-
-#%% Visualize [Size, porphology and fabric]
+#%% Visualize [Size, morphology and fabric]
 
 # Creater a visulaize object
-viz = Visualize()
 
 # Size
 
