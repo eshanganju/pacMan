@@ -125,6 +125,7 @@ aggregate = Aggregate.Aggregate(Box4, pixelSize)                        # Box 4 
 '''
 In this section we upload data from CT scans 
 This will need some pre-processing to filter the images
+keep greylevel data between 0 and 1
 Visualization wil be very useful in this case. 
 '''
 
@@ -134,16 +135,13 @@ Visualization wil be very useful in this case.
 # %% Segment CT data
 
 
-segment = Segment.Segment()                 # Create segmetation object
-segment.binarizeOtsu(aggregate)             # Binarization using OTSU
-segment.euclidDistanceMap(aggregate)        # Euclidean distance map
-segment.localMaximaMarkers(aggregate)       # Location of markers (particle)
-segment.topoWatershed(aggregate)            # Topological watershed and create a list of particles
-
+segment.binarizeOtsu(aggregate)                         # Binarization using OTSU
+segment.euclidDistanceMap(aggregate)                    # Euclidean distance map
+segment.localMaximaMarkers(aggregate)                   # Location of markers (particle), each marker given a value of label
+segment.topoWatershed(aggregate)                        # Topological watershed and create a list of particles from
 
 #---#---#---#
-
-# Number of particles keeps changing - check segment.localMaximaMarkers
+# TODO: Number of particles keeps changing - check segment.localMaximaMarkers
 # TODO: Correction of oversegmentation - long contact edge detection
 # TODO: Implement random Walker segmentation, manual checks
 
@@ -151,7 +149,9 @@ segment.topoWatershed(aggregate)            # Topological watershed and create a
 
 measure.measureParticleSizeDistribution(aggregate)      # Size
 measure.measureMorphology(aggregate)                    # Morphology
-measure.measureContactNormalsSpam(aggregate)            # Fabric
+measure.measureContactNormalsSpam(aggregate)            # Fabric from SPAM libraries
+
+#---#---#---#
 
 #%% Visualize [Size, morphology and fabric]
 
