@@ -20,6 +20,7 @@ References:
 import numpy as np
 import math
 import statistics
+import pandas as pd
 
 # Spam libraries
 import spam.label as slab
@@ -30,7 +31,7 @@ class Measure:
 
     # Initialize
     def __init__(self):
-        print("Ruler has been polished, measuring device activated")
+        print("Ruler has been polished: measuring device activated")
 
 
     def measureParticleSizeDistribution(self,aggregate):
@@ -41,9 +42,12 @@ class Measure:
         Advantage would be easier to see and maybe better functionality?
         Plus you get to learn the damn thing
         '''
-        print("Starting")
-        for i in range(1,aggregate.numberOfParticles+1):                                # Starting from 1 as 0 is void
+        aggregate.particleSizeDataSummary = np.zeros((aggregate.numberOfParticles+1,6)) # Starting at 1 Index, Equivalent sphere, Feret min, max and med
+    
+        print("Starting measurement of particles...")
 
+        for i in range(1,aggregate.numberOfParticles+1):                                # Starting from 1 as 0 is void
+            print("Computing size of",i,"/",aggregate.numberOfParticles, "particle")    # Impatience
             # Equivalent sphere diameter
             vol = aggregate.particleList[i].volume
             sphDia = 2*(((3*vol)/(4*math.pi))**(1/3))                                   # Obtain diameter of equivalent sphere
@@ -77,12 +81,24 @@ class Measure:
             aggregate.particleList[i].feretMax = max(feretDims)[0]                      # Store largest feret diameter in obect variable
             aggregate.particleList[i].feretMin = min(feretDims)[0]                      # Store smallest feret diameter in obect variable
             aggregate.particleList[i].feretMed = statistics.median(feretDims)[0]        # Store intermediate feret diameter in obect variable
-            print("Computing size of",i,"/",aggregate.numberOfParticles, "particle")    # Impatience
 
+            # Storing data in neat table
+            aggregate.particleSizeDataSummary[i][0] = i
+            aggregate.particleSizeDataSummary[i][1] = aggregate.particleList[i].volume
+            aggregate.particleSizeDataSummary[i][2] = aggregate.particleList[i].equivalentSphereDiameter
+            aggregate.particleSizeDataSummary[i][3] = aggregate.particleList[i].feretMax
+            aggregate.particleSizeDataSummary[i][4] = aggregate.particleList[i].feretMed 
+            aggregate.particleSizeDataSummary[i][5] = aggregate.particleList[i].feretMin 
             # TODO: Add other particle size measure(s)
+            # TODO: Use of dataframes for GSD?
             # TODO: Is the eigen vector approach really the feret diameter?
+
+        # Creating grain size distribution list
         '''
-        Work with dataFrame to get GSD
+        copy index, volume and size data into a new array with additional column with zeros
+        sort array by the size columns
+        populate the zero column to get percentage passing
+        pass the percentage passing and particle size columns to aggregate variable of GSD
         '''
 
 

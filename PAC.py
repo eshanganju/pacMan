@@ -72,6 +72,7 @@ cleanUp = Filter.Filter()       # Filter tool
 segment = Segment.Segment()     # Segment tool
 measure = Measure.Measure()     # Measure tool
 lemmeC = LemmeC.LemmeC()        # Visualization tool
+writer = Writer.Writer()        # Writer to store analysis data
 
 #---#---#---#
 # TODO: Minimize unnesary commenting
@@ -134,11 +135,11 @@ Visualization wil be very useful in this case.
 
 # %% Segment CT data
 
-
-segment.binarizeOtsu(aggregate)                         # Binarization using OTSU
-segment.euclidDistanceMap(aggregate)                    # Euclidean distance map
-segment.localMaximaMarkers(aggregate)                   # Location of markers (particle), each marker given a value of label
-segment.topoWatershed(aggregate)                        # Topological watershed and create a list of particles from
+segment.greyLevelHistogram(aggregate)                   # Generate the grey level histogram and store in aggregate as "greyLevelHistogram"
+segment.binarizeOtsu(aggregate)                         # Binarization using OTSU and store threshold in aggregate as "globalThreshold"
+segment.euclidDistanceMap(aggregate)                    # Create EDM and store in aggregate as "euclidDistanceMap"
+segment.localMaximaMarkers(aggregate)                   # Locate peaks of EDM, store location of each marker (label) as "markers"
+segment.topoWatershed(aggregate)                        # Topological watershed and store in aggregate as "labelledMap" create a "particleList"
 
 #---#---#---#
 # TODO: Number of particles keeps changing - check segment.localMaximaMarkers

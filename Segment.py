@@ -39,10 +39,6 @@ class Segment:
 
     # Histogram
     def greyLevelHistogram(self, aggregate):
-        '''
-        Take values put in array
-        make histogram with fixed bin size of 1
-        '''
         greyLevelMap = aggregate.greyLevelMap
         greyLevelList = np.zeros(greyLevelMap.size)
         count = 0
@@ -51,16 +47,20 @@ class Segment:
                 for k in range(0,greyLevelMap.shape[2]):
                     greyLevelList[count]=greyLevelMap[i][j][k]
                     count=count+1
-        greyLevelHist = np.histogram(greyLevelList, bins=1000, range=(0,1))     # 
+        greyLevelHist = np.histogram(greyLevelList, bins=1000, range=(0,1))                     # 
         aggregate.greyLevelHistogram[:,0] = np.arange(0.0005,1,0.001)
         aggregate.greyLevelHistogram[:,1] = greyLevelHist[0]
+
+        # TODO: Get rid of this after visualization is updated
         plt.figure()
         plt.plot(aggregate.greyLevelHistogram[:,0], aggregate.greyLevelHistogram[:,1])
+
+
 
     # Binarization - Otsu
     def binarizeOtsu(self,aggregate):
         greyLvlMap=aggregate.greyLevelMap
-        aggregate.globalThreshold = threshold_otsu(greyLvlMap)
+        aggregate.globalOtsuThreshold = threshold_otsu(greyLvlMap)
         aggregate.binaryMap[np.where(greyLvlMap >= aggregate.globalThreshold)] = 1
         print("Completed binarization using OTSU")
 
@@ -70,6 +70,7 @@ class Segment:
     def euclidDistanceMap(self,aggregate):
         aggregate.euclidDistanceMap = edt(aggregate.binaryMap)
         print("EDM Created")
+
 
 
     # Location of markers

@@ -26,13 +26,14 @@ class Aggregate:
         self.pixelSize = pxlSize
         self.greyLevelMap = greyLvlMap
         self.binaryMap = np.zeros_like(self.greyLevelMap)
-        self.globalThreshold = 0
+        self.globalOtsuThreshold = 0
         self.euclidDistanceMap = np.zeros_like(self.greyLevelMap)
         self.markers = np.zeros_like(self.greyLevelMap)
         self.labelledMap = np.zeros_like(self.greyLevelMap)
         self.particleList = []                                              # TODO: Object of objects? List of objects is irritating, or not?
         self.particleList.append(None)                                      # Done to start at index 1, which matches with particle index (0 is void)
         self.numberOfParticles = 0
+        self.particleSizeDataSummary = np.zeros((5000,6))                   # Particle sizes and volume as a table identified by particle label
         self.grainSizeDistributionEquivalentSphere = np.zeros((5000,2))     # GSD sphere (Size is arbitrary - rows will correspond to number of particles)
         self.grainSizeDistributionFeretMax = np.zeros((5000,2))             # GSD FeretMax ([0]Size is arbitrary - rows = numberOfParticles
         self.grainSizeDistributionFeretMin = np.zeros((5000,2))             # GSD FeretMin ([0]Size is arbitrary - rows = numberOfParticles
