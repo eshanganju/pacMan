@@ -36,11 +36,6 @@ class Measure:
 
     def measureParticleSizeDistribution(self,aggregate):
         '''
-        TODO:
-        Create a pandas dataframe with diffrent sizes as column headings
-        populate that as you compute the particle size parameter
-        Advantage would be easier to see and maybe better functionality?
-        Plus you get to learn the damn thing
         '''
         aggregate.particleSizeDataSummary = np.zeros((aggregate.numberOfParticles+1,6)) # Starting at 1 Index, Equivalent sphere, Feret min, max and med
     
