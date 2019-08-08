@@ -35,9 +35,8 @@ class Measure:
 
 
     def measureParticleSizeDistribution(self,aggregate):
-        '''
-        '''
-        aggregate.particleSizeDataSummary = np.zeros((aggregate.numberOfParticles+1,6)) # Starting at 1 Index, Equivalent sphere, Feret min, max and med
+
+        aggregate.particleSizeDataSummary = np.zeros((aggregate.numberOfParticles+1,6)) # Starting at 1 Index, volume, sphere, Feret min, max and med
     
         print("Starting measurement of particles...")
 
@@ -89,12 +88,44 @@ class Measure:
             # TODO: Is the eigen vector approach really the feret diameter?
 
         # Creating grain size distribution list
-        '''
-        copy index, volume and size data into a new array with additional column with zeros
-        sort array by the size columns
-        populate the zero column to get percentage passing
-        pass the percentage passing and particle size columns to aggregate variable of GSD
-        '''
+        tempTable = np.zeros((aggregate.numberOfParticles+1,4))
+        tempTable[:,0] = aggregate.particleSizeDataSummary[:,0]
+        tempTable[:,1] = aggregate.particleSizeDataSummary[:,1]
+
+        for i in range(2,6):
+            tempTable[:,2]= aggregate.particleSizeDataSummary[:,i]
+            tempTable = np.sort(tempTable.view('f8,f8,f8,f8'), order=['f2'], axis=0).view(np.float)
+
+            for j in range(1,aggregate.numberOfParticles+1):
+                tempTable[j,3]=((sum(tempTable[0:j,1]))/sum(tempTable[:,1]))*100
+
+            if i == 2:
+                '''eqSphere'''
+                print("eqSphere")
+                aggregate.grainSizeDistributionEquivalentSphere = np.zeros((aggregate.numberOfParticles+1,2))
+                aggregate.grainSizeDistributionEquivalentSphere[:,0]=tempTable[:,2]
+                aggregate.grainSizeDistributionEquivalentSphere[:,1]=tempTable[:,3]
+
+            elif i == 3:
+                '''feretMax'''
+                print("feretMax")
+                aggregate.grainSizeDistributionFeretMax = np.zeros((aggregate.numberOfParticles+1,2))
+                aggregate.grainSizeDistributionFeretMax[:,0]=tempTable[:,2]
+                aggregate.grainSizeDistributionFeretMax[:,1]=tempTable[:,3]
+
+            elif i== 4:
+                '''feretMed'''
+                print("feretMed")
+                aggregate.grainSizeDistributionFeretMed = np.zeros((aggregate.numberOfParticles+1,2))
+                aggregate.grainSizeDistributionFeretMed[:,0]=tempTable[:,2]
+                aggregate.grainSizeDistributionFeretMed[:,1]=tempTable[:,3]
+
+            elif i == 5: 
+                '''feretMin'''
+                print("feretMin")
+                aggregate.grainSizeDistributionFeretMin = np.zeros((aggregate.numberOfParticles+1,2))
+                aggregate.grainSizeDistributionFeretMin[:,0]=tempTable[:,2]
+                aggregate.grainSizeDistributionFeretMin[:,1]=tempTable[:,3]
 
 
 

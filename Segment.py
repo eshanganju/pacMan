@@ -61,7 +61,7 @@ class Segment:
     def binarizeOtsu(self,aggregate):
         greyLvlMap=aggregate.greyLevelMap
         aggregate.globalOtsuThreshold = threshold_otsu(greyLvlMap)
-        aggregate.binaryMap[np.where(greyLvlMap >= aggregate.globalThreshold)] = 1
+        aggregate.binaryMap[np.where(greyLvlMap >= aggregate.globalOtsuThreshold)] = 1
         print("Completed binarization using OTSU")
 
 

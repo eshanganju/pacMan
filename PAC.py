@@ -62,6 +62,7 @@ import Filter               # Contains methods that filter image data
 import Segment              # Contains methods that segment particles
 import Measure              # Contains methods that particle and aggregate properties
 import LemmeC               # Contains methods to plot data
+import Writer               # Writer - makes files that can later be used
 
 #---#---#---#
 # TODO: Minimize unnesary commenting
