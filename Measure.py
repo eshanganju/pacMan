@@ -33,6 +33,28 @@ class Measure:
     def __init__(self):
         print("Ruler has been polished: measuring device activated")
 
+    def measureBenchMarkSizeAndNormal(self,aggregate,radii,centres):
+        aggregate.benchMarkNumberOfParticles = radii.shape[0]
+        aggregate.benchMarkCentres = np.zeros((aggregate.benchMarkNumberOfParticles,3))
+        aggregate.benchMarkRadii = np.zeros((aggregate.benchMarkNumberOfParticles,1))
+        aggregate.benchMarkCentres = centres
+        aggregate.benchMarkRadii = radii
+
+        # Compute grain size distribution
+        aggregate.benchMarkGrainSizeDistribution = np.zeros((aggregate.benchMarkNumberOfParticles,2))
+        aggregate.benchMarkGrainSizeDistribution[:,0] = aggregate.benchMarkRadii
+        aggregate.benchMarkGrainSizeDistribution[:,0] = aggregate.benchMarkGrainSizeDistribution[:,0]*2
+        aggregate.benchMarkGrainSizeDistribution = np.sort(aggregate.benchMarkGrainSizeDistribution.view('f8,f8'), order=['f1'], axis=0).view(np.float)
+        for i in range(0,aggregate.benchMarkNumberOfParticles):
+            aggregate.benchMarkGrainSizeDistribution[i,1]=((sum((aggregate.benchMarkGrainSizeDistribution[0:i+1,0])**3))/sum((aggregate.benchMarkGrainSizeDistribution[:,0])**3))*100
+
+        # Find contact normals
+        '''
+        Make centre pairs
+        compute unit vectors for center pairs
+        store unit vectors as zz,yy,xx
+        '''
+
 
     def measureParticleSizeDistribution(self,aggregate):
 

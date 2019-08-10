@@ -39,6 +39,13 @@ class Aggregate:
         self.grainSizeDistributionFeretMin = np.zeros((5000,2))             # GSD FeretMin ([0]Size is arbitrary - rows = numberOfParticles
         self.grainSizeDistributionFeretMed = np.zeros((5000,2))             # GSD FeretMed ([0]Size is arbitrary - rows = numberOfParticles
         self.greyLevelHistogram = np.zeros((1000,2))                        # Histogram with x axis (0-1)
+
+        self.benchMarkNumberOfParticles = 0
+        self.benchMarkCentres = np.zeros((self.benchMarkNumberOfParticles,3))
+        self.benchMarkRadii = np.zeros((self.benchMarkNumberOfParticles,1))
+        self.benchMarkGrainSizeDistribution = np.zeros((self.benchMarkNumberOfParticles,2))
+        self.benchMarkContactNormal = np.zeros((100,3))
+
         print("Its like a beach in here: Aggregate activated")
 
 

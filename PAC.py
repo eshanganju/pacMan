@@ -117,11 +117,8 @@ Box4 = np.random.normal(Box3, scale=noiseSTD)                           # Applie
 
 aggregate = Aggregate.Aggregate(Box4, pixelSize)                        # Box 4 dataset is passed (PVE'd DEM data; blurred and filtered)
 
+measure.measureBenchMarkSizeAndNormal(aggregate,radii,centres)          # Generates grain size distribution and contact normals
 
-#---#---#---#
-
-# TODO: Compute analytically the contact normals
-# TODO: Add visualization at this stage
 
 # %% DATA option #2 - CT data in aggregate object
 '''
