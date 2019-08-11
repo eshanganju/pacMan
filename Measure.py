@@ -48,12 +48,42 @@ class Measure:
         for i in range(0,aggregate.benchMarkNumberOfParticles):
             aggregate.benchMarkGrainSizeDistribution[i,1]=((sum((aggregate.benchMarkGrainSizeDistribution[0:i+1,0])**3))/sum((aggregate.benchMarkGrainSizeDistribution[:,0])**3))*100
 
-        # Find contact normals
-        '''
-        Make centre pairs
-        compute unit vectors for center pairs
-        store unit vectors as zz,yy,xx
-        '''
+        # Find contact normals of benchMarkData
+        aggregate.benchMarkNumberOfContacts = 0
+        contactingParticlesOne = []
+        contactingParticlesTwo = []
+        for i in range(0,aggregate.benchMarkNumberOfParticles-1):
+            for j in range(i+1,aggregate.benchMarkNumberOfParticles):
+                a = aggregate.benchMarkCentres[i,0]-aggregate.benchMarkCentres[j,0]
+                b = aggregate.benchMarkCentres[i,1]-aggregate.benchMarkCentres[j,1]
+                c = aggregate.benchMarkCentres[i,2]-aggregate.benchMarkCentres[j,2]
+                distanceCentres = (a**2+b**2+c**2)**0.5
+                if distanceCentres <= (aggregate.benchMarkRadii[i]+aggregate.benchMarkRadii[j]):
+                    aggregate.benchMarkNumberOfContacts = aggregate.benchMarkNumberOfContacts+1
+                    contactingParticlesOne.append(i)
+                    contactingParticlesTwo.append(j)
+
+        aggregate.benchMarkContactNormal = np.zeros((aggregate.benchMarkNumberOfContacts,5))
+        for k in range(0,len(contactingParticlesOne)):
+            aggregate.benchMarkContactNormal[k,0] = contactingParticlesOne[k]
+            aggregate.benchMarkContactNormal[k,1] = contactingParticlesTwo[k]
+            
+            a = aggregate.benchMarkCentres[contactingParticlesOne[k],0]-aggregate.benchMarkCentres[contactingParticlesTwo[k],0]
+            b = aggregate.benchMarkCentres[contactingParticlesOne[k],1]-aggregate.benchMarkCentres[contactingParticlesTwo[k],1]
+            c = aggregate.benchMarkCentres[contactingParticlesOne[k],2]-aggregate.benchMarkCentres[contactingParticlesTwo[k],2]
+            d = (a**2+b**2+c**2)**0.5
+
+            # If Z if positive, the sign of all are retained
+            if a>=0:
+                aggregate.benchMarkContactNormal[k,2] = a/d
+                aggregate.benchMarkContactNormal[k,3] = b/d
+                aggregate.benchMarkContactNormal[k,4] = c/d
+            # If Z is negative, the sign of all are flipped to get positive Z
+            elif a<=0:
+                aggregate.benchMarkContactNormal[k,2] = -a/d
+                aggregate.benchMarkContactNormal[k,3] = -b/d
+                aggregate.benchMarkContactNormal[k,4] = -c/d
+
 
 
     def measureParticleSizeDistribution(self,aggregate):
@@ -167,12 +197,20 @@ class Measure:
         tempOrts = np.zeros_like(ortTabSand)                                                                # Some orientations are bad, cleaning them
         ortOnlySand = ortTabSand[:,2:5]                                                                     # Variable extracts only contacts with enough points
         j=0
+
+        # For some reason the X component of the orientation is kept positive in this code
+        # To stick to Z +ve convention of contactOrientation code, we keep Z positive
         for i in range(0,ortTabSand.shape[0]):
+            if (ortOnlySand[i,0]<0):
+                ortOnlySand[i]=-1*ortOnlySand[i]
+
             if (ortOnlySand[i]**2).sum()<=0.999:
                 print("Contact deleted - small contact")
+
             else:
                 tempOrts[j] = ortTabSand[i]
                 j=j+1
+
         aggregate.contactTable = tempOrts[0:j,:]
 
 

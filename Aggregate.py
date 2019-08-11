@@ -44,7 +44,8 @@ class Aggregate:
         self.benchMarkCentres = np.zeros((self.benchMarkNumberOfParticles,3))
         self.benchMarkRadii = np.zeros((self.benchMarkNumberOfParticles,1))
         self.benchMarkGrainSizeDistribution = np.zeros((self.benchMarkNumberOfParticles,2))
-        self.benchMarkContactNormal = np.zeros((100,3))
+        self.benchMarkNumberOfContacts = 0
+        self.benchMarkContactNormal = np.zeros((1,5))
 
         print("Its like a beach in here: Aggregate activated")
 
