@@ -54,7 +54,7 @@ class Segment:
         # TODO: Get rid of this after visualization is updated
         plt.figure()
         plt.plot(aggregate.greyLevelHistogram[:,0], aggregate.greyLevelHistogram[:,1])
-
+        plt.show()
 
 
     # Binarization - Otsu

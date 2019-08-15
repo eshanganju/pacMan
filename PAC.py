@@ -162,6 +162,7 @@ measure.measureParticleSizeDistribution(aggregate)      # Size
 measure.measureMorphology(aggregate)                    # Morphology
 measure.measureContactNormalsSpam(aggregate)            # Fabric from SPAM libraries
 
+print("Done, Dude!")
 #---#---#---#
 
 #%% Visualize [Size, morphology and fabric]

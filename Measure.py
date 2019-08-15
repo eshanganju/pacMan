@@ -4,12 +4,12 @@ Outline:
 This a part of the PAC code; this modue is for measurement of size, fabric and state parameters of the segmented CT data
 
 ---
-Features: 
-    1. 
+Features:
+    1.
 
 
 ---
-References: 
+References:
     [1]
 
 """
@@ -25,7 +25,7 @@ import pandas as pd
 # Spam libraries
 import spam.label as slab
 
-#%% 
+#%%  Measure class and methods
 
 class Measure:
 
@@ -67,7 +67,6 @@ class Measure:
         for k in range(0,len(contactingParticlesOne)):
             aggregate.benchMarkContactNormal[k,0] = contactingParticlesOne[k]
             aggregate.benchMarkContactNormal[k,1] = contactingParticlesTwo[k]
-            
             a = aggregate.benchMarkCentres[contactingParticlesOne[k],0]-aggregate.benchMarkCentres[contactingParticlesTwo[k],0]
             b = aggregate.benchMarkCentres[contactingParticlesOne[k],1]-aggregate.benchMarkCentres[contactingParticlesTwo[k],1]
             c = aggregate.benchMarkCentres[contactingParticlesOne[k],2]-aggregate.benchMarkCentres[contactingParticlesTwo[k],2]
@@ -89,7 +88,6 @@ class Measure:
     def measureParticleSizeDistribution(self,aggregate):
 
         aggregate.particleSizeDataSummary = np.zeros((aggregate.numberOfParticles+1,6)) # Starting at 1 Index, volume, sphere, Feret min, max and med
-    
         print("Starting measurement of particles...")
 
         for i in range(1,aggregate.numberOfParticles+1):                                # Starting from 1 as 0 is void
