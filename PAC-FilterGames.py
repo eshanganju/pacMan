@@ -17,36 +17,37 @@ import math
 import scipy
 
 # %% Making spheres:
-pixelSize = 30.e-6                                                      # m/pixel
 
+pixelSize = 30.e-6
 
-blurSTD = 0.8                                                           # The standard deviation of the image blurring to be applied first
-noiseSTD = 0.03                                                         # The standard deviation of the random noise to be added to each voxel
+blurSTD = 0.8    
+noiseSTD = 0.03 
 
+boxSizeDEM, centres, radii = sdata.loadDEMboxsizeCentreRadius()
+rMax = np.amax(radii)                                         
+boxSize = boxSizeDEM + 3 * rMax                              
 
-boxSizeDEM, centres, radii = sdata.loadDEMboxsizeCentreRadius()         # Loading data from SPAM database - centres, radii and box size (length units)
-rMax = np.amax(radii)                                                   # Get maximum radius to pad our image (periodic boundaries...)
-boxSize = boxSizeDEM + 3 * rMax                                         # Make the box such that there are no particle cutting the edges
-centres[:, :] = centres[:, :] + 1.5 * rMax                              # Move the positions to the new center of the image
+centres[:, :] = centres[:, :] + 1.5 * rMax                  
 boxSize = int(math.ceil(np.max(boxSize[:]) / pixelSize))
 centres = centres / pixelSize
 radii = radii / pixelSize
-Box = np.zeros((boxSize, boxSize, boxSize), dtype="<f8")                # Box holding the 3D CT data, Datatype is a 64-bit floating-point number, "<" not sure
-skali.makeSphere(Box, centres, radii)                                   # Kalisphera [1] used to genetrate the spheres - Accounting for PVE. particle = 1, void = 0
+
+Box = np.zeros((boxSize, boxSize, boxSize), dtype="<f8")
+skali.makeSphere(Box, centres, radii)                  
+
 Box1 = Box
-Box1[np.where(Box1 > 1.0)] = 1.0                                        # Checking for outliers voxels x|1<x; DEM uses overlap to compute forces hence vox > 1
-Box1[np.where(Box1 < 0.0)] = 0.0                                        # Checking for outliers voxels x|0>x; Why this will be needed is unclear
-Box2 = Box1 * 0.5                                                       # All voxles are squeezed from 0-1 to 0-0.5 
-Box2 = Box2 + 0.25                                                      # All voxels are shifted from 0-0.5 to 0.25-0.75
+Box1[np.where(Box1 > 1.0)] = 1.0                      
+Box1[np.where(Box1 < 0.0)] = 0.0                     
+Box2 = Box1 * 0.5                                   
+Box2 = Box2 + 0.25                                 
 
+# Filters for blurring and noise
+Box3 = scipy.ndimage.filters.gaussian_filter(Box2, sigma=blurSTD)
+Box4 = np.random.normal(Box3, scale=noiseSTD)                   
 
-Box3 = scipy.ndimage.filters.gaussian_filter(Box2, sigma=blurSTD)       # Applies a gaussian blur. Good example in [3]
-Box4 = np.random.normal(Box3, scale=noiseSTD)                           # Applies a random noise to the data [4]
-
-
+# Creating slice
 oriClean = Box2[50]
 ori50 = Box4[50]
-
 
 # %% Filters
 ori50_cham = restoration.denoise_tv_chambolle(ori50)
@@ -54,12 +55,10 @@ ori50_median = median_filter(ori50, size=3)
 ori50_nlm3 = restoration.denoise_nl_means(ori50, patch_size=3)
 ori50_nlm5 = restoration.denoise_nl_means(ori50, patch_size=5)
 
-
 # Plotting
 ax1=plt.subplot(231)
 ax1 = plt.imshow(oriClean, cmap='Greys_r')
 plt.title('Original with PVE')
-
 
 ax2=plt.subplot(232)
 ax2.imshow(ori50, cmap='Greys_r')
@@ -85,9 +84,7 @@ ax6.imshow(ori50_nlm5, cmap='Greys_r')
 plt.title('Denoised - nlm5')
 
 plt.savefig('plts.tiff',dpi=600)
-plt.show()
-plt.close()
-
+plt.draw()
 
 # %% Histograms
 num = (oriClean.shape[0]*oriClean.shape[0])
@@ -117,5 +114,5 @@ plt.xlim((0,1))
 plt.ylim((0,600))
 
 plt.savefig('hist.tiff',dpi=600)
-plt.show()
-plt.close()
+plt.draw()
+print('the hell is going on')
