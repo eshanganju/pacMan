@@ -16,6 +16,9 @@ import spam.kalisphera as skali
 import math
 import scipy
 
+# Create logging file
+f = open("logFile.txt","w+")
+
 # %% Making spheres:
 
 pixelSize = 30.e-6
@@ -84,7 +87,7 @@ ax6.imshow(ori50_nlm5, cmap='Greys_r')
 plt.title('Denoised - nlm5')
 
 plt.savefig('plts.tiff',dpi=600)
-plt.draw()
+plt.show()
 
 # %% Histograms
 num = (oriClean.shape[0]*oriClean.shape[0])
@@ -114,5 +117,21 @@ plt.xlim((0,1))
 plt.ylim((0,600))
 
 plt.savefig('hist.tiff',dpi=600)
-plt.draw()
-print('the hell is going on')
+plt.show()
+
+'''
+Conclusion - the non local mean filter does the best job for cleaning the data
+the  median filter is also good but more noise on theblack part
+'''
+'''
+The difference between the images - original and after sharpening is shown below and saved. 
+'''
+Clean_nlm3_diff = (oriClean - ori50_nlm3)
+plt.figure()
+plt.imshow(Clean_nlm3_diff, cmap = 'Greys_r')
+plt.colorbar()
+plt.title('different in pixel values (positive - underdetection)')
+plt.savefig('clean-nlm3diff.tiff', dpi=600)
+plt.show()
+meanOfDifference = np.mean(Clean_nlm3_diff)
+f.write("meanDifference = %f" % meanOfDifference)
