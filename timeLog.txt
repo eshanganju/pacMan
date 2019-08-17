@@ -1,0 +1,7 @@
+This is atime log to keep track of progress locally:
+
+
+2019-08-17:
+  Working on alphaFilter.py to figure out how to quantify deviatio from original
+  
+

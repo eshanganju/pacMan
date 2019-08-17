@@ -1,1 +1,0 @@
-meanDifference = 0.001578
