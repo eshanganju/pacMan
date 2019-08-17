@@ -51,13 +51,13 @@ ori50_median = median_filter(ori50, size=3)
 
 
 sigma_est = np.mean(restoration.estimate_sigma(ori50))
-patch = dict(patch_size=3,
-             patch_distance=25)
 ori50_nlm3_patch = restoration.denoise_nl_means(ori50,
-                                                h=0.8*sigma_est,
+                                                h=4*sigma_est,
                                                 sigma=sigma_est,
-                                                fast_mode=False,
-                                                **patch)
+                                                fast_mode=True,
+                                                patch_size=3,
+                                                patch_distance=11)
+f.write("sigma image = %f\n" % sigma_est)
 ori50_nlm3 = restoration.denoise_nl_means(ori50, patch_size=3)
 ori50_nlm5 = restoration.denoise_nl_means(ori50, patch_size=5)
 
@@ -128,7 +128,6 @@ meanOfDifference = np.mean(Clean_nlm3_diff)
 
 
 f.write("meanDifference = %f\n" % meanOfDifference)
-f.write("sigma image = %f\n" % sigma_est)
 f.close()
 
 print("###########################")

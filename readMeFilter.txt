@@ -18,8 +18,6 @@ Knead to know
     patches close to the current patch. As a result, this algorithm can restore well textures, 
     that would be blurred by other denoising algorithm.
         
-    
-
 Issues: 
   The nlm filters make the gl peaks narrower but shift the peaks for the particles to smaller gl
   Need to find a way of checking accuracy
@@ -35,3 +33,7 @@ Conclusions:
 References: 
 [1] Vlahinić, Ivan, Edward Andò, Gioacchino Viggiani, and José E. Andrade. 2014. “Towards a More Accurate Characterization of Granular Media: Extracting Quantitative Descriptors from Tomographic Images.” Granular Matter 16 (1): 9–21. https://doi.org/10.1007/s10035-013-0460-6.
 [2] Buades, Antoni, Bartomeu Coll, and Jean Michel Morel. 2008. “Nonlocal Image and Movie Denoising.” International Journal of Computer Vision 76 (2): 123–39. https://doi.org/10.1007/s11263-007-0052-1.
+
+Links: 
+[1] NLM: https://www.youtube.com/watch?v=9tUns4HYtcw
+[2] NLM math: https://www.youtube.com/watch?v=k8hS6uTz-Uc
