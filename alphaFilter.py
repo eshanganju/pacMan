@@ -70,23 +70,23 @@ ax2.imshow(ori50, cmap='Greys_r')
 plt.title('PVE+noise+blur')
 
 ax3=plt.subplot(233)
-ax3.imshow(ori50_nlm3_patch, cmap='Greys_r')
-plt.title('Denoised - NLM3-Patch')
+ax3.imshow(ori50_cham, cmap='Greys_r')
+plt.title('Chambolle filter')
 
 
 ax4=plt.subplot(234)
 ax4.imshow(ori50_median, cmap='Greys_r')
-plt.title('Denoised - median')
+plt.title('Median')
 
 
 ax5=plt.subplot(235)
 ax5.imshow(ori50_nlm3, cmap='Greys_r')
-plt.title('Denoised - nlm3')
+plt.title('Non local means')
 
 
 ax6=plt.subplot(236)
 ax6.imshow(ori50_nlm5, cmap='Greys_r')
-plt.title('Denoised - nlm5')
+plt.title('Non local means 2')
 plt.savefig('plts.tiff',dpi=600)
 
 num = (oriClean.shape[0]*oriClean.shape[0])
