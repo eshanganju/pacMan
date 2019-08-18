@@ -38,6 +38,15 @@ Box4 = np.random.normal(Box3, scale=noiseSTD)
 oriClean = Box2[50]
 ori50 = Box4[50]
 
+axx1 = plt.subplot(121)
+axx1.imshow(oriClean, cmap="Greys_r")
+plt.title("Clean + PVE")
+axx2 = plt.subplot(122)
+axx2.imshow(ori50, cmap="Greys_r")
+plt.title("PVE+Blur+Noise")
+plt.savefig('pltsEffectOfNoise.tiff',dpi=600)
+
+
 sigma_est = np.mean(restoration.estimate_sigma(ori50, multichannel=True))
 
 nlm_3ps_11pd_02h = restoration.denoise_nl_means(ori50, 
