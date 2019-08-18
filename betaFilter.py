@@ -95,6 +95,13 @@ nlm_5ps_11pd_10h = restoration.denoise_nl_means(ori50,
                                                 multichannel=False, 
                                                 fast_mode=True, 
                                                 sigma=sigma_est)
+noiseRemoved = ori50 - nlm_5ps_11pd_05h
+
+plt.figure()
+ax0=plt.imshow(noiseRemoved, cmap='Greys_r')
+plt.title("Noise removed")
+plt.colorbar(ax0)
+plt.savefig('pltsNoise.tiff',dpi=600)
 
 ax1=plt.subplot(331)
 ax1.imshow(nlm_3ps_11pd_02h, cmap='Greys_r')
@@ -133,7 +140,6 @@ ax9.imshow(nlm_5ps_11pd_10h, cmap='Greys_r')
 plt.title('NLM5ps11pd0.10h')
 
 plt.savefig('pltsNLM.tiff',dpi=600) 
-plt.show()
 
 # histogram
 num = (oriClean.shape[0]*oriClean.shape[0])
@@ -164,4 +170,5 @@ print("###########################")
 print("Files made:")
 print("\t1. histNLM.tiff")
 print("\t2. pltsNLM.tiff")
+print("\t3. pltsNoise.tiff")
 print("###########################")
