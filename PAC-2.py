@@ -15,13 +15,48 @@ Classes:
     1. Particle
     2. Aggregate
 ---
-    3. Filter
-    4. Segment
-    5. Measure
-    6. Visualize
+    3. Reader
+    4. Filter
+    5. Segment
+    6. Measure
+    7. LemmeC
+    8. Writer
 """
 
-# importing important stuff
-
+# General
 import numpy as np
+import skimage.external.tifffile as tiffy
+import matplotlib.pyplot as plt
+
+# Made up
+import Reader
+import Particle
+import Aggregate
+import Filter
+import Segment
+import Measure
+import LemmeC
+import Writer
+
+# Activating objects
+reader = Reader.Reader()
+filters = Filter.Filter()
+segment = Segment.Segment()
+measure = Measure.Measure()
+lemmec = LemmeC.LemmeC()
+writer = Writer.Writer()
+
+fileName = 'Box4A.tiff'
+pixelSize = 1
+
+data = reader.imageRead(fileName)
+aggregate = Aggregate.Aggregate(data,pixelSize)
+
+###
+plt.figure()
+cut=aggregate.greyLevelMap.shape[0]//2
+plt.imshow(aggregate.greyLevelMap[cut])
+plt.show()
+###
+
 
