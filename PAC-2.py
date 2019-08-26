@@ -46,17 +46,39 @@ measure = Measure.Measure()
 lemmec = LemmeC.LemmeC()
 writer = Writer.Writer()
 
+#---Filename
 fileName = 'Box4A.tiff'
 pixelSize = 1
 
+#---Reading file
 data = reader.imageRead(fileName)
 aggregate = Aggregate.Aggregate(data,pixelSize)
 
-###
-plt.figure()
-cut=aggregate.greyLevelMap.shape[0]//2
-plt.imshow(aggregate.greyLevelMap[cut])
-plt.show()
-###
+#---Filter
+runFilter = True
+print("\n\n\nFilter started")
+filters.filterDenoiseNlm(aggregate)
+
+
+#---Segment
+
+
+#---Particle size
+
+
+#---Particle Contact
+
+
+#---Figures
+
+
+
+#######################################################
+# Checking data save
+#plt.figure()
+#cut=aggregate.greyLevelMap.shape[0]//2
+#plt.imshow(aggregate.greyLevelMap[cut], cmap="Greys_r")
+#plt.show()
+#
 
 
