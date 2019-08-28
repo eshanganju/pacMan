@@ -31,7 +31,7 @@ class Measure:
 
     # Initialize
     def __init__(self):
-        print("Ruler has been polished: measuring device activated")
+        print("Measurer activated")
 
     def measureBenchMarkSizeAndNormal(self,aggregate,radii,centres):
         aggregate.benchMarkNumberOfParticles = radii.shape[0]

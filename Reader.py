@@ -13,7 +13,7 @@ import skimage.external.tifffile as tiffy
 class Reader:
 
     def __init__(self):
-        print("I can read now: Reader activated")
+        print("Reader activated")
     
     def imageRead(self, fileName):
         data = tiffy.imread(fileName)

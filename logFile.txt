@@ -1,0 +1,4 @@
+Filter parameters---------------------*
+Patch size = 5.000000
+Patch distance = 11.000000
+Cut-off distance = 0.040000

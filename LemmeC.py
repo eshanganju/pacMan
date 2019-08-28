@@ -28,4 +28,4 @@ class LemmeC:
 
     # Initialize
     def __init__(self):
-        print("The LemmeC visualizer activated")
+        print("Visualizer activated")

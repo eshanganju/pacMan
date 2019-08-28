@@ -49,15 +49,18 @@ writer = Writer.Writer()
 #---Filename
 fileName = 'Box4A.tiff'
 pixelSize = 1
+f = open("logFile.txt","w+")
 
 #---Reading file
 data = reader.imageRead(fileName)
 aggregate = Aggregate.Aggregate(data,pixelSize)
 
 #---Filter
-runFilter = True
-print("\n\n\nFilter started")
-filters.filterDenoiseNlm(aggregate)
+patchSize,patchDist,cutOff = filters.filterDenoiseNlm(aggregate)
+f.write("Filter parameters---------------------*\n")
+f.write("Patch size = %f\n" % patchSize)
+f.write("Patch distance = %f\n" % patchDist)
+f.write("Cut-off intensity = %f\n" % cutOff)
 
 
 #---Segment
@@ -72,7 +75,7 @@ filters.filterDenoiseNlm(aggregate)
 #---Figures
 
 
-
+f.close()
 #######################################################
 # Checking data save
 #plt.figure()

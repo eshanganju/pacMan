@@ -14,4 +14,4 @@
 class Writer:
 
     def __init__(self):
-        print("I have my pen ready: Writer activated")
+        print("Writer activated")

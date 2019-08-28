@@ -47,6 +47,6 @@ class Aggregate:
         self.benchMarkNumberOfContacts = 0
         self.benchMarkContactNormal = np.zeros((1,5))
 
-        print("Its like a beach in here: Aggregate activated")
+        print("Aggregate activated")
 
 

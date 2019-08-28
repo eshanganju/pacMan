@@ -34,7 +34,7 @@ class Segment:
 
     # Initialize
     def __init__(self):
-        print("Divide-and-conquer: Segmentation tool activated")
+        print("Segmenter activated")
 
 
     # Histogram
