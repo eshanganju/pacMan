@@ -6,7 +6,7 @@ This is the second version of the Particle analysis code
 The following are attempted with trepidation: 
   1. Reading tiff files containing CT scan data in to np arrays
   2. Filtering the CT scan data to reduce noise
-  3. Segmenting the data to separate out individual particles
+  3. Binarization and segmentation of the data to separate out individual particles
   4. Computing particle size and morphology distribution
   5. Location interparticle contact
   6. Determining contact normal distribution
@@ -50,38 +50,46 @@ writer = Writer.Writer()
 fileName = 'Box4A.tiff'
 pixelSize = 1
 f = open("logFile.txt","w+")
+f.write("File name: %s " % fileName)
 
-#---Reading file
+
+#---Read
 data = reader.imageRead(fileName)
 aggregate = Aggregate.Aggregate(data,pixelSize)
 
+
 #---Filter
 patchSize,patchDist,cutOff = filters.filterDenoiseNlm(aggregate)
-f.write("Filter parameters---------------------*\n")
+segment.greyLevelHistogram(aggregate)
+f.write("\n\nFilter parameters---------------------*\n")
 f.write("Patch size = %f\n" % patchSize)
 f.write("Patch distance = %f\n" % patchDist)
 f.write("Cut-off intensity = %f\n" % cutOff)
 
+#---Binarize
+segment.binarizeOtsu(aggregate)
+
+#---Clean-up
+
+
+#---ED map
+segment.euclidDistanceMap(aggregate)
+
+#---Markers
+segment.localMaximaMarkers(aggregate)
 
 #---Segment
-
+segment.topoWatershed(aggregate)
 
 #---Particle size
-
+measure.measureParticleSizeDistribution(aggregate)
 
 #---Particle Contact
+measure.measureContactNormalsSpam(aggregate)
 
 
 #---Figures
 
 
 f.close()
-#######################################################
-# Checking data save
-#plt.figure()
-#cut=aggregate.greyLevelMap.shape[0]//2
-#plt.imshow(aggregate.greyLevelMap[cut], cmap="Greys_r")
-#plt.show()
-#
-
 

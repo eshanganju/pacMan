@@ -16,7 +16,7 @@ References:
 
 """
 
-# %% Importing libraries
+# Importing libraries
 
 # Python libraries
 import numpy as np
@@ -25,7 +25,6 @@ from skimage.morphology import local_maxima as localMaxima
 from scipy.ndimage.morphology import distance_transform_edt as edt
 from skimage.morphology import watershed as wsd
 import matplotlib.pyplot as plt
-
 import Particle
 
 #%% Initialize and methods
@@ -62,7 +61,12 @@ class Segment:
         greyLvlMap=aggregate.greyLevelMap
         aggregate.globalOtsuThreshold = threshold_otsu(greyLvlMap)
         aggregate.binaryMap[np.where(greyLvlMap >= aggregate.globalOtsuThreshold)] = 1
-        print("Completed binarization using OTSU")
+        print("\n\nCompleted binarization using OTSU")
+        
+        # TODO: Get rid of this after visualization is updated
+        plt.figure()
+        plt.imshow(aggregate.binaryMap[aggregate.binaryMap.shape[0]//2],cmap="Greys_r")
+        plt.show()
 
 
 
@@ -70,6 +74,11 @@ class Segment:
     def euclidDistanceMap(self,aggregate):
         aggregate.euclidDistanceMap = edt(aggregate.binaryMap)
         print("EDM Created")
+        
+        # TODO: Get rid of this after visualization is updated
+        plt.figure()
+        plt.imshow(aggregate.euclidDistanceMap[aggregate.euclidDistanceMap.shape[0]//2],cmap="Greys_r")
+        plt.show()
 
 
 
@@ -87,28 +96,33 @@ class Segment:
                         count = count + 1
 
 
-
     # Topological watershed
     def topoWatershed(self, aggregate):
-        
-        
         print("Segmenting particles by topological watershed")
-        edm_invert=-aggregate.euclidDistanceMap                                         # Inversion is carried out to make valley in the dem
-        binMask = aggregate.binaryMap.astype(bool)                                      # Mask is created to prevent watershed algorithm aorking there
-        particleMarkers = aggregate.markers                                             # Location of peaks in EDM - represent centres of particles
-        aggregate.labelledMap = wsd(edm_invert, markers=particleMarkers, mask=binMask)  # Watershed on inverted edm map with binary and mask as input
+        
+        edm_invert=-aggregate.euclidDistanceMap          
+        binMask = aggregate.binaryMap.astype(bool)      
+        particleMarkers = aggregate.markers            
+        aggregate.labelledMap = wsd(edm_invert, markers=particleMarkers, mask=binMask) 
 
         # Creating list of Particles within agregate
         aggregate.numberOfParticles = aggregate.labelledMap.max()
 
         for i in range(1,aggregate.numberOfParticles+1):
-            numberOfParticleVoxel = np.where(aggregate.labelledMap == i)[0].shape[0]    # Number of voxels also is the volume of the particle
-            locData = np.zeros((numberOfParticleVoxel,3))                               # Location data because it is easier to store just the particle loc
+            numberOfParticleVoxel = np.where(aggregate.labelledMap == i)[0].shape[0]  
+            locData = np.zeros((numberOfParticleVoxel,3))                            
             for j in range(0, 3):
-                locData[:,j]=np.where(aggregate.labelledMap == i)[j]                    # Extract the locations of the label
-            p=Particle.Particle(i,numberOfParticleVoxel,locData)                        # Create particle object
-            aggregate.particleList.append(p)                                            # Add particle object to list of particle store in aggregate
+                locData[:,j]=np.where(aggregate.labelledMap == i)[j]                
+            p=Particle.Particle(i,numberOfParticleVoxel,locData)                   
+            aggregate.particleList.append(p)                                      
         print("Done! List of particles created")
+        
+        # TODO: Get rid of this after visualization is updated
+        plt.figure()
+        plt.imshow(aggregate.labelledMap[aggregate.labelledMap.shape[0]//2],cmap="Greys_r")
+        plt.show()
+
+
 
 
 

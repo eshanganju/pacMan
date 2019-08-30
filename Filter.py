@@ -36,10 +36,10 @@ class Filter:
       # The SD of the input noisy image
       sigmaEstimate = np.mean(restoration.estimate_sigma(inputImage, multichannel=True))
       
-      print('\n\nIntial parameters for filter----------------------*')
+      print('\n\nIntial parameters for filter----------------------*\n')
       print('Patch size: ', patchSize)
       print('Patch distance: ', patchDistance)
-      print('Cut-off distance: ', hVal)
+      print('Cut-off pixel intensity: ', hVal)
 
       while runFilter == True:
         
@@ -68,7 +68,7 @@ class Filter:
         print("\n--- %s seconds ---" %timeTakenThisLoop)
         plt.show()
        
-        # Check for satisfaction of user: 
+        # Check user: 
         answer = input("\n\nIs the quality of filtered image good [y/n]: ")
         
         if answer == 'n':
