@@ -1,2 +1,0 @@
-sigma image = 0.030606
-meanDifference = 0.001159

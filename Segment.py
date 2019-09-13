@@ -119,11 +119,8 @@ class Segment:
         
         # TODO: Get rid of this after visualization is updated
         plt.figure()
-        plt.imshow(aggregate.labelledMap[aggregate.labelledMap.shape[0]//2],cmap="Greys_r")
+        plt.imshow(aggregate.labelledMap[aggregate.labelledMap.shape[0]//2],cmap="gist_rainbow")
         plt.show()
-
-
-
 
 
     # Random walker

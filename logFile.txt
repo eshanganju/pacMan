@@ -1,6 +1,0 @@
-File name: Box4A.tiff 
-
-Filter parameters---------------------*
-Patch size = 5.000000
-Patch distance = 11.000000
-Cut-off intensity = 0.050000

@@ -44,7 +44,9 @@ class Measure:
         aggregate.benchMarkGrainSizeDistribution = np.zeros((aggregate.benchMarkNumberOfParticles,2))
         aggregate.benchMarkGrainSizeDistribution[:,0] = aggregate.benchMarkRadii
         aggregate.benchMarkGrainSizeDistribution[:,0] = aggregate.benchMarkGrainSizeDistribution[:,0]*2
-        aggregate.benchMarkGrainSizeDistribution = np.sort(aggregate.benchMarkGrainSizeDistribution.view('f8,f8'), order=['f1'], axis=0).view(np.float)
+        aggregate.benchMarkGrainSizeDistribution = np.sort(aggregate.benchMarkGrainSizeDistribution.view('f8,f8'), 
+                                                           order=['f1'], 
+                                                           axis=0).view(np.float)
         for i in range(0,aggregate.benchMarkNumberOfParticles):
             aggregate.benchMarkGrainSizeDistribution[i,1]=((sum((aggregate.benchMarkGrainSizeDistribution[0:i+1,0])**3))/sum((aggregate.benchMarkGrainSizeDistribution[:,0])**3))*100
 
@@ -82,8 +84,10 @@ class Measure:
                 aggregate.benchMarkContactNormal[k,2] = -a/d
                 aggregate.benchMarkContactNormal[k,3] = -b/d
                 aggregate.benchMarkContactNormal[k,4] = -c/d
-
-
+        
+        np.savetxt("benchMarkContactNormals.csv",aggregate.benchMarkContactNormal,delimiter=",")
+         
+                
 
     def measureParticleSizeDistribution(self,aggregate):
 
@@ -192,6 +196,7 @@ class Measure:
 
     def measureContactNormalsSpam(self,aggregate):
         
+        print("Measuring contact normals using SPAM library")
         labelledData=aggregate.labelledMap
         binaryData=aggregate.binaryMap
         
@@ -220,4 +225,14 @@ class Measure:
         aggregate.contactTable = tempOrts[0:j,:]
         
         np.savetxt("ContactTable.csv", aggregate.contactTable, delimiter=",")
+
+    def measureContactNormalGeneral:
+      print("Measuring contact normals - non SPAM - using pixel data")
+      """
+      1. Contact determination for pixel data
+      2. Contact normal from PCA - probabilistic distrbution
+      """
+
+    def measureContactNormalLevelSet:
+      print("Measuring contact normals - using level set data")
 
