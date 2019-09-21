@@ -68,7 +68,6 @@ measure.measureBenchMarkSizeAndNormal(aggregate,radii,centres)
 
 #---Filter
 patchSize,patchDist,cutOff = filters.filterDenoiseNlm(aggregate)
-segment.greyLevelHistogram(aggregate)
 f.write("\n\nFilter parameters---------------------*\n") 
 f.write("Patch size = %f\n" % patchSize) 
 f.write("Patch distance = %f\n" % patchDist)

@@ -46,24 +46,35 @@ class Filter:
         print('\n\nStarting filtering loop ------------------------*')
         start_time = time.time()
 
-        filteredImage = restoration.denoise_nl_means(inputImage, patch_size=patchSize, patch_distance=patchDistance,
-                                                     h=hVal, multichannel=False, fast_mode=True, sigma=sigmaEstimate)
+        filteredImage = restoration.denoise_nl_means(inputImage, 
+                                                     patch_size=patchSize, 
+                                                     patch_distance=patchDistance,
+                                                     h=hVal, 
+                                                     multichannel=False, 
+                                                     fast_mode=True, 
+                                                     sigma=sigmaEstimate)
+                                                     
         noiseRemoved = abs(inputImage-filteredImage) 
         
         listNoisy = inputImage.reshape((numHistPts,1))
         listClean = filteredImage.reshape((numHistPts,1))   
+        
         histNoisy = np.histogram(listNoisy, bins=1000, range=(0,1)) 
         histClean = np.histogram(listClean, bins=1000, range=(0,1))
         
         ax1 = plt.subplot(221)
         ax1.imshow(inputImage[inputImage.shape[0]//2],cmap='Greys_r')
+        
         ax2 = plt.subplot(222)
         ax2.imshow(filteredImage[filteredImage.shape[0]//2],cmap='Greys_r')
+        
         ax3 = plt.subplot(223)
         ax3.imshow(noiseRemoved[noiseRemoved.shape[0]//2],cmap='Greys_r')
+        
         ax4 = plt.subplot(224)
         ax4.plot(his_x,histNoisy[0])
         ax4.plot(his_x,histClean[0])
+        
         timeTakenThisLoop = (time.time() - start_time)
         print("\n--- %s seconds ---" %timeTakenThisLoop)
         plt.show()

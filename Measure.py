@@ -226,13 +226,13 @@ class Measure:
         
         np.savetxt("ContactTable.csv", aggregate.contactTable, delimiter=",")
 
-    def measureContactNormalGeneral:
+    def measureContactNormalGeneral(self,aggregate):
       print("Measuring contact normals - non SPAM - using pixel data")
       """
       1. Contact determination for pixel data
       2. Contact normal from PCA - probabilistic distrbution
       """
 
-    def measureContactNormalLevelSet:
+    def measureContactNormalLevelSet(self,aggregate):
       print("Measuring contact normals - using level set data")
 
