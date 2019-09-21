@@ -22,7 +22,9 @@ import numpy as np
 
 class Aggregate:
 
-    def __init__(self, greyLvlMap, pxlSize):
+    def __init__(self, fileName, greyLvlMap, pxlSize):
+        #TODO: Need to normalize the pixel intensity between 0 and 1         
+        self.fileName = fileName
         self.pixelSize = pxlSize
         self.greyLevelMap = greyLvlMap
         self.filteredGreyLevelMap = np.zeros_like(self.greyLevelMap)

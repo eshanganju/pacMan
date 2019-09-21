@@ -4,15 +4,16 @@
 This is the second version of the Particle analysis code
 
 The following are attempted with trepidation: 
-  1. Read tiff files containing CT scan data in to np arrays and normalize grey scale to [0,1]
-  2. Filter CT scan data to reduce noise using automated NLM loops
-  3. Segment CT data using:  
-    3a. Traditional topographical watershed segmentation
-    3b. Power segmentation
-    3c. Level-set segmentation
-  4. Compute particle size and morphology distribution
-  5. Locate interparticle contact
-  6. Determine contact normal distribution
+  1.Read tiff files containing CT scan data in to np arrays and
+    1a.Normalize grey scale to [0,1]
+  2.Filter CT scan data to reduce noise using automated NLM loops
+  3.Segment CT data using:  
+    3a.Traditional topographical watershed segmentation
+    3b.Power segmentation
+    3c.Level-set segmentation
+  4.Compute particle size and morphology distribution
+  5.Locate interparticle contact
+  6.Determine contact normal distribution
 
 Classes:
     1. Particle
@@ -60,7 +61,7 @@ f.write("File name: %s " % fileName)
 
 #---Read
 data = reader.imageRead(fileName)
-aggregate = Aggregate.Aggregate(data,pixelSize)
+aggregate = Aggregate.Aggregate(fileName,data,pixelSize)
 
 #---Baseline data
 boxSizeDEM, centres, radii = sdata.loadDEMboxsizeCentreRadius()
@@ -74,21 +75,22 @@ f.write("Patch distance = %f\n" % patchDist)
 f.write("Cut-off intensity = %f\n" % cutOff)
 
 #---Binarize
-segment.binarizeOtsu(aggregate)
+#segment.binarizeOtsu(aggregate)
 
 #---Clean-up
 """TODO: Closing holes in the binary maps. Needs to be iterative."""
 
 #---Euclidean distance transform watershed
-segment.euclidDistanceMap(aggregate)
-segment.localMaximaMarkers(aggregate)
-segment.topoWatershed(aggregate)
+#segment.euclidDistanceMap(aggregate)
+#segment.localMaximaMarkers(aggregate)
+#segment.topoWatershed(aggregate)
+
 
 #---Particle size
-measure.measureParticleSizeDistribution(aggregate)
+#measure.measureParticleSizeDistribution(aggregate)
 
 #---Particle Contact
-measure.measureContactNormalsSpam(aggregate)
+#measure.measureContactNormalsSpam(aggregate)
 
 #---Figures
 

@@ -91,6 +91,7 @@ class Filter:
 
         else:
           print("Done! Filtered image quality acceptable----------*")
+          '''Save filter file as a tiff stack'''
           runFilter = False
       
       aggregate.filteredGreyLevleMap = filteredImage

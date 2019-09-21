@@ -48,7 +48,9 @@ class Measure:
                                                            order=['f1'], 
                                                            axis=0).view(np.float)
         for i in range(0,aggregate.benchMarkNumberOfParticles):
-            aggregate.benchMarkGrainSizeDistribution[i,1]=((sum((aggregate.benchMarkGrainSizeDistribution[0:i+1,0])**3))/sum((aggregate.benchMarkGrainSizeDistribution[:,0])**3))*100
+            a = sum((aggregate.benchMarkGrainSizeDistribution[0:i+1,0])**3)
+            b = sum((aggregate.benchMarkGrainSizeDistribution[:,0])**3)
+            aggregate.benchMarkGrainSizeDistribution[i,1]=(a/b)*100
 
         # Find contact normals of benchMarkData
         aggregate.benchMarkNumberOfContacts = 0
@@ -64,8 +66,9 @@ class Measure:
                     aggregate.benchMarkNumberOfContacts = aggregate.benchMarkNumberOfContacts+1
                     contactingParticlesOne.append(i)
                     contactingParticlesTwo.append(j)
-
+        
         aggregate.benchMarkContactNormal = np.zeros((aggregate.benchMarkNumberOfContacts,5))
+        
         for k in range(0,len(contactingParticlesOne)):
             aggregate.benchMarkContactNormal[k,0] = contactingParticlesOne[k]
             aggregate.benchMarkContactNormal[k,1] = contactingParticlesTwo[k]
