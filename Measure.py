@@ -42,8 +42,7 @@ class Measure:
 
         # Compute grain size distribution
         aggregate.benchMarkGrainSizeDistribution = np.zeros((aggregate.benchMarkNumberOfParticles,2))
-        aggregate.benchMarkGrainSizeDistribution[:,0] = aggregate.benchMarkRadii
-        aggregate.benchMarkGrainSizeDistribution[:,0] = aggregate.benchMarkGrainSizeDistribution[:,0]*2
+        aggregate.benchMarkGrainSizeDistribution[:,0] = (aggregate.benchMarkRadii)*2
         aggregate.benchMarkGrainSizeDistribution = np.sort(aggregate.benchMarkGrainSizeDistribution.view('f8,f8'), 
                                                            order=['f1'], 
                                                            axis=0).view(np.float)
@@ -89,7 +88,7 @@ class Measure:
                 aggregate.benchMarkContactNormal[k,4] = -c/d
         
         np.savetxt("benchMarkContactNormals.csv",aggregate.benchMarkContactNormal,delimiter=",")
-         
+        np.savetxt("benchMarkGSD.csv",aggregate.benchMarkGrainSizeDistribution,delimiter=",")
                 
 
     def measureParticleSizeDistribution(self,aggregate):
@@ -196,38 +195,60 @@ class Measure:
         Sphericity - stick to probably ratio of "Feret sizes"
         '''
 
-
     def measureContactNormalsSpam(self,aggregate):
-        
-        print("Measuring contact normals using SPAM library")
+        print("\nMeasuring contact normals using SPAM library\n")
         labelledData=aggregate.labelledMap
         binaryData=aggregate.binaryMap
         
         contactVolume, Z, contactsTable, contactingLabels = slab.labelledContacts(labelledData)
-        ortTabSand = slab.contacts.contactOrientationsAssembly(labelledData,binaryData,contactingLabels)
-        
-        tempOrts = np.zeros_like(ortTabSand)                                                           
-        ortOnlySand = ortTabSand[:,2:5]                                                               
-        
-        j=0
 
+        # Random walker - contact
+        print("\nMeasuring contact using randomwalker\n")
+        ortTabSandRW = slab.contacts.contactOrientationsAssembly(labelledData,
+                                                                 binaryData,
+                                                                 contactingLabels,
+                                                                 watershed="RW")
+        tempOrtsRW = np.zeros_like(ortTabSandRW)
+        ortOnlySandRW = ortTabSandRW[:,2:5]
+        j=0
         # For some reason the X component of the orientation is kept positive in this code
         # To stick to Z +ve convention of contactOrientation code, we keep Z positive
-        
-        for i in range(0,ortTabSand.shape[0]):
-            if (ortOnlySand[i,0]<0):
-                ortOnlySand[i]=-1*ortOnlySand[i]
+        for i in range(0,ortTabSandRW.shape[0]):
+            if (ortOnlySandRW[i,0]<0):
+                ortOnlySandRW[i]=-1*ortOnlySandRW[i]
 
-            if (ortOnlySand[i]**2).sum()<=0.999:
+            if (ortOnlySandRW[i]**2).sum()<=0.999:
                 print("Contact deleted - small contact")
 
             else:
-                tempOrts[j] = ortTabSand[i]
+                tempOrtsRW[j] = ortTabSandRW[i]
                 j=j+1
+        aggregate.contactTableRW = tempOrtsRW[0:j,:]
+        np.savetxt("ContactTableRW.csv", aggregate.contactTableRW, delimiter=",")
 
-        aggregate.contactTable = tempOrts[0:j,:]
-        
-        np.savetxt("ContactTable.csv", aggregate.contactTable, delimiter=",")
+        # Watershed - contact
+        print("\nMeasuring contact using watershed\n")
+        ortTabSandITK = slab.contacts.contactOrientationsAssembly(labelledData,
+                                                                  binaryData,
+                                                                  contactingLabels,
+                                                                  watershed="ITK")
+        tempOrtsITK = np.zeros_like(ortTabSandITK)
+        ortOnlySandITK = ortTabSandITK[:,2:5]
+        j=0
+        # For some reason the X component of the orientation is kept positive in this code
+        # To stick to Z +ve convention of contactOrientation code, we keep Z positive
+        for i in range(0,ortTabSandITK.shape[0]):
+            if (ortOnlySandITK[i,0]<0):
+                ortOnlySandITK[i]=-1*ortOnlySandRW[i]
+
+            if (ortOnlySandITK[i]**2).sum()<=0.999:
+                print("Contact deleted - small contact")
+
+            else:
+                tempOrtsITK[j] = ortTabSandITK[i]
+                j=j+1
+        aggregate.contactTableITK = tempOrtsITK[0:j,:]
+        np.savetxt("ContactTableITK.csv", aggregate.contactTableITK, delimiter=",")
 
     def measureContactNormalGeneral(self,aggregate):
       print("Measuring contact normals - non SPAM - using pixel data")

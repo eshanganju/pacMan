@@ -35,7 +35,6 @@ import spam.datasets as sdata
 
 #---Unique Classes
 import Reader
-import Particle
 import Aggregate
 import Filter
 import Segment
@@ -53,47 +52,51 @@ measure = Measure.Measure()
 lemmec = LemmeC.LemmeC()
 writer = Writer.Writer()
 
-#---Filename
-fileName = 'Box4A.tiff'
-pixelSize = 1
-f = open("logFile.txt","w+")
-f.write("File name: %s " % fileName)
+# File
+fileName = 'Box4B.tiff'
+pixelSize = 1           # mm/pixel
+#TODO: Add subroutine to make grey level intensity between 0 and 1
 
-#---Read
+# Read and create aggregate object
 data = reader.imageRead(fileName)
 aggregate = Aggregate.Aggregate(fileName,data,pixelSize)
 
-#---Baseline data
+# Baseline data
 boxSizeDEM, centres, radii = sdata.loadDEMboxsizeCentreRadius()
 measure.measureBenchMarkSizeAndNormal(aggregate,radii,centres)
 
-#---Filter
-patchSize,patchDist,cutOff = filters.filterDenoiseNlm(aggregate)
-f.write("\n\nFilter parameters---------------------*\n") 
-f.write("Patch size = %f\n" % patchSize) 
-f.write("Patch distance = %f\n" % patchDist)
-f.write("Cut-off intensity = %f\n" % cutOff)
+# Filter
+print("\nIs the file in need of filtering(y/n)?:")
+answer=input()
+if answer=='y':
+    filters.filterDenoiseNlm(aggregate)
+    segment.greyLevelHistogram(aggregate)
+else:
+    aggregate.filteredGreyLevelMap = aggregate.greyLevelMap
+    f = open("FilterDetails.txt","w+")
+    f.write("No filtering parameters as no filter used")
+    f.close()
 
-#---Binarize
-#segment.binarizeOtsu(aggregate)
+# Binarize
+segment.binarizeOtsu(aggregate)
 
-#---Clean-up
+# Clean-up
 """TODO: Closing holes in the binary maps. Needs to be iterative."""
 
 #---Euclidean distance transform watershed
-#segment.euclidDistanceMap(aggregate)
-#segment.localMaximaMarkers(aggregate)
-#segment.topoWatershed(aggregate)
-
+segment.euclidDistanceMap(aggregate)
+segment.localMaximaMarkers(aggregate)
+segment.topoWatershed(aggregate)
 
 #---Particle size
-#measure.measureParticleSizeDistribution(aggregate)
+measure.measureParticleSizeDistribution(aggregate)
 
-#---Particle Contact
-#measure.measureContactNormalsSpam(aggregate)
+#---Particle Contact 
+measure.measureContactNormalsSpam(aggregate)
 
 #---Figures
 
 
-f.close()
+#%%---Writing log file
+
 

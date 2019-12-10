@@ -9,16 +9,11 @@ Features:
 
 ---
 References: 
-    [1] Scikit-image thresholding: https://scikit-image.org/docs/0.13.x/auto_examples/xx_applications/plot_thresholding.html
-    [2] Otsu, Nobuyuki. 1979. “A Threshold Selection Method from Gray-Level Histograms.” 
-        IEEE Transactions on Systems, Man, and Cybernetics 9 (1): 62–66. 
-        https://doi.org/10.1109/TSMC.1979.4310076.
+
 
 """
 
 # Importing libraries
-
-# Python libraries
 import numpy as np
 from skimage.filters import threshold_otsu
 from skimage.morphology import local_maxima as localMaxima
@@ -26,8 +21,7 @@ from scipy.ndimage.morphology import distance_transform_edt as edt
 from skimage.morphology import watershed as wsd
 import matplotlib.pyplot as plt
 import Particle
-
-#%% Initialize and methods
+import skimage.external.tifffile as tiffy
 
 class Segment:
 
@@ -38,6 +32,8 @@ class Segment:
 
     # Histogram
     def greyLevelHistogram(self, aggregate):
+
+        # Unfiltered histogram
         greyLevelMap = aggregate.greyLevelMap
         greyLevelList = np.zeros(greyLevelMap.size)
         count = 0
@@ -46,13 +42,31 @@ class Segment:
                 for k in range(0,greyLevelMap.shape[2]):
                     greyLevelList[count]=greyLevelMap[i][j][k]
                     count=count+1
-        greyLevelHist = np.histogram(greyLevelList, bins=1000, range=(0,1))                     # 
+        greyLevelHist = np.histogram(greyLevelList, bins=1000, range=(0,1))
         aggregate.greyLevelHistogram[:,0] = np.arange(0.0005,1,0.001)
-        aggregate.greyLevelHistogram[:,1] = greyLevelHist[0]
+        aggregate.greyLevelHistogram[:,1] = (greyLevelHist[0]/(greyLevelHist[0].sum()))*100
+
+        # Filtered histogram
+        filteredGreyLevelMap = aggregate.filteredGreyLevelMap
+        filteredGreyLevelList = np.zeros(filteredGreyLevelMap.size)
+        count = 0
+        for i in range(0,filteredGreyLevelMap.shape[0]):
+            for j in range(0,filteredGreyLevelMap.shape[1]):
+                for k in range(0,filteredGreyLevelMap.shape[2]):
+                    filteredGreyLevelList[count]=filteredGreyLevelMap[i][j][k]
+                    count=count+1
+        filteredGreyLevelHist = np.histogram(filteredGreyLevelList, bins=1000, range=(0,1))
+        aggregate.filteredGreyLevelHistogram[:,0] = np.arange(0.0005,1,0.001)
+        aggregate.filteredGreyLevelHistogram[:,1] = (filteredGreyLevelHist[0]/(filteredGreyLevelHist[0].sum()))*100
 
         # TODO: Get rid of this after visualization is updated
         plt.figure()
-        plt.plot(aggregate.greyLevelHistogram[:,0], aggregate.greyLevelHistogram[:,1])
+        plt.plot(aggregate.greyLevelHistogram[:,0], aggregate.greyLevelHistogram[:,1],'k--',label='Unfiltered image')
+        plt.plot(aggregate.filteredGreyLevelHistogram[:,0], aggregate.filteredGreyLevelHistogram[:,1],'k',label='Filtered image')
+        plt.legend(loc='upper right')
+        plt.xlim(0,1)
+        plt.xticks([0,.10,.20,0.25,.30,.40,0.49,.50,.60,.70,0.75,.80,.90,.100])
+        plt.ylim(0,5)
         plt.show()
 
 
@@ -60,13 +74,12 @@ class Segment:
     def binarizeOtsu(self,aggregate):
         greyLvlMap=aggregate.greyLevelMap
         aggregate.globalOtsuThreshold = threshold_otsu(greyLvlMap)
-        aggregate.binaryMap[np.where(greyLvlMap >= aggregate.globalOtsuThreshold)] = 1
+        aggregate.binaryMap[np.where(greyLvlMap > aggregate.globalOtsuThreshold)] = 1
         print("\n\nCompleted binarization using OTSU")
-        
-        # TODO: Get rid of this after visualization is updated
-        plt.figure()
-        plt.imshow(aggregate.binaryMap[aggregate.binaryMap.shape[0]//2],cmap="Greys_r")
-        plt.show()
+        tiffy.imsave('Bin.tiff',aggregate.binaryMap)
+        f = open("OtsuThreshold.txt","w+")
+        f.write("\nGlobal Otsu threshold = %f\n" % aggregate.globalOtsuThreshold)
+        f.close()
 
 
 
@@ -74,18 +87,14 @@ class Segment:
     def euclidDistanceMap(self,aggregate):
         aggregate.euclidDistanceMap = edt(aggregate.binaryMap)
         print("EDM Created")
-        
-        # TODO: Get rid of this after visualization is updated
-        plt.figure()
-        plt.imshow(aggregate.euclidDistanceMap[aggregate.euclidDistanceMap.shape[0]//2],cmap="Greys_r")
-        plt.show()
-
-
+        tiffy.imsave('EDM.tiff',aggregate.euclidDistanceMap)
 
     # Location of markers
     def localMaximaMarkers(self,aggregate):
+        #TODO: Check implementation if h-maxima for this steps
         print("Finding local maxima in EDM")
         aggregate.markers = localMaxima(aggregate.euclidDistanceMap).astype(int)
+        
         # Give each local maxima a new label
         count=0
         for i in range(0,aggregate.markers.shape[0]):
@@ -94,7 +103,7 @@ class Segment:
                     if aggregate.markers[i][j][k] == 1:
                         aggregate.markers[i][j][k] = count + 1
                         count = count + 1
-
+        tiffy.imsave('Markers.tiff',aggregate.markers)
 
     # Topological watershed
     def topoWatershed(self, aggregate):
@@ -116,13 +125,8 @@ class Segment:
             p=Particle.Particle(i,numberOfParticleVoxel,locData)                   
             aggregate.particleList.append(p)                                      
         print("Done! List of particles created")
-        
-        # TODO: Get rid of this after visualization is updated
-        plt.figure()
-        plt.imshow(aggregate.labelledMap[aggregate.labelledMap.shape[0]//2],cmap="gist_rainbow")
-        plt.show()
-
+        tiffy.imsave('watershedSegmentation.tiff', aggregate.labelledMap)
 
     # Random walker
-    def randomWalkerWatershed(self):
-        print("Segmentation using random walker watershed")
+    def randomWalkerWatershed2Particles(self):
+        print("Segmentation using random walker watershed for 2 particles")

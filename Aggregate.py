@@ -28,6 +28,7 @@ class Aggregate:
         self.pixelSize = pxlSize
         self.greyLevelMap = greyLvlMap
         self.filteredGreyLevelMap = np.zeros_like(self.greyLevelMap)
+        self.imageNoise = np.zeros_like(self.filteredGreyLevelMap)
         self.binaryMap = np.zeros_like(self.greyLevelMap)
         self.globalOtsuThreshold = 0
         self.euclidDistanceMap = np.zeros_like(self.greyLevelMap)
@@ -42,6 +43,7 @@ class Aggregate:
         self.grainSizeDistributionFeretMin = np.zeros((5000,2))             
         self.grainSizeDistributionFeretMed = np.zeros((5000,2))             
         self.greyLevelHistogram = np.zeros((1000,2))                    
+        self.filteredGreyLevelHistogram = np.zeros((1000,2))
         self.benchMarkNumberOfParticles = 0
         self.benchMarkCentres = np.zeros((self.benchMarkNumberOfParticles,3))
         self.benchMarkRadii = np.zeros((self.benchMarkNumberOfParticles,1))
