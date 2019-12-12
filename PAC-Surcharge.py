@@ -54,20 +54,24 @@ writer = Writer.Writer()
 
 # %% File
 fileName = 'Box4B.tiff'
-# update filename to read from local folder
+# TODO: update filename to read from local folder
+
 
 pixelSize = 1           # mm/pixel
 #TODO: Add subroutine to make grey level intensity between 0 and 1
 
 # Read and create aggregate object
 data = reader.imageRead(fileName)
+
+# %% Create Aggregate object
+
 aggregate = Aggregate.Aggregate(fileName,data,pixelSize)
 
 # Baseline data
 boxSizeDEM, centres, radii = sdata.loadDEMboxsizeCentreRadius()
 measure.measureBenchMarkSizeAndNormal(aggregate,radii,centres)
 
-# Filter
+# %% Filter
 print("\nIs the file in need of filtering(y/n)?:")
 answer=input()
 if answer=='y':
@@ -79,13 +83,13 @@ else:
     f.write("No filtering parameters as no filter used")
     f.close()
 
-# Binarize
+# %% Binarize
 segment.binarizeOtsu(aggregate)
 
-# Clean-up
-"""TODO: Closing holes in the binary maps. Needs to be iterative."""
+# TODO: Closing holes in the binary maps. Needs to be iterative."""
 
-#---Euclidean distance transform watershed
+
+# %% Euclidean distance transform watershed
 segment.euclidDistanceMap(aggregate)
 segment.localMaximaMarkers(aggregate)
 segment.topoWatershed(aggregate)
