@@ -1,108 +1,127 @@
 # -*- coding: utf-8 -*-
 
 """
-This is the second version of the Particle analysis code
+This is an instance of the Particle Analysis Code (PAC)
 
-The following are attempted with trepidation: 
-  1.Read tiff files containing CT scan data in to np arrays and
-    1a.Normalize grey scale to [0,1]
-  2.Filter CT scan data to reduce noise using automated NLM loops
-  3.Segment CT data using:  
-    3a.Traditional topographical watershed segmentation
-    3b.Power segmentation
-    3c.Level-set segmentation
-  4.Compute particle size and morphology distribution
-  5.Locate interparticle contact
-  6.Determine contact normal distribution
+Outline: 
+    1.Read tiff file sequence into aggregate objects and,
+        1a. Normalize grey scale to [0,1]
+        1b. Split the scan data (regions) into subregions
+    2.Filter grey level intensity (GLI) data
+    3.Segment GLI data using:  
+        3a.Traditional topographical watershed segmentation
+        3b.Power segmentation
+        3c.Level-set segmentation
+    4.Compute particle size and morphology distribution
+    5.Locate interparticle contact
+    6.Determine contact normal distribution
 
 Classes:
     1. Particle
+        Contains locations of particle voxels
+        Contains morphology and size parameters
+
     2. Aggregate
----
+        contains GLI data of entire region
+        Contains list of all particles
+        Contains grain size distribution
+        Contains morphology distribution
+        Contains contact normals 
+        Contains list of contacting particles
+
     3. Reader
+        Reads data from pacInput
+        Crops data
+        Normalizes GLI of region
+        Splits region into sub-regions
+        Creats aggregate objects for regions and sub-regions
+
     4. Filter
+        Filters subregions
+        Checks adequacy of filtration
+
     5. Segment
+        Binarizes the GLI for subregions
+        Checks binarizations
+        Segments the particles using: 
+            a. Topological watershed
+            b. Power watershed
+            c. Level set
+        Assigns surfaces to particles
+
     6. Measure
+        Measures particle size parameters
+        Measures breakage parameters
+        Measures particle morphology paramters
+        Measures contact normals and Fabric
+        Generates grain size distributions 
+        Generates morphology distributions
+        Generates contact distributions
+
     7. LemmeC
+        Visualizes particles
+        Visualizes the aggregate
+        Generates plots for:
+            Grain size distribution
+            Contact normals
+            Morphology distributions
+
     8. Writer
+        Outputs files to pacOutput
+
+    9. Jeeves
+        Takes care of misc activites
+
 """
 
-# %% General Classes
+# %% Imports
+
+print("\n\nStarting Particle analysis code (PAC)------------*")
+
+# General imports
 import numpy as np
 import skimage.external.tifffile as tiffy
+from skimage import io
 import matplotlib.pyplot as plt
 import spam.datasets as sdata
 
-# %% Unique Classes
-import Reader
+# Noun imports
 import Aggregate
+
+# Verb imports
+import Reader
 import Filter
 import Segment
 import Measure
 import LemmeC
 import Writer
+import Jeeves
 
 # %% Objects
 
-print("\n\nStarting Particle analysis code (PAC)------------*")
 reader = Reader.Reader()
 filters = Filter.Filter()
 segment = Segment.Segment()
 measure = Measure.Measure()
 lemmec = LemmeC.LemmeC()
 writer = Writer.Writer()
+jeeves = Jeeves.Jeeves()
 
-# %% File
-fileName = 'Box4B.tiff'
+# %% Read files into regions
+
+# Folder name and image type:
+folderName = '/home/eg/github/PAC/pacInput/ConeScans/OTC_90_top'
+fileType = '.tiff'
+
+# File details
+pixelSize = 0.012390           # mm/pixel
+
+
+
+
 # TODO: update filename to read from local folder
-
-
-pixelSize = 1           # mm/pixel
-#TODO: Add subroutine to make grey level intensity between 0 and 1
-
-# Read and create aggregate object
-data = reader.imageRead(fileName)
-
-# %% Create Aggregate object
-
-aggregate = Aggregate.Aggregate(fileName,data,pixelSize)
-
-# Baseline data
-boxSizeDEM, centres, radii = sdata.loadDEMboxsizeCentreRadius()
-measure.measureBenchMarkSizeAndNormal(aggregate,radii,centres)
-
-# %% Filter
-print("\nIs the file in need of filtering(y/n)?:")
-answer=input()
-if answer=='y':
-    filters.filterDenoiseNlm(aggregate)
-    segment.greyLevelHistogram(aggregate)
-else:
-    aggregate.filteredGreyLevelMap = aggregate.greyLevelMap
-    f = open("FilterDetails.txt","w+")
-    f.write("No filtering parameters as no filter used")
-    f.close()
-
-# %% Binarize
-segment.binarizeOtsu(aggregate)
-
-# TODO: Closing holes in the binary maps. Needs to be iterative."""
-
-
-# %% Euclidean distance transform watershed
-segment.euclidDistanceMap(aggregate)
-segment.localMaximaMarkers(aggregate)
-segment.topoWatershed(aggregate)
-
-#---Particle size
-measure.measureParticleSizeDistribution(aggregate)
-
-#---Particle Contact 
-measure.measureContactNormalsSpam(aggregate)
-
-#---Figures
-
-
-#%%---Writing log file
+# TODO: Add subroutine to make grey level intensity between 0 and 1
+# TODO: Read and create aggregate object, each region is a aggregate
+# TODO: Subdivide region into subregions, each of which is an aggregate objects
 
 
