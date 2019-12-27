@@ -22,11 +22,11 @@ import numpy as np
 
 class Aggregate:
 
-    def __init__(self, fileName, greyLvlMap, pxlSize):
-        #TODO: Need to normalize the pixel intensity between 0 and 1         
+    def __init__(self, fileName, greyLvlMap, pxlSize, bitDepth):
         self.fileName = fileName
         self.pixelSize = pxlSize
         self.greyLevelMap = greyLvlMap
+        self.GLIMax = 2**bitDepth-1
         self.filteredGreyLevelMap = np.zeros_like(self.greyLevelMap)
         self.imageNoise = np.zeros_like(self.filteredGreyLevelMap)
         self.binaryMap = np.zeros_like(self.greyLevelMap)
@@ -50,7 +50,9 @@ class Aggregate:
         self.benchMarkGrainSizeDistribution = np.zeros((self.benchMarkNumberOfParticles,2))
         self.benchMarkNumberOfContacts = 0
         self.benchMarkContactNormal = np.zeros((1,5))
-
+        
+        
+        
         print("Aggregate activated")
 
 
