@@ -52,11 +52,11 @@ class Filter:
              
         # Inital settings chosen based on parameteric study 
         
-        patchSize = 7
+        patchSize = 3
         
-        patchDistance = 11
+        patchDistance = 5
         
-        hVal = 0.8*sigmaEstimateMap
+        hVal = 450
 
         print('\n\nIntial parameters for filter----------------------*\n')
         print('Patch size: ', patchSize)
@@ -192,14 +192,14 @@ class Filter:
         
         aggregate.imageNoise = aggregate.greyLevelMap - aggregate.filteredGreyLevelMap
 
-#        # Keeping records
-#        tiffy.imsave('Filtered.tiff', aggregate.filteredGreyLevelMap)
-#        f = open("NonLocalMeansFilterParameters.txt","w+")
-#        f.write("NLM filter parameters---------------------*\n") 
-#        f.write("Patch size = %f\n" % patchSize) 
-#        f.write("Patch distance = %f\n" % patchDistance)
-#        f.write("Cut-off intensity = %f\n" % hVal)
-#        f.write("Estimated sigma - CS = %f\n" % sigmaEstimateImage)
-#        f.write("Estimated sigma - Map = %f\n" % sigmaEstimateMap)
-#        f.close()
+        # Keeping records
+        tiffy.imsave('Filtered.tiff', aggregate.filteredGreyLevelMap)
+        f = open("NonLocalMeansFilterParameters.txt","w+")
+        f.write("NLM filter parameters---------------------*\n") 
+        f.write("Patch size = %f\n" % patchSize) 
+        f.write("Patch distance = %f\n" % patchDistance)
+        f.write("Cut-off intensity = %f\n" % hVal)
+        f.write("Estimated sigma - CS = %f\n" % sigmaEstimateImage)
+        f.write("Estimated sigma - Map = %f\n" % sigmaEstimateMap)
+        f.close()
 

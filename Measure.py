@@ -91,103 +91,98 @@ class Measure:
         np.savetxt("benchMarkGSD.csv",aggregate.benchMarkGrainSizeDistribution,delimiter=",")
                 
 
-    def measureParticleSizeDistribution(self,aggregate):
+    # Particle Size distribution
+    def measureParticleSizeDistribution( self, aggregate ):
 
-        aggregate.particleSizeDataSummary = np.zeros((aggregate.numberOfParticles+1,6))
-        print("Starting measurement of particles...")
+        aggregate.particleSizeDataSummary = np.zeros( ( aggregate.numberOfParticles + 1 , 6 ) )
+        
+        print( "Starting measurement of particles..." )
 
-        for i in range(1,aggregate.numberOfParticles+1):                              
-            print("Computing size of",i,"/",aggregate.numberOfParticles, "particle") 
+        for i in range( 1, aggregate.numberOfParticles + 1 ):                              
+            
+            print( "Computing size of", i, "/", aggregate.numberOfParticles, "particle" ) 
+
+            
             # Equivalent sphere diameter
-            vol = aggregate.particleList[i].volume
-            sphDia = 2*(((3*vol)/(4*math.pi))**(1/3))                               
-            aggregate.particleList[i].equivalentSphereDiameter = sphDia            
+            vol = aggregate.particleList[ i ].volume
+            sphDia = 2 * ( ( ( 3 * vol ) / ( 4 * math.pi ) ) ** ( 1 / 3 ) )                               
+            aggregate.particleList[ i ].equivalentSphereDiameter = sphDia            
+
 
             # Feret diameters
-            pointCloud = aggregate.particleList[i].locationData                   
-            aggregate.particleList[i].covarianceMatrix=np.cov(pointCloud.T)      
-            eigval,eigvec = np.linalg.eig(aggregate.particleList[i].covarianceMatrix)
-            aggregate.particleList[i].eigenValue = eigval                            
-            aggregate.particleList[i].eigenVector = eigvec                          
-            aggregate.particleList[i].meanZ = np.average(pointCloud[:,0])           
-            aggregate.particleList[i].meanY = np.average(pointCloud[:,1])              
-            aggregate.particleList[i].meanX = np.average(pointCloud[:,2])             
-            meanMatrix = np.zeros_like(pointCloud)                                   
-            meanMatrix[:,0] = aggregate.particleList[i].meanZ                       
-            meanMatrix[:,1] = aggregate.particleList[i].meanY                      
-            meanMatrix[:,2] = aggregate.particleList[i].meanX                     
-            aggregate.particleList[i].centeredLocationData = pointCloud - meanMatrix 
-            centeredPointCloud=aggregate.particleList[i].centeredLocationData        
-            rotationMatrix=np.zeros((3,3))                                          
-            rotationMatrix[:,0] = eigvec[0]                                        
-            rotationMatrix[:,1] = eigvec[1]                                       
-            rotationMatrix[:,2] = eigvec[2]                                            
-            rotCentPointCloud = (np.matmul(rotationMatrix,centeredPointCloud.T)).T     
-            aggregate.particleList[i].rotatedCenteredLocationData = rotCentPointCloud  
-            feretDims = np.zeros((3,1))                                                
-            feretDims[0]=rotCentPointCloud[:,0].max()-rotCentPointCloud[:,0].min()     
-            feretDims[1]=rotCentPointCloud[:,1].max()-rotCentPointCloud[:,1].min()     
-            feretDims[2]=rotCentPointCloud[:,0].max()-rotCentPointCloud[:,2].min()     
-            aggregate.particleList[i].feretMax = max(feretDims)[0]                     
-            aggregate.particleList[i].feretMin = min(feretDims)[0]                     
-            aggregate.particleList[i].feretMed = statistics.median(feretDims)[0]       
+            pointCloud = aggregate.particleList[ i ].locationData                   
+
+            aggregate.particleList[ i ].covarianceMatrix = np.cov( pointCloud.T )      
+
+            eigval, eigvec = np.linalg.eig( aggregate.particleList[ i ].covarianceMatrix )
+
+            aggregate.particleList[ i ].eigenValue = eigval                            
+
+            aggregate.particleList[ i ].eigenVector = eigvec                          
+
+            aggregate.particleList[ i ].meanZ = np.average( pointCloud[ :, 0 ] )           
+
+            aggregate.particleList[ i ].meanY = np.average( pointCloud[ :, 1 ] )              
+
+            aggregate.particleList[ i ].meanX = np.average( pointCloud[ :, 2 ] )             
+
+            meanMatrix = np.zeros_like( pointCloud )                                   
+
+            meanMatrix[ :, 0 ] = aggregate.particleList[ i ].meanZ                       
+
+            meanMatrix[ :, 1 ] = aggregate.particleList[ i ].meanY                      
+
+            meanMatrix[ :, 2 ] = aggregate.particleList[ i ].meanX                     
+
+            aggregate.particleList[ i ].centeredLocationData = pointCloud - meanMatrix 
+
+            centeredPointCloud = aggregate.particleList[ i ].centeredLocationData        
+
+            rotationMatrix = np.zeros( ( 3, 3 ) )                                          
+
+            rotationMatrix[ :, 0 ] = eigvec[ 0 ]                                        
+
+            rotationMatrix[ :, 1 ] = eigvec[ 1 ]                                       
+
+            rotationMatrix[ :, 2 ] = eigvec[ 2 ]                                            
+
+            rotCentPointCloud = ( np.matmul( rotationMatrix, centeredPointCloud.T ) ).T     
+
+            aggregate.particleList[ i ].rotatedCenteredLocationData = rotCentPointCloud  
+
+            feretDims = np.zeros( ( 3, 1 ) )                                                
+
+            feretDims[ 0 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 0 ].min()     
+
+            feretDims[ 1 ] = rotCentPointCloud[ :, 1 ].max() - rotCentPointCloud[ :, 1 ].min()     
+
+            feretDims[ 2 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 2 ].min()     
+
+            aggregate.particleList[ i ].feretMax = max( feretDims )[ 0 ]                     
+
+            aggregate.particleList[ i ].feretMin = min( feretDims )[ 0 ]                     
+
+            aggregate.particleList[ i ].feretMed = statistics.median( feretDims )[ 0 ]       
+
 
             # Storing data in neat table
-            aggregate.particleSizeDataSummary[i][0] = i
-            aggregate.particleSizeDataSummary[i][1] = aggregate.particleList[i].volume
-            aggregate.particleSizeDataSummary[i][2] = aggregate.particleList[i].equivalentSphereDiameter
-            aggregate.particleSizeDataSummary[i][3] = aggregate.particleList[i].feretMax
-            aggregate.particleSizeDataSummary[i][4] = aggregate.particleList[i].feretMed 
-            aggregate.particleSizeDataSummary[i][5] = aggregate.particleList[i].feretMin 
-            # TODO: Add other particle size measure(s)
-            # TODO: Use of dataframes for GSD?
-            # TODO: Is the eigen vector approach really the feret diameter?
+            aggregate.particleSizeDataSummary[ i ][ 0 ] = i
+            
+            aggregate.particleSizeDataSummary[ i ][ 1 ] = aggregate.particleList[ i ].volume
+            
+            aggregate.particleSizeDataSummary[ i ][ 2 ] = aggregate.particleList[ i ].equivalentSphereDiameter
+            
+            aggregate.particleSizeDataSummary[ i ][ 3 ] = aggregate.particleList[ i ].feretMax
+            
+            aggregate.particleSizeDataSummary[ i ][ 4 ] = aggregate.particleList[ i ].feretMed 
+            
+            aggregate.particleSizeDataSummary[ i ][ 5 ] = aggregate.particleList[ i ].feretMin 
+            
 
-        # Creating grain size distribution list
-        tempTable = np.zeros((aggregate.numberOfParticles+1,4))
-        tempTable[:,0] = aggregate.particleSizeDataSummary[:,0]
-        tempTable[:,1] = aggregate.particleSizeDataSummary[:,1]
+        np.savetxt( "DataGSD.csv", aggregate.particleSizeDataSummary, delimiter = "," )        
 
-        for i in range(2,6):
-            tempTable[:,2]= aggregate.particleSizeDataSummary[:,i]
-            tempTable = np.sort(tempTable.view('f8,f8,f8,f8'), order=['f2'], axis=0).view(np.float)
 
-            for j in range(1,aggregate.numberOfParticles+1):
-                tempTable[j,3]=((sum(tempTable[0:j,1]))/sum(tempTable[:,1]))*100
-
-            if i == 2:
-                '''eqSphere'''
-                print("eqSphere")
-                aggregate.grainSizeDistributionEquivalentSphere = np.zeros((aggregate.numberOfParticles+1,2))
-                aggregate.grainSizeDistributionEquivalentSphere[:,0]=tempTable[:,2]
-                aggregate.grainSizeDistributionEquivalentSphere[:,1]=tempTable[:,3]
-
-            elif i == 3:
-                '''feretMax'''
-                print("feretMax")
-                aggregate.grainSizeDistributionFeretMax = np.zeros((aggregate.numberOfParticles+1,2))
-                aggregate.grainSizeDistributionFeretMax[:,0]=tempTable[:,2]
-                aggregate.grainSizeDistributionFeretMax[:,1]=tempTable[:,3]
-
-            elif i== 4:
-                '''feretMed'''
-                print("feretMed")
-                aggregate.grainSizeDistributionFeretMed = np.zeros((aggregate.numberOfParticles+1,2))
-                aggregate.grainSizeDistributionFeretMed[:,0]=tempTable[:,2]
-                aggregate.grainSizeDistributionFeretMed[:,1]=tempTable[:,3]
-
-            elif i == 5: 
-                '''feretMin'''
-                print("feretMin")
-                aggregate.grainSizeDistributionFeretMin = np.zeros((aggregate.numberOfParticles+1,2))
-                aggregate.grainSizeDistributionFeretMin[:,0]=tempTable[:,2]
-                aggregate.grainSizeDistributionFeretMin[:,1]=tempTable[:,3]
-      
-        np.savetxt("Eqsp.csv",aggregate.grainSizeDistributionEquivalentSphere,delimiter=",")
-        np.savetxt("FeretMax.csv",aggregate.grainSizeDistributionFeretMax,delimiter=",")
-        np.savetxt("FeretMed.csv",aggregate.grainSizeDistributionFeretMed,delimiter=",")
-        np.savetxt("FeretMin.csv",aggregate.grainSizeDistributionFeretMin,delimiter=",")
-
+    # Morphology
     def measureMorphology(self,aggregate):
         print("Measuring particle morphology...")
         '''
@@ -195,6 +190,7 @@ class Measure:
         Sphericity - stick to probably ratio of "Feret sizes"
         '''
 
+    # Contact Normals
     def measureContactNormalsSpam(self,aggregate):
         print("\nMeasuring contact normals using SPAM library\n")
         labelledData=aggregate.labelledMap

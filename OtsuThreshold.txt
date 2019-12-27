@@ -1,2 +1,0 @@
-
-Global Otsu threshold = 19153.916016

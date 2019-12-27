@@ -87,7 +87,7 @@ class Segment:
             
         ax23.imshow( oldBinaryMap[ ( oldBinaryMap.shape[ 0 ] // 4 ) * 3 ], cmap='gray')            
                    
-        aggregate.binaryMap = newBinaryMap
+        aggregate.binaryMap = newBinaryMap.astype(int)
         
     
     def removespecks( self, aggregate ):
@@ -110,7 +110,7 @@ class Segment:
             
         ax23.imshow( oldBinaryMap[ ( oldBinaryMap.shape[ 0 ] // 4 ) * 3 ], cmap='gray') 
         
-        aggregate.binaryMap = newBinaryMap
+        aggregate.binaryMap = newBinaryMap.astype(int)
         
 
 
@@ -212,7 +212,29 @@ class Segment:
         print( "Done! List of particles created" )
         
         tiffy.imsave( 'watershedSegmentation.tiff', aggregate.labelledMap )
+        
+    # Reset particleList
+    def resetParticleList(self, aggregate):
+        
+        aggregate.numberOfParticles = int( aggregate.labelledMap.max() )        
+        aggregate.particleList = []         
+        aggregate.particleList.append(None) 
+        
+        for i in range( 1, aggregate.numberOfParticles + 1 ):
+            
+            numberOfParticleVoxel = np.where( aggregate.labelledMap == i)[ 0 ].shape[ 0 ]  
+            
+            locData = np.zeros( ( numberOfParticleVoxel, 3 ) )                            
+            
+            for j in range(0, 3):
+                
+                locData[ :, j ] = np.where( aggregate.labelledMap == i )[ j ]                
+            
+            p = Particle.Particle( i, numberOfParticleVoxel, locData )                   
+            
+            aggregate.particleList.append( p )
 
+    
     # Random walker
     def randomWalkerWatershed2Particles( self ):
         print( "Segmentation using random walker watershed for 2 particles" )
