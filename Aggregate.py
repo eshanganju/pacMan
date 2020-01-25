@@ -26,11 +26,13 @@ class Aggregate:
         self.fileName = fileName
         self.pixelSize = pxlSize
         self.greyLevelMap = greyLvlMap
+        self.filteredGreyLevelMap = greyLvlMap
         self.GLIMax = 2**bitDepth-1
-        self.filteredGreyLevelMap = np.zeros_like(self.greyLevelMap)
         self.imageNoise = np.zeros_like(self.filteredGreyLevelMap)
         self.binaryMap = np.zeros_like(self.greyLevelMap)
+        self.binaryMapUser = np.zeros_like(self.greyLevelMap)
         self.globalOtsuThreshold = 0
+        self.globalUserThreshold = 0
         self.euclidDistanceMap = np.zeros_like(self.greyLevelMap)
         self.markers = np.zeros_like(self.greyLevelMap)
         self.labelledMap = np.zeros_like(self.greyLevelMap)

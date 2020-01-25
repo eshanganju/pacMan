@@ -36,16 +36,16 @@ class Reader:
     def __init__(self):
         print("Reader activated")
 
-    def readTiffStack(self, fileName):
+
+    def readTiffStack(self, fileName):       
         data = tiffy.imread(fileName)
         return data 
 
     def readTiffSequence(self, folderLocation, fileRangeMin, fileRangeMax):
-        gc.collect()
-        print("Reading files from: " + folderLocation)
-
-        searchString = folderLocation+'/*tiff'
-        fileList = glob.glob(searchString)
+        gc.collect()        
+        print("Reading files from: " + folderLocation)      
+        searchString = folderLocation+'\*tiff'       
+        fileList = glob.glob(searchString)        
         fileList.sort()
         
         numTiffFiles = (fileRangeMax-fileRangeMin+1)
@@ -69,9 +69,9 @@ class Reader:
         
     def plotGLI(self,arrayGLI):
         fig, (ax1, ax2, ax3) = plt.subplots(1,3) 
-        ax1.imshow(arrayGLI[1], cmap='gray')
+        ax1.imshow(arrayGLI[0], cmap='gray')
         ax2.imshow(arrayGLI[arrayGLI.shape[0]//2], cmap='gray')
-        ax3.imshow(arrayGLI[arrayGLI.shape[0]-2], cmap='gray')          
+        ax3.imshow(arrayGLI[arrayGLI.shape[0]-1], cmap='gray')          
     
     def cropGLI(self, arrayGLI,y1,y2,x1,x2): 
         cropGliMap = arrayGLI[:,y1:y2,x1:x2]
