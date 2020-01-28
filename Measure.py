@@ -19,12 +19,10 @@ References:
 # Python libs
 
 import numpy as np
-
 import math
-
 import statistics
-
 import pandas as pd
+import scipy
 
 # Spam libraries
 #
@@ -35,67 +33,67 @@ import pandas as pd
 class Measure:
 
     # Initialize
-    def __init__(self):
-        print("Measurer activated")
+    def __init__( self ):
+        print( "Measurer activated" )
 
-    def measureBenchMarkSizeAndNormal(self,aggregate,radii,centres):      
-        aggregate.benchMarkNumberOfParticles = radii.shape[0]        
-        aggregate.benchMarkCentres = np.zeros((aggregate.benchMarkNumberOfParticles,3))       
-        aggregate.benchMarkRadii = np.zeros((aggregate.benchMarkNumberOfParticles,1))        
+    def measureBenchMarkSizeAndNormal( self, aggregate, radii, centres ):      
+        aggregate.benchMarkNumberOfParticles = radii.shape[ 0 ]        
+        aggregate.benchMarkCentres = np.zeros( ( aggregate.benchMarkNumberOfParticles, 3 ) )       
+        aggregate.benchMarkRadii = np.zeros( ( aggregate.benchMarkNumberOfParticles, 1 ) )        
         aggregate.benchMarkCentres = centres       
         aggregate.benchMarkRadii = radii
 
         # Compute grain size distribution
-        aggregate.benchMarkGrainSizeDistribution = np.zeros((aggregate.benchMarkNumberOfParticles,2))        
-        aggregate.benchMarkGrainSizeDistribution[:,0] = (aggregate.benchMarkRadii)*2        
-        aggregate.benchMarkGrainSizeDistribution = np.sort(aggregate.benchMarkGrainSizeDistribution.view('f8,f8'), order=['f1'],axis=0).view(np.float)
+        aggregate.benchMarkGrainSizeDistribution = np.zeros( ( aggregate.benchMarkNumberOfParticles, 2 ) )        
+        aggregate.benchMarkGrainSizeDistribution[ :, 0 ] = ( aggregate.benchMarkRadii ) * 2        
+        aggregate.benchMarkGrainSizeDistribution = np.sort( aggregate.benchMarkGrainSizeDistribution.view( 'f8,f8' ), order = [ 'f1' ], axis = 0 ).view( np.float )
         
-        for i in range(0,aggregate.benchMarkNumberOfParticles):        
-            a = sum((aggregate.benchMarkGrainSizeDistribution[0:i+1,0])**3)           
-            b = sum((aggregate.benchMarkGrainSizeDistribution[:,0])**3)            
-            aggregate.benchMarkGrainSizeDistribution[i,1]=(a/b)*100
+        for i in range( 0, aggregate.benchMarkNumberOfParticles ):        
+            a = sum( ( aggregate.benchMarkGrainSizeDistribution[ 0:i+1, 0 ] ) ** 3 )           
+            b = sum( ( aggregate.benchMarkGrainSizeDistribution[ :, 0 ] ) ** 3 )            
+            aggregate.benchMarkGrainSizeDistribution[ i, 1 ] = ( a / b ) * 100
 
         # Find contact normals of benchMarkData
         aggregate.benchMarkNumberOfContacts = 0       
         contactingParticlesOne = []       
         contactingParticlesTwo = []
         
-        for i in range(0,aggregate.benchMarkNumberOfParticles-1):           
+        for i in range( 0, aggregate.benchMarkNumberOfParticles - 1 ):           
             for j in range(i+1,aggregate.benchMarkNumberOfParticles):       
-                a = aggregate.benchMarkCentres[i,0]-aggregate.benchMarkCentres[j,0]               
-                b = aggregate.benchMarkCentres[i,1]-aggregate.benchMarkCentres[j,1]                
-                c = aggregate.benchMarkCentres[i,2]-aggregate.benchMarkCentres[j,2]                
-                distanceCentres = (a**2+b**2+c**2)**0.5
+                a = aggregate.benchMarkCentres[ i, 0 ] - aggregate.benchMarkCentres[ j, 0 ]               
+                b = aggregate.benchMarkCentres[ i, 1 ] - aggregate.benchMarkCentres[ j, 1 ]                
+                c = aggregate.benchMarkCentres[ i, 2 ] - aggregate.benchMarkCentres[ j, 2 ]                
+                distanceCentres = ( a ** 2 + b ** 2 + c ** 2 ) ** 0.5
                 
-                if distanceCentres <= (aggregate.benchMarkRadii[i]+aggregate.benchMarkRadii[j]):                    
-                    aggregate.benchMarkNumberOfContacts = aggregate.benchMarkNumberOfContacts+1                   
-                    contactingParticlesOne.append(i)                    
-                    contactingParticlesTwo.append(j)
+                if distanceCentres <= (aggregate.benchMarkRadii[ i ] + aggregate.benchMarkRadii[ j ] ):                    
+                    aggregate.benchMarkNumberOfContacts = aggregate.benchMarkNumberOfContacts + 1                   
+                    contactingParticlesOne.append( i )                    
+                    contactingParticlesTwo.append( j )
         
-        aggregate.benchMarkContactNormal = np.zeros((aggregate.benchMarkNumberOfContacts,5))
+        aggregate.benchMarkContactNormal = np.zeros( ( aggregate.benchMarkNumberOfContacts, 5 ) )
                 
-        for k in range(0,len(contactingParticlesOne)):            
-            aggregate.benchMarkContactNormal[k,0] = contactingParticlesOne[k]            
-            aggregate.benchMarkContactNormal[k,1] = contactingParticlesTwo[k]           
-            a = aggregate.benchMarkCentres[contactingParticlesOne[k],0]-aggregate.benchMarkCentres[contactingParticlesTwo[k],0]            
-            b = aggregate.benchMarkCentres[contactingParticlesOne[k],1]-aggregate.benchMarkCentres[contactingParticlesTwo[k],1]            
-            c = aggregate.benchMarkCentres[contactingParticlesOne[k],2]-aggregate.benchMarkCentres[contactingParticlesTwo[k],2]            
-            d = (a**2+b**2+c**2)**0.5
+        for k in range( 0, len( contactingParticlesOne ) ):            
+            aggregate.benchMarkContactNormal[ k, 0 ] = contactingParticlesOne[ k ]            
+            aggregate.benchMarkContactNormal[ k, 1 ] = contactingParticlesTwo[ k ]           
+            a = aggregate.benchMarkCentres[ contactingParticlesOne[ k ], 0 ] - aggregate.benchMarkCentres[ contactingParticlesTwo[ k ], 0 ]            
+            b = aggregate.benchMarkCentres[ contactingParticlesOne[ k ], 1 ] - aggregate.benchMarkCentres[ contactingParticlesTwo[ k ], 1 ]            
+            c = aggregate.benchMarkCentres[ contactingParticlesOne[ k ], 2 ] - aggregate.benchMarkCentres[ contactingParticlesTwo[ k ], 2 ]            
+            d = ( a ** 2 + b ** 2 + c ** 2 ) ** 0.5
             
             # If Z if positive, the sign of all are retained
-            if a>=0:               
-                aggregate.benchMarkContactNormal[k,2] = a/d               
-                aggregate.benchMarkContactNormal[k,3] = b/d               
-                aggregate.benchMarkContactNormal[k,4] = c/d
+            if a >= 0:               
+                aggregate.benchMarkContactNormal[ k, 2 ] = a / d               
+                aggregate.benchMarkContactNormal[ k, 3 ] = b / d               
+                aggregate.benchMarkContactNormal[ k, 4 ] = c / d
             
             # If Z is negative, the sign of all are flipped to get positive Z
-            elif a<=0:                
-                aggregate.benchMarkContactNormal[k,2] = -a/d                
-                aggregate.benchMarkContactNormal[k,3] = -b/d                
-                aggregate.benchMarkContactNormal[k,4] = -c/d
+            elif a <= 0:                
+                aggregate.benchMarkContactNormal[ k, 2 ] = - a / d                 
+                aggregate.benchMarkContactNormal[ k, 3 ] = - b / d                
+                aggregate.benchMarkContactNormal[ k, 4 ] = - c / d
               
-        np.savetxt("benchMarkContactNormals.csv",aggregate.benchMarkContactNormal,delimiter=",")      
-        np.savetxt("benchMarkGSD.csv",aggregate.benchMarkGrainSizeDistribution,delimiter=",")
+        np.savetxt( "benchMarkContactNormals.csv", aggregate.benchMarkContactNormal, delimiter = "," )      
+        np.savetxt( "benchMarkGSD.csv", aggregate.benchMarkGrainSizeDistribution, delimiter = "," )
                 
 
     # Particle Size distribution
@@ -105,16 +103,24 @@ class Measure:
 
         for i in range( 1, aggregate.numberOfParticles + 1 ):                                          
             print( "Computing size of", i, "/", aggregate.numberOfParticles, "particle" )         
-            # Equivalent sphere diameter
+            
+            #-------------Equivalent sphere diameter
             vol = aggregate.particleList[ i ].volume        
             sphDia = 2 * ( ( ( 3 * vol ) / ( 4 * math.pi ) ) ** ( 1 / 3 ) )                                       
             aggregate.particleList[ i ].equivalentSphereDiameter = sphDia            
 
 
-            # Feret diameters
+            #-------------Feret diameters
+            
+            # Get z, y, x locations of particle
             pointCloud = aggregate.particleList[ i ].locationData                   
-            aggregate.particleList[ i ].covarianceMatrix = np.cov( pointCloud.T )      
-            eigval, eigvec = np.linalg.eig( aggregate.particleList[ i ].covarianceMatrix )
+            
+            # Get covariance matrix of particle point cloud
+            aggregate.particleList[ i ].covarianceMatrix = np.cov( pointCloud.T )   
+            
+            # 
+            cov = aggregate.particleList[ i ].covarianceMatrix
+            eigval, eigvec = np.linalg.eig( cov )
 
             aggregate.particleList[ i ].eigenValue = eigval                            
             aggregate.particleList[ i ].eigenVector = eigvec                          

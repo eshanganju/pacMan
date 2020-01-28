@@ -40,17 +40,17 @@ w = Writer.Writer()
 j = Jeeves.Jeeves()
 
 # Subregion extraction
-D50 = 0.72
+D50 = 0.62
 
 # Reading data
-calib = 11930/1000/1000 # mm/px
+calib = 11930 / 1000 / 1000 # mm/px
 
 #  Center slice location: 
-otcCenterSlice = round((20+1006)/2)
+otcCenterSlice = round( ( 21 + 1005 ) / 2 )
 
 # Center of sample rows/columns
-csCenterRow = 450 # Y
-csCenterCol = 506 # X
+csCenterRow = 451 # Y
+csCenterCol = 500 # X
 
 # Center slice
 length = 5.5
@@ -62,7 +62,8 @@ upperCol = csCenterCol + round( (length / 2) / calib )
 lowerCol = csCenterCol - round( (length / 2) / calib )
 
 # Read entire data
-file = r.readTiffSequence('C:/Users/eganj/gitHub/pac/OTC-0N',lowerSlice, upperSlice-1)[:,lowerRow:upperRow,lowerCol:upperCol]
+file = r.readTiffSequence('C:/Users/eganj/gitHub/pacInput/OTC-0N', lowerSlice, upperSlice - 1)[:, lowerRow : upperRow, lowerCol:upperCol ]
+r.plotGLI(file)
 
 # %% Determination of user threshold for binarization (using a 5.5 mm cube volume)
 
@@ -76,45 +77,49 @@ file = r.readTiffSequence('C:/Users/eganj/gitHub/pac/OTC-0N',lowerSlice, upperSl
 '''
 
 # Create Aggregates 
-superCube = Aggregate.Aggregate('5.5mm cube', file, calib, 16)
-tiffy.imsave('superCube.tiff', superCube.greyLevelMap)
+superCube = Aggregate.Aggregate( '5.5mm cube', file, calib, 16 )
+tiffy.imsave( 'superCube.tiff', superCube.greyLevelMap )
 
 # Filteration
-f.filterDenoiseNlm(superCube)
-r.plotGLI(superCube.filteredGreyLevelMap)
+f.filterDenoiseNlm( superCube )
+tiffy.imsave( 'superCubeFiltered.tiff', superCube.filteredGreyLevelMap )
+r.plotGLI( superCube.filteredGreyLevelMap )
 
-superCube.filteredGreyLevelMap = tiffy.imread('C:/Users/eganj/Google Drive/(02) Research/(07) EIDPS/(02) Data/(05) Tomo/(02) Physics - nCT/(05) 1D compression study/(02) REV analysis/density based binarization/OTC/superCube/Filtered.tiff')
+#superCube.filteredGreyLevelMap = tiffy.imread( 'file:///C:/Users/eganj/Google Drive/(02) Research/(07) EIDPS/(02) Data/(05) Tomo/(02) Physics - nCT/(05) 1D compression study/(02) REV analysis/density based binarization/OGF/superCube/superCubeFiltered.png' )
 
 # Binarization - OTSU
 s.binarizeOtsu( superCube )
-print('Otsu Threshold = %f' % superCube.globalOtsuThreshold)
+print( 'Otsu Threshold = %f' % superCube.globalOtsuThreshold )
 
 # Refine OTSU
-thresholdUser = 20256
-s.resetOtsuBinarizationAccordingToUser(superCube,thresholdUser)
+thresholdUser = 21225.7
+s.resetOtsuBinarizationAccordingToUser( superCube, thresholdUser )
 
 # %% Cube subregion
 
+# All
+sublength = length
+
 # Cubical volume
-nD50 = 3
+nD50 = length
 sublength = nD50*D50
 
-superCubeCenterSlice = (superCube.greyLevelMap.shape[0])//2 
-superCubeCenterRow = (superCube.greyLevelMap.shape[1])//2  # Y
-superCubeCenterCol = (superCube.greyLevelMap.shape[2])//2  # Z
+superCubeCenterSlice = ( superCube.greyLevelMap.shape[ 0 ] ) // 2 
+superCubeCenterRow = ( superCube.greyLevelMap.shape[ 1 ] ) // 2  # Y
+superCubeCenterCol = ( superCube.greyLevelMap.shape[ 2 ] ) // 2  # Z
 
-subUpperSlice = superCubeCenterSlice + round( (sublength / 2) / calib )
-subLowerSlice = superCubeCenterSlice - round( (sublength / 2) / calib ) 
-subUpperRow = superCubeCenterRow + round( (sublength / 2) / calib )
-subLowerRow = superCubeCenterRow - round( (sublength / 2) / calib )
-subUpperCol = superCubeCenterCol + round( (sublength / 2) / calib )
-subLowerCol = superCubeCenterCol - round( (sublength / 2) / calib )
+subUpperSlice = superCubeCenterSlice + round( ( sublength / 2 ) / calib )
+subLowerSlice = superCubeCenterSlice - round( ( sublength / 2 ) / calib ) 
+subUpperRow = superCubeCenterRow + round( ( sublength / 2 ) / calib )
+subLowerRow = superCubeCenterRow - round( ( sublength / 2 ) / calib )
+subUpperCol = superCubeCenterCol + round( ( sublength / 2 ) / calib )
+subLowerCol = superCubeCenterCol - round( ( sublength / 2 ) / calib )
 
 gli = superCube.greyLevelMap[ subLowerSlice : subUpperSlice , subLowerRow : subUpperRow , subLowerCol : subUpperCol ]
 fgli = superCube.filteredGreyLevelMap[ subLowerSlice : subUpperSlice , subLowerRow : subUpperRow , subLowerCol : subUpperCol ]
 
-r.plotGLI(gli)
-r.plotGLI(fgli)
+r.plotGLI( gli )
+r.plotGLI( fgli )
 
 # Create Aggregate
 cube = Aggregate.Aggregate( nD50, gli, calib, 16 )
@@ -122,11 +127,11 @@ cube.filteredGreyLevelMap = fgli
 
 # Binarize Otsu
 s.binarizeOtsu( cube )
-print('Otsu Threshold = %f' % cube.globalOtsuThreshold)
+print( 'Otsu Threshold = %f' % cube.globalOtsuThreshold )
 
     
 # Refine OTSU
-s.resetOtsuBinarizationAccordingToUser(cube,thresholdUser)
+s.resetOtsuBinarizationAccordingToUser( cube, thresholdUser )
 
 # Euclid-Marker-Topo
 s.euclidDistanceMap( cube )
@@ -134,11 +139,11 @@ s.euclidDistanceMap( cube )
 # Particle markers
 s.localhMaxima( cube, 4 )
 
-# Watershed
+# Watershed [HERE]
 s.topoWatershed( cube )
 
 # Update particles
-cube.labelledMap = tiffy.imread( 'watershedSegmentation-edited3-NE.tif' ) # After manual editing
+cube.labelledMap = tiffy.imread( 'watershedSegmentation-edited-NE.tif' ) # After manual editing
 s.resetParticleList( cube )
 
 # Analysis
