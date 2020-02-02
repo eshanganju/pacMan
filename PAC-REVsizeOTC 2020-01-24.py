@@ -40,6 +40,11 @@ w = Writer.Writer()
 j = Jeeves.Jeeves()
 
 # Subregion extraction
+'''
+    OTC:0.72
+    OGF: 0.62
+    2QR: 0.71
+'''
 D50 = 0.72
 
 # Reading data

@@ -46,7 +46,7 @@ j = Jeeves.Jeeves()
     OGF: 0.62
     2QR: 0.71
 '''
-D50 = 0.62
+D50 = 0.71
 
 # Reading data
 calib = 11930 / 1000 / 1000 # mm/px
@@ -55,8 +55,8 @@ calib = 11930 / 1000 / 1000 # mm/px
 otcCenterSlice = round( ( 21 + 1005 ) / 2 )
 
 # Center of sample rows/columns
-csCenterRow = 451 # Y
-csCenterCol = 500 # X
+csCenterRow = 427 # Y
+csCenterCol = 513 # X
 
 # Center slice
 length = 5.5
@@ -68,7 +68,7 @@ upperCol = csCenterCol + round( (length / 2) / calib )
 lowerCol = csCenterCol - round( (length / 2) / calib )
 
 # Read entire data
-file = r.readTiffSequence('C:/Users/eganj/gitHub/pacInput/OTC-0N', lowerSlice, upperSlice - 1)[:, lowerRow : upperRow, lowerCol:upperCol ]
+file = r.readTiffSequence('C:/Users/eganj/gitHub/pacInput/2QR-0N', lowerSlice, upperSlice - 1)[:, lowerRow : upperRow, lowerCol:upperCol ]
 r.plotGLI(file)
 
 # %% Determination of user threshold for binarization (using a 5.5 mm cube volume)
@@ -86,19 +86,21 @@ r.plotGLI(file)
 superCube = Aggregate.Aggregate( '5.5mm cube', file, calib, 16 )
 tiffy.imsave( 'superCube.tiff', superCube.greyLevelMap )
 
-# Filteration
+# %% Filteration
 f.filterDenoiseNlm( superCube )
 tiffy.imsave( 'superCubeFiltered.tiff', superCube.filteredGreyLevelMap )
 r.plotGLI( superCube.filteredGreyLevelMap )
 
 #superCube.filteredGreyLevelMap = tiffy.imread( 'file:///C:/Users/eganj/Google Drive/(02) Research/(07) EIDPS/(02) Data/(05) Tomo/(02) Physics - nCT/(05) 1D compression study/(02) REV analysis/density based binarization/OGF/superCube/superCubeFiltered.png' )
 
+# %% Non filter processing
+
 # Binarization - OTSU
 s.binarizeOtsu( superCube )
 print( 'Otsu Threshold = %f' % superCube.globalOtsuThreshold )
 
 # Refine OTSU
-thresholdUser = 21222
+thresholdUser = 9758
 s.resetOtsuBinarizationAccordingToUser( superCube, thresholdUser )
 
 # Euclid-Marker-Topo
