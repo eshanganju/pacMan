@@ -126,7 +126,7 @@ class Segment:
         print( "Completed binarization using user input" )                
         tiffy.imsave( 'BinUser.tiff', aggregate.binaryMap )        
         f = open( "UserThreshold.txt", "w+" )        
-        f.write( "\nGlobal User threshold = %f\n" % aggregate.globalOtsuThreshold )        
+        f.write( "\nGlobal User threshold = %f\n" % aggregate.globalUserThreshold )        
         f.close()
         
         

@@ -86,14 +86,11 @@ r.plotGLI(file)
 superCube = Aggregate.Aggregate( '5.5mm cube', file, calib, 16 )
 tiffy.imsave( 'superCube.tiff', superCube.greyLevelMap )
 
-# %% Filteration
 f.filterDenoiseNlm( superCube )
 tiffy.imsave( 'superCubeFiltered.tiff', superCube.filteredGreyLevelMap )
 r.plotGLI( superCube.filteredGreyLevelMap )
 
 #superCube.filteredGreyLevelMap = tiffy.imread( 'file:///C:/Users/eganj/Google Drive/(02) Research/(07) EIDPS/(02) Data/(05) Tomo/(02) Physics - nCT/(05) 1D compression study/(02) REV analysis/density based binarization/OGF/superCube/superCubeFiltered.png' )
-
-# %% Non filter processing
 
 # Binarization - OTSU
 s.binarizeOtsu( superCube )
@@ -117,7 +114,7 @@ superCube.labelledMap = tiffy.imread( 'watershedSegmentation-edited-NE.tif' )
 s.resetParticleList( cube )
 
 # Analysis
-m.measureParticleSizeDistribution( cube )
+m.measureParticleSizeDistribution( superCube )
 
 # %% Cube subregion analysis
 

@@ -3,7 +3,8 @@
 """
     This is for analysis of 1D compression data scans at no load to obtain 
         1. REV size
-        2. Particle shape parameter
+        2. Particle shape parameter        
+        
 """
 
 # %% Imports
@@ -67,7 +68,7 @@ upperCol = csCenterCol + round( (length / 2) / calib )
 lowerCol = csCenterCol - round( (length / 2) / calib )
 
 # Read entire data
-file = r.readTiffSequence('C:/Users/eganj/gitHub/pac/OTC-0N',lowerSlice, upperSlice-1)[:,lowerRow:upperRow,lowerCol:upperCol]
+file = r.readTiffSequence('C:/Users/Purdue DIC/Documents/GitHub/pacInput/OTC-0N',lowerSlice, upperSlice-1)[:,lowerRow:upperRow,lowerCol:upperCol]
 
 # %% Determination of user threshold for binarization (using a 5.5 mm cube volume)
 
@@ -83,11 +84,13 @@ file = r.readTiffSequence('C:/Users/eganj/gitHub/pac/OTC-0N',lowerSlice, upperSl
 # Create Aggregates 
 superCube = Aggregate.Aggregate('5.5mm cube', file, calib, 16)
 tiffy.imsave('superCube.tiff', superCube.greyLevelMap)
+r.plotGLI(superCube.greyLevelMap)
 
 # Filteration
 f.filterDenoiseNlm(superCube)
 r.plotGLI(superCube.filteredGreyLevelMap)
 
+# Run only if restarting due to fatal error
 superCube.filteredGreyLevelMap = tiffy.imread('C:/Users/eganj/Google Drive/(02) Research/(07) EIDPS/(02) Data/(05) Tomo/(02) Physics - nCT/(05) 1D compression study/(02) REV analysis/density based binarization/OTC/superCube/Filtered.tiff')
 
 # Binarization - OTSU
@@ -95,13 +98,13 @@ s.binarizeOtsu( superCube )
 print('Otsu Threshold = %f' % superCube.globalOtsuThreshold)
 
 # Refine OTSU
-thresholdUser = 20256
+thresholdUser = 20255
 s.resetOtsuBinarizationAccordingToUser(superCube,thresholdUser)
 
 # %% Cube subregion
 
-# Cubical volume
-nD50 = 3
+# Cubical volume (2-7)
+nD50 = 7
 sublength = nD50*D50
 
 superCubeCenterSlice = (superCube.greyLevelMap.shape[0])//2 
@@ -124,11 +127,12 @@ r.plotGLI(fgli)
 # Create Aggregate
 cube = Aggregate.Aggregate( nD50, gli, calib, 16 )
 cube.filteredGreyLevelMap = fgli
+name='D50-'+ str(nD50)+'-filtered.tiff'
+tiffy.imsave(name, cube.filteredGreyLevelMap)
 
 # Binarize Otsu
 s.binarizeOtsu( cube )
 print('Otsu Threshold = %f' % cube.globalOtsuThreshold)
-
     
 # Refine OTSU
 s.resetOtsuBinarizationAccordingToUser(cube,thresholdUser)
@@ -143,7 +147,7 @@ s.localhMaxima( cube, 4 )
 s.topoWatershed( cube )
 
 # Update particles
-cube.labelledMap = tiffy.imread( 'watershedSegmentation-edited3-NE.tif' ) # After manual editing
+cube.labelledMap = tiffy.imread( 'watershedSegmentation-edited.tif' ) # After manual editing
 s.resetParticleList( cube )
 
 # Analysis
