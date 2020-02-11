@@ -29,3 +29,10 @@ class LemmeC:
     # Initialize
     def __init__(self):
         print("Visualizer activated")
+    
+    def plotGLI(self, arrayGLI):
+        fig, (ax1, ax2, ax3) = plt.subplots(1,3) 
+        ax1.imshow(arrayGLI[0], cmap='gray')
+        ax2.imshow(arrayGLI[arrayGLI.shape[0]//2], cmap='gray')
+        ax3.imshow(arrayGLI[arrayGLI.shape[0]-1], cmap='gray')          
+    
