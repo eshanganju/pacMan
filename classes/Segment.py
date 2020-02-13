@@ -78,13 +78,11 @@ class Segment:
         
         # Saving files
         print( "Completed binarization using Otsu threshold of %d" % aggregate.globalOtsuThreshold)                
-        otsuBinaryFileName = aggregate.fileName+'-otsuBinary.tiff'
+        otsuBinaryFileName = aggregate.dataOutputDirectory + aggregate.fileName+'-otsuBinary.tiff'
         tiffy.imsave( otsuBinaryFileName, aggregate.binaryMap )        
-        otsuTextFileName = aggregate.fileName + '-OtsuThreshold.txt'
+        otsuTextFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-OtsuThreshold.txt'
         f = open( otsuTextFileName, "w+" )        
         f.write( "\nGlobal User threshold = %f\n" % aggregate.globalOtsuThreshold )        
-        f.close()
-
                
     def resetOtsuBinarizationAccordingToUser( self, aggregate, userThreshold):
         
@@ -117,10 +115,10 @@ class Segment:
                 
         # Saving files
         print( "Completed binarization using user input" )  
-        userBinaryFileName = aggregate.fileName+'-userBinary.tiff'              
+        userBinaryFileName = aggregate.dataOutputDirectory + aggregate.fileName +'-userBinary.tiff'              
         tiffy.imsave( userBinaryFileName, aggregate.binaryMapUser )        
         
-        userThresholdTextFileName = aggregate.fileName + '-userThreshold.txt'
+        userThresholdTextFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-userThreshold.txt'
         f = open( userThresholdTextFileName, "w+" )               
         f.write( "\nGlobal User threshold = %f\n" % aggregate.globalUserThreshold )        
         f.close()        
@@ -156,6 +154,11 @@ class Segment:
             iterations = 1
             maxIterations = 50
             
+            userThresholdStepsTextFileName = aggregate.dataOutputDirectory +  aggregate.fileName + '-userThresholdDensitySteps.txt'
+            f = open( userThresholdStepsTextFileName, "w+")
+            f.write( "Steps of density based user threshold\n\n" )
+            f.close()
+
             while( abs( deltaVoidRatio ) > tolerance and iterations <= maxIterations ):
                 incrementSign = deltaVoidRatio/abs(deltaVoidRatio)  
                
@@ -196,19 +199,27 @@ class Segment:
                 print( 'Current void ratio: %0.5f' % round( currentVoidRatio,5 ) )
                 print( 'Target void ratio: %0.5f' % round( targetVoidRatio,5 ) )
                 print( 'Target - Current void ratio: %0.5f' % round( deltaVoidRatio, 5 ) )
-                
+
+                f = open( userThresholdStepsTextFileName, 'a' )
+                f.write( "\n\nCurrent threshold: %d\n" % round( currentThreshold ) )
+                f.write( "Otsu Threshold: %d\n" %  round( aggregate.globalOtsuThreshold ) )
+                f.write( "Current void ratio:  %0.5f\n" % round( currentVoidRatio,5 ) )
+                f.write( "Target void ratio: %0.5f\n" % round( targetVoidRatio,5 ) )
+                f.write( "Target - Current void ratio: %0.5f\n" % round( deltaVoidRatio, 5 ) )
+                f.close()
+
                 iterations = iterations + 1
             
             aggregate.ctVoidRatio = currentVoidRatio
             aggregate.binaryMapUser = currentBinaryMap
             aggregate.globalUserThreshold = currentThreshold
             
-            userBinaryFileName = aggregate.fileName+'-userBinaryDB.tiff'              
+            userBinaryFileName = aggregate.dataOutputDirectory + aggregate.fileName+'-userBinaryDB.tiff'              
             tiffy.imsave( userBinaryFileName, aggregate.binaryMapUser ) 
             
-            userThresholdTextFileName = aggregate.fileName + '-userThresholdDensityBased.txt'
+            userThresholdTextFileName = aggregate.dataOutputDirectory +  aggregate.fileName + '-userThresholdDensityBased.txt'
             f = open( userThresholdTextFileName, "w+" )               
-            f.write( "\nGlobal User threshold (density based) = %f\n" % aggregate.globalUserThreshold )        
+            f.write( "\nGlobal User threshold (density based) = %f\n" % aggregate.globalUserThreshold )
             f.close()
             
         else:

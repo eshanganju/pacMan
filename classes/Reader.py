@@ -19,7 +19,7 @@ from skimage.util import img_as_float
 import glob
 import matplotlib.pyplot as plt
 import gc
-import classes.LemmeC
+import classes.LemmeC as LemmeC
 
 # %% Class
 
@@ -35,6 +35,8 @@ class Reader:
 
 
     def readTiffSequence( self, folderLocation, centerSlice, centerRow, centerCol, edgeLength, calib):
+        
+        plot = LemmeC.LemmeC()
         
         upperSlice = centerSlice + round( ( edgeLength / 2 ) / calib )
         lowerSlice = centerSlice - round( ( edgeLength / 2 ) / calib )
@@ -66,7 +68,7 @@ class Reader:
             gliMap[ i - lowerSlice ] = tiffy.imread ( fileList [ i ] )    
             print('Read ' + str( i - lowerSlice + 1 ) + '/' + str( numTiffFilesToRead ) + ' files...')
         
-        print('\nFinished reading files...') 
+        print( '\nFinished reading files...' ) 
         croppedGLIMap = gliMap[ :, lowerRow : upperRow, lowerCol : upperCol ] 
         return croppedGLIMap
                 

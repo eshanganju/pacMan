@@ -20,7 +20,7 @@ import skimage.external.tifffile as tiffy
 
 class Aggregate:
 
-    def __init__( self, fileName, greyLvlMap, pxlSize, bitDepth, measuredVoidRatio, createFileBool ):
+    def __init__( self, fileName, greyLvlMap, pxlSize, bitDepth, measuredVoidRatio, createFileBool, dataStorageDirectory ):
         self.fileName = fileName
         self.pixelSize = pxlSize
         self.greyLevelMap = greyLvlMap
@@ -52,10 +52,11 @@ class Aggregate:
         self.benchMarkContactNormal = np.zeros( ( 1, 5 ) )
         self.knownVoidRatio = measuredVoidRatio
         self.ctVoidRatio = 0
+        self.dataOutputDirectory = dataStorageDirectory
         
         # Saving GLI as tiff stack if requested
         if createFileBool == True:
-            imageName = str( self.fileName ) + '.tiff'
+            imageName = str(self.dataOutputDirectory) + str( self.fileName ) + '.tiff'
             tiffy.imsave( imageName, self.greyLevelMap )
             print( "\nUnfiltered GLI file saved as " + imageName )
         

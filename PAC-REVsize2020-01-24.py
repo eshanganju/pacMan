@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
 '''
+	Purpose is to 
+		1. Get the REV size that can be used for analysi of all the data
+		2. Get particle size parameter that 
 
 '''
 
@@ -20,64 +23,20 @@ m = Measure.Measure()
 l = LemmeC.LemmeC()
 j = Jeeves.Jeeves()
 
-# %% Starting off: 
-
-j.checkFolderLocations() 
+j.checkFolderLocations()
 j.checkREVSampleDetails()
+
 gliStack = r.readTiffSequence( j.tiffFileLocation, j.superCubeCenterSlice, j.superCubeCenterRow, j.superCubeCenterCol, j.superCubeEdgeLengthforREVAnalysis, j.superCubeCalib )
-superCube = Aggregate.Aggregate( j.sandName, gliStack, j.superCubeCalib, 16, j.voidRatio, True )
+superCube = Aggregate.Aggregate( j.sandName, gliStack, j.superCubeCalib, 16, j.voidRatio, True, j.outputFilesLocation )
+
 f.checkForFiltration( superCube )    
 s.binarizeOtsu( superCube )
 s.resetBinarizationAccordingToDensity( superCube )
 
 
-# %% Cube subregion
+'''
+Correct the void ratrio calculation in binarization otsu
+Watershed algorithm - write new code - test in batch. take files for output
 
-# Cubical volume
-nD50 = 3
-sublength = nD50*D50
-
-superCubeCenterSlice = (superCube.greyLevelMap.shape[0])//2 
-superCubeCenterRow = (superCube.greyLevelMap.shape[1])//2  # Y
-superCubeCenterCol = (superCube.greyLevelMap.shape[2])//2  # Z
-
-subUpperSlice = superCubeCenterSlice + round( (sublength / 2) / calib )
-subLowerSlice = superCubeCenterSlice - round( (sublength / 2) / calib ) 
-subUpperRow = superCubeCenterRow + round( (sublength / 2) / calib )
-subLowerRow = superCubeCenterRow - round( (sublength / 2) / calib )
-subUpperCol = superCubeCenterCol + round( (sublength / 2) / calib )
-subLowerCol = superCubeCenterCol - round( (sublength / 2) / calib )
-
-gli = superCube.greyLevelMap[ subLowerSlice : subUpperSlice , subLowerRow : subUpperRow , subLowerCol : subUpperCol ]
-fgli = superCube.filteredGreyLevelMap[ subLowerSlice : subUpperSlice , subLowerRow : subUpperRow , subLowerCol : subUpperCol ]
-
-r.plotGLI(gli)
-r.plotGLI(fgli)
-
-# Create Aggregate
-cube = Aggregate.Aggregate( nD50, gli, calib, 16 )
-cube.filteredGreyLevelMap = fgli
-
-# Binarize Otsu
-s.binarizeOtsu( cube )
-print('Otsu Threshold = %f' % cube.globalOtsuThreshold)
-   
-# Refine OTSU
-s.resetOtsuBinarizationAccordingToUser(cube,thresholdUser)
-
-# Euclid-Marker-Topo
-s.euclidDistanceMap( cube )
-
-# Particle markers
-s.localhMaxima( cube, 4 )
-
-# Watershed
-s.topoWatershed( cube )
-
-# Update particles
-cube.labelledMap = tiffy.imread( 'watershedSegmentation-edited3-NE.tif' ) # After manual editing
-s.resetParticleList( cube )
-
-# Analysis
-m.measureParticleSizeDistribution( cube )
+'''
 

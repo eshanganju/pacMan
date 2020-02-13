@@ -39,18 +39,18 @@ class Jeeves:
         defaultOutputFilesLocation = 'C:/Users/eganj/gitHub/pacOutput/'       
         
         # Check default input: 
-        inputLocationIsCorrect = input( 'By default, input files are supposed to be at: ' + defaultInputFilesLocation + '\nIs this coorect? [y/n]: ' )        
-        if inputLocationIsCorrect.lower() == 'y':
-            self.inputFilesLocation = defaultInputFilesLocation       
+        inputLocationIsCorrect = input( 'By default, input files are supposed to be at: ' + defaultInputFilesLocation + '\nIs this coorect? ["y"/n]: ' )        
+        if inputLocationIsCorrect.lower() == 'n':
+            self.inputFilesLocation = input( 'Enter new location of input files: ' )                
         else:
-            self.inputFilesLocation = input( 'Enter new location of input files: ' )           
+            self.inputFilesLocation = defaultInputFilesLocation   
 
         # Check default output: 
-        outputLocationIsCorrect = input( '\nBy default, output files are supposed to be at: ' + defaultOutputFilesLocation + '\nIs this coorect? [y/n]: ' )                 
-        if outputLocationIsCorrect.lower() == 'y':
-            self.outputFilesLocation = defaultOutputFilesLocation      
+        outputLocationIsCorrect = input( '\nBy default, output files are supposed to be at: ' + defaultOutputFilesLocation + '\nIs this coorect? ["y"/n]: ' )                 
+        if outputLocationIsCorrect.lower() == 'n':
+            self.outputFilesLocation = input('Enter new location of output files: ')      
         else:
-            self.outputFilesLocation = input('Enter new location of output files: ')
+            self.outputFilesLocation = defaultOutputFilesLocation
 
         print('\nFolder locations established...')
     
@@ -58,16 +58,16 @@ class Jeeves:
     def checkREVSampleDetails(self):
         
         # supercube calibration
-        print( 'superCube default calibration is 0.01193 mm/px...' )
-        changeSuperCubeCalib = input( 'Do you want to change this [y/n]?: ' )
+        print( '\nSuperCube default calibration is 0.01193 mm/px...' )
+        changeSuperCubeCalib = input( 'Do you want to change this [y/"n"]?: ' )
         if changeSuperCubeCalib.lower() == 'y':
-            self.superCubeCalib = float( input( 'Enter calibration (mm/px): ' ) )        
+            self.superCubeCalib = float( input( 'Enter calibration (mm/px): ' ) )       
         else:
-            self.superCubeCalib = 0.01193
+            self.superCubeCalib = 0.01193 
                 
         # Supercube size details: 
-        print( 'superCube default edge length is 5.5 mm' )
-        changeSuperCubeEdgeLength = input( 'Do you want to change this [y/n]?: ' )      
+        print( '\nSuperCube default edge length is 5.5 mm' )
+        changeSuperCubeEdgeLength = input( 'Do you want to change this [y/"n"]?: ' )      
         if changeSuperCubeEdgeLength.lower() == 'y':
             self.superCubeEdgeLengthforREVAnalysis = float( input( 'Enter superCube edge length (mm): ' ) )
         else:
