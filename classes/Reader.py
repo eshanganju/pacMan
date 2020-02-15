@@ -1,27 +1,15 @@
-# -*- coding: utf-8 -*-
-
 '''
-Purpose: 
-    This class will read the data files from the local storage
-    Convert the GLI from what is on the data to 0-1 range
-    Crop image to get appropriate section of the data
 
-NOTES:
-    May need to add an invert fuction as the cone scans are inverted 
-    
 '''
 
 
 # General
-import numpy as np
-import skimage.external.tifffile as tiffy
 from skimage.util import img_as_float
-import glob
+import skimage.external.tifffile as tiffy
 import matplotlib.pyplot as plt
+import numpy as np
+import glob
 import gc
-import classes.LemmeC as LemmeC
-
-# %% Class
 
 class Reader:
 

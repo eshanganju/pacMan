@@ -1,42 +1,20 @@
-# -*- coding: utf-8 -*-
+'''
 
-"""
-Outline:
-This a part of the PAC code; this module is for segmentation of CT data.
----
-Features:
-    Binarize
-    Fix errors - fill holes and remove specks in binary image
-    Find Euclidian distance map (EDM)
-    Locate maxima in EDM
-        local maxima
-        local-h-maxima
-    Topoglogical watershed segmentation
-    Fix particle list
-    Random walker segmentation 2 particles
----
-References: 
-    
----
-TODO: 
-    Binarization - how to ensure particle size correction?
-
-
-"""
+'''
 
 # Importing libraries
-import numpy as np
-from skimage.filters import threshold_otsu
-from skimage.morphology import local_maxima as localMaxima
-from skimage.morphology import h_maxima as hmax
 from scipy.ndimage.morphology import distance_transform_edt as edt
 from scipy.ndimage.morphology import binary_fill_holes as fillHoles
 from scipy.ndimage.morphology import binary_opening as removeSpecks
+from skimage.morphology import local_maxima as localMaxima
+from skimage.morphology import h_maxima as hmax
 from skimage.morphology import watershed as wsd
-import classes.Particle as particle
+from skimage.filters import threshold_otsu
 import skimage.external.tifffile as tiffy
 import matplotlib.pyplot as plt
+import numpy as np
 
+from classes import Tangibles as Tangibles
 
 # %% Class
 
@@ -46,35 +24,28 @@ class Segment:
         print( "Segmenter activated" )
 
 
-    def binarizeOtsu( self, aggregate ):
-        
+    def binarizeAccordingToOtsu( self, aggregate ):       
+        print('\nRunning Otsu Binarization')
         greyLvlMap = aggregate.filteredGreyLevelMap
         aggregate.globalOtsuThreshold = threshold_otsu( greyLvlMap )      
         aggregate.binaryMap = np.zeros_like( greyLvlMap )        
         aggregate.binaryMap[ np.where( greyLvlMap > aggregate.globalOtsuThreshold ) ] = 1
         aggregate.binaryMap = aggregate.binaryMap.astype( int )
-        vs = aggregate.binaryMap.sum()
-        v = ( aggregate.binaryMap.shape[ 0 ]) * aggregate.binaryMap.shape[ 1 ] * aggregate.binaryMap.shape[ 2 ]
-        e = ( v - vs ) / vs
-        print( 'void ratio after Otsu binarization= %f' % e )
-        
-        
+        e1 = self.calcVoidRatio(aggregate.binaryMap)
+        print( 'Void ratio after Otsu binarization= %f' % e1 )
+          
         # Filling Holes
         aggregate.binaryMap = fillHoles(aggregate.binaryMap)
         aggregate.binaryMap = aggregate.binaryMap.astype( int )
-        vs = aggregate.binaryMap.sum()      
-        v = (aggregate.binaryMap.shape[0])*aggregate.binaryMap.shape[1]*aggregate.binaryMap.shape[2]        
-        e = (v-vs)/vs        
-        print('void ratio after filling holes = %f' % e)
-        
+        e2 = self.calcVoidRatio(aggregate.binaryMap)        
+        print('Void ratio after filling holes = %f' % e2)
         
         # Removing specks
         aggregate.binaryMap = removeSpecks(aggregate.binaryMap)
         aggregate.binaryMap = aggregate.binaryMap.astype( int )        
-        vs = aggregate.binaryMap.sum()       
-        v = (aggregate.binaryMap.shape[0])*aggregate.binaryMap.shape[1]*aggregate.binaryMap.shape[2]        
-        aggregate.ctVoidRatio = (v-vs)/vs        
-        print('void ratio after removing specks = %f' % e)
+        e3 = self.calcVoidRatio(aggregate.binaryMap)        
+        aggregate.ctVoidRatio = e3       
+        print('Void ratio after removing specks = %f' % e3)
         
         # Saving files
         print( "Completed binarization using Otsu threshold of %d" % aggregate.globalOtsuThreshold)                
@@ -84,33 +55,56 @@ class Segment:
         f = open( otsuTextFileName, "w+" )        
         f.write( "\nGlobal User threshold = %f\n" % aggregate.globalOtsuThreshold )        
                
-    def resetOtsuBinarizationAccordingToUser( self, aggregate, userThreshold):
+    def binarizeAccordingToUserThreshold( self, aggregate, userThreshold):        
+        print('\nRunning Otsu Binarization')
+        greyLvlMap = aggregate.filteredGreyLevelMap
+        aggregate.globalOtsuThreshold = threshold_otsu( greyLvlMap )      
+        aggregate.binaryMap = np.zeros_like( greyLvlMap )        
+        aggregate.binaryMap[ np.where( greyLvlMap > aggregate.globalOtsuThreshold ) ] = 1
+        aggregate.binaryMap = aggregate.binaryMap.astype( int )
+        e1 = self.calcVoidRatio(aggregate.binaryMap)
+        print( 'Void ratio after Otsu binarization= %f' % e1 )
+               
+        # Filling Holes
+        aggregate.binaryMap = fillHoles(aggregate.binaryMap)
+        aggregate.binaryMap = aggregate.binaryMap.astype( int )
+        e2 = self.calcVoidRatio(aggregate.binaryMap)        
+        print('Void ratio after filling holes = %f' % e2)
         
-        # Resetting binarization threshold
-        greyLvlMap = aggregate.filteredGreyLevelMap       
+        # Removing specks
+        aggregate.binaryMap = removeSpecks(aggregate.binaryMap)
+        aggregate.binaryMap = aggregate.binaryMap.astype( int )        
+        e3 = self.calcVoidRatio(aggregate.binaryMap)        
+        aggregate.ctVoidRatio = e3       
+        print('Void ratio after removing specks = %f' % e3)
+        
+        # Saving files
+        print( "Completed binarization using Otsu threshold of %d" % aggregate.globalOtsuThreshold)                
+        otsuBinaryFileName = aggregate.dataOutputDirectory + aggregate.fileName+'-otsuBinary.tiff'
+        tiffy.imsave( otsuBinaryFileName, aggregate.binaryMap )        
+        otsuTextFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-OtsuThreshold.txt'
+        f = open( otsuTextFileName, "w+" )        
+        f.write( "\nGlobal User threshold = %f\n" % aggregate.globalOtsuThreshold )
+
+        # Resetting binarization threshold    
         aggregate.globalUserThreshold = userThreshold        
         aggregate.binaryMap = np.zeros_like( greyLvlMap )        
         aggregate.binaryMap[ np.where( greyLvlMap > aggregate.globalUserThreshold ) ] = 1
         aggregate.binaryMap = aggregate.binaryMap.astype( int )
-        vs = aggregate.binaryMap.sum()
-        v = aggregate.binaryMap.shape[ 0 ] * aggregate.binaryMap.shape[ 1 ] * aggregate.binaryMap.shape[ 2 ]
-        e = ( v - vs ) / vs
-        print( 'void ratio after binarization= %f' % e )
+        e4 = self.calcVoidRatio(aggregate.binaryMap) 
+        print( 'void ratio after binarization= %f' % e4 )
                 
         # Filling Holes
         aggregate.binaryMap = fillHoles(aggregate.binaryMap)
-        aggregate.binaryMap = aggregate.binaryMap.astype( int )
-        vs = aggregate.binaryMap.sum()      
-        v = aggregate.binaryMap.shape[0]*aggregate.binaryMap.shape[1]*aggregate.binaryMap.shape[2]        
-        e = (v-vs)/vs        
-        print('void ratio after filling holes = %f' % e)
+        aggregate.binaryMap = aggregate.binaryMap.astype( int )       
+        e5 = self.calcVoidRatio(aggregate.binaryMap)    
+        print('void ratio after filling holes = %f' % e5)
                 
         # Removing specks
         aggregate.binaryMap = removeSpecks(aggregate.binaryMap)
         aggregate.binaryMap = aggregate.binaryMap.astype( int )
-        vs = aggregate.binaryMap.sum()       
-        v = aggregate.binaryMap.shape[0]*aggregate.binaryMap.shape[1]*aggregate.binaryMap.shape[2]        
-        aggregate.ctVoidRatio = (v-vs)/vs        
+        e6 = self.calcVoidRatio(aggregate.binaryMap)     
+        aggregate.ctVoidRatio = e6      
         print('void ratio after removing specks = %f' % e)
                 
         # Saving files
@@ -123,112 +117,126 @@ class Segment:
         f.write( "\nGlobal User threshold = %f\n" % aggregate.globalUserThreshold )        
         f.close()        
 
-    def resetBinarizationAccordingToDensity( self, aggregate ):
-        '''
+    def binarizeAccordingToDensity( self, aggregate ):
+        print('\nRunning Otsu Binarization')
+        greyLvlMap = aggregate.filteredGreyLevelMap
+        aggregate.globalOtsuThreshold = threshold_otsu( greyLvlMap )      
+        aggregate.binaryMap = np.zeros_like( greyLvlMap )        
+        aggregate.binaryMap[ np.where( greyLvlMap > aggregate.globalOtsuThreshold ) ] = 1
+        aggregate.binaryMap = aggregate.binaryMap.astype( int )
+        e1 = self.calcVoidRatio(aggregate.binaryMap)
+        print( 'Void ratio after Otsu binarization= %f' % e1 )
         
-        Parameters
-        ----------
-        aggregate : Object
-            Object of the sand particles containing atleast the GLI
         
-        targetVoidRatio : float
-            Void ratio measured from 
+        # Filling Holes
+        aggregate.binaryMap = fillHoles(aggregate.binaryMap)
+        aggregate.binaryMap = aggregate.binaryMap.astype( int )
+        e2 = self.calcVoidRatio(aggregate.binaryMap)        
+        print('Void ratio after filling holes = %f' % e2)
+        
+        
+        # Removing specks
+        aggregate.binaryMap = removeSpecks(aggregate.binaryMap)
+        aggregate.binaryMap = aggregate.binaryMap.astype( int )        
+        e3 = self.calcVoidRatio(aggregate.binaryMap)        
+        aggregate.ctVoidRatio = e3       
+        print('Void ratio after removing specks = %f' % e3)
+        
+        # Saving files
+        print( "Completed binarization using Otsu threshold of %d" % aggregate.globalOtsuThreshold)                
+        otsuBinaryFileName = aggregate.dataOutputDirectory + aggregate.fileName+'-otsuBinary.tiff'
+        tiffy.imsave( otsuBinaryFileName, aggregate.binaryMap )        
+        otsuTextFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-OtsuThreshold.txt'
+        f = open( otsuTextFileName, "w+" )        
+        f.write( "\nGlobal User threshold = %f\n" % aggregate.globalOtsuThreshold )         
 
-        Returns
-        -------
-        Binary map according to void ratio measured from samples
+        currentThreshold = aggregate.globalOtsuThreshold
+        currentVoidRatio = aggregate.ctVoidRatio
+        targetVoidRatio = aggregate.knownVoidRatio
+        greyLvlMap = aggregate.filteredGreyLevelMap
+            
+        tolerance = 0.0001
+        deltaVoidRatio = targetVoidRatio - currentVoidRatio
+            
+        absDeltaThreshold = 0
+        maxAbsDeltaThreshold = 500
+            
+        iterations = 1
+        maxIterations = 50
+            
+        userThresholdStepsTextFileName = aggregate.dataOutputDirectory +  aggregate.fileName + '-userThresholdDensitySteps.txt'
+        f = open( userThresholdStepsTextFileName, "w+")
+        f.write( "Steps of density based user threshold\n\n" )
+        f.close()
 
-        '''
-        if aggregate.globalOtsuThreshold != 0:
-            currentThreshold = aggregate.globalOtsuThreshold
-            currentVoidRatio = aggregate.ctVoidRatio
-            targetVoidRatio = aggregate.knownVoidRatio
-            greyLvlMap = aggregate.filteredGreyLevelMap
-            
-            tolerance = 0.0001
-            deltaVoidRatio = targetVoidRatio - currentVoidRatio
-            
-            absDeltaThreshold = 0
-            maxAbsDeltaThreshold = 500
-            
-            iterations = 1
-            maxIterations = 50
-            
-            userThresholdStepsTextFileName = aggregate.dataOutputDirectory +  aggregate.fileName + '-userThresholdDensitySteps.txt'
-            f = open( userThresholdStepsTextFileName, "w+")
-            f.write( "Steps of density based user threshold\n\n" )
-            f.close()
-
-            while( abs( deltaVoidRatio ) > tolerance and iterations <= maxIterations ):
-                incrementSign = deltaVoidRatio/abs(deltaVoidRatio)  
+        while( abs( deltaVoidRatio ) > tolerance and iterations <= maxIterations ):
+            incrementSign = deltaVoidRatio/abs(deltaVoidRatio)  
                
-                if abs( deltaVoidRatio ) > 0.100:
-                    absDeltaThreshold = 500
+            if abs( deltaVoidRatio ) > 0.100:
+                absDeltaThreshold = 500
                 
-                elif abs( deltaVoidRatio ) > 0.05:
-                    absDeltaThreshold = 250
+            elif abs( deltaVoidRatio ) > 0.05:
+                absDeltaThreshold = 250
                 
-                elif abs( deltaVoidRatio ) > 0.01:
-                    absDeltaThreshold = 100
+            elif abs( deltaVoidRatio ) > 0.01:
+                absDeltaThreshold = 100
                 
-                elif abs( deltaVoidRatio ) > 0.005:
-                    absDeltaThreshold = 50
+            elif abs( deltaVoidRatio ) > 0.005:
+                absDeltaThreshold = 50
                 
-                elif abs( deltaVoidRatio ) > 0.001:
-                    absDeltaThreshold = 25
+            elif abs( deltaVoidRatio ) > 0.001:
+                absDeltaThreshold = 25
                 
-                elif abs( deltaVoidRatio ) > 0.0005:
-                    absDeltaThreshold = 10
+            elif abs( deltaVoidRatio ) > 0.0005:
+                absDeltaThreshold = 10
                 
-                else:
-                    absDeltaThreshold = 1
+            else:
+                absDeltaThreshold = 1
                 
-                currentThreshold = currentThreshold + absDeltaThreshold*incrementSign
-                currentBinaryMap = np.zeros_like( greyLvlMap )        
-                currentBinaryMap[ np.where( greyLvlMap > currentThreshold ) ] = 1
+            currentThreshold = currentThreshold + absDeltaThreshold*incrementSign
+            currentBinaryMap = np.zeros_like( greyLvlMap )        
+            currentBinaryMap[ np.where( greyLvlMap > currentThreshold ) ] = 1
                 
-                currentBinaryMap = self.fillholes( currentBinaryMap )
-                currentBinaryMap = self.removespecks( currentBinaryMap )
+            currentBinaryMap = self.fillholes( currentBinaryMap )
+            currentBinaryMap = self.removespecks( currentBinaryMap )
                 
-                currentVoidRatio = self.calcVoidRatio( currentBinaryMap )
-                deltaVoidRatio = targetVoidRatio - currentVoidRatio
+            currentVoidRatio = self.calcVoidRatio( currentBinaryMap )
+            deltaVoidRatio = targetVoidRatio - currentVoidRatio
                 
-                print( '\nIteration %d:' % iterations )
-                print( 'Current threshold: %d' % round( currentThreshold ) )
-                print( 'Otsu Threshold: %d' % round( aggregate.globalOtsuThreshold ) )
-                print( 'Current void ratio: %0.5f' % round( currentVoidRatio,5 ) )
-                print( 'Target void ratio: %0.5f' % round( targetVoidRatio,5 ) )
-                print( 'Target - Current void ratio: %0.5f' % round( deltaVoidRatio, 5 ) )
+            print( '\nIteration %d:' % iterations )
+            print( 'Current threshold: %d' % round( currentThreshold ) )
+            print( 'Otsu Threshold: %d' % round( aggregate.globalOtsuThreshold ) )
+            print( 'Current void ratio: %0.5f' % round( currentVoidRatio,5 ) )
+            print( 'Target void ratio: %0.5f' % round( targetVoidRatio,5 ) )
+            print( 'Target - Current void ratio: %0.5f' % round( deltaVoidRatio, 5 ) )
 
-                f = open( userThresholdStepsTextFileName, 'a' )
-                f.write( "\n\nCurrent threshold: %d\n" % round( currentThreshold ) )
-                f.write( "Otsu Threshold: %d\n" %  round( aggregate.globalOtsuThreshold ) )
-                f.write( "Current void ratio:  %0.5f\n" % round( currentVoidRatio,5 ) )
-                f.write( "Target void ratio: %0.5f\n" % round( targetVoidRatio,5 ) )
-                f.write( "Target - Current void ratio: %0.5f\n" % round( deltaVoidRatio, 5 ) )
-                f.close()
-
-                iterations = iterations + 1
-            
-            aggregate.ctVoidRatio = currentVoidRatio
-            aggregate.binaryMapUser = currentBinaryMap
-            aggregate.globalUserThreshold = currentThreshold
-            
-            userBinaryFileName = aggregate.dataOutputDirectory + aggregate.fileName+'-userBinaryDB.tiff'              
-            tiffy.imsave( userBinaryFileName, aggregate.binaryMapUser ) 
-            
-            userThresholdTextFileName = aggregate.dataOutputDirectory +  aggregate.fileName + '-userThresholdDensityBased.txt'
-            f = open( userThresholdTextFileName, "w+" )               
-            f.write( "\nGlobal User threshold (density based) = %f\n" % aggregate.globalUserThreshold )
+            f = open( userThresholdStepsTextFileName, 'a' )
+            f.write( "\nIteration %d:\n" % iterations)
+            f.write( "Current threshold: %d\n" % round( currentThreshold ) )
+            f.write( "Otsu Threshold: %d\n" %  round( aggregate.globalOtsuThreshold ) )
+            f.write( "Current void ratio:  %0.5f\n" % round( currentVoidRatio,5 ) )
+            f.write( "Target void ratio: %0.5f\n" % round( targetVoidRatio,5 ) )
+            f.write( "Target - Current void ratio: %0.5f\n" % round( deltaVoidRatio, 5 ) )
             f.close()
+
+            iterations = iterations + 1
             
-        else:
-            print('Run Otsu first!')
+        aggregate.ctVoidRatio = currentVoidRatio
+        aggregate.binaryMapUser = currentBinaryMap
+        aggregate.globalUserThreshold = currentThreshold
+            
+        userBinaryFileName = aggregate.dataOutputDirectory + aggregate.fileName+'-userBinaryDB.tiff'              
+        tiffy.imsave( userBinaryFileName, aggregate.binaryMapUser ) 
+            
+        userThresholdTextFileName = aggregate.dataOutputDirectory +  aggregate.fileName + '-userThresholdDensityBased.txt'
+        f = open( userThresholdTextFileName, "w+" )               
+        f.write( "\nGlobal User threshold (density based) = %f\n" % aggregate.globalUserThreshold )
+        f.close()    
+            
         
         
     def calcVoidRatio(self, binaryMapforVoidRatioCalc):
         '''
-    
         Parameters
         ----------
         binaryMap : numpy array with 1 and 0
@@ -236,7 +244,6 @@ class Segment:
         Returns
         -------
         void ratio of the binary map assumin 1 is particle
-    
         '''
         volSolids = binaryMapforVoidRatioCalc.sum()
         lenZ = binaryMapforVoidRatioCalc.shape[ 0 ]
@@ -258,7 +265,6 @@ class Segment:
         Returns
         -------
         newBinaryMap holes in the map is filled
-            DESCRIPTION.
 
         '''
         newBinaryMap = fillHoles( oldBinaryMap )
@@ -266,25 +272,32 @@ class Segment:
 
                    
     def removespecks( self, oldBinaryMap ):
+        '''
+        
+        Parameters
+        ----------
+        oldBinaryMap : Numpy array of binary data
+            obtained from binarization
+
+        Returns
+        -------
+        newBinaryMap with white specks in the map removed
+
+        '''
         newBinaryMap = removeSpecks( oldBinaryMap )   
         return newBinaryMap.astype(int)
 
         
-    def euclidDistanceMap( self, aggregate ):      
-        aggregate.euclidDistanceMap = edt( aggregate.binaryMap )
-        edm = aggregate.euclidDistanceMap        
-        
-        fig1, ( ax11, ax12, ax13 ) = plt.subplots( 1, 3 )             
-        ax11.imshow( edm[ edm.shape[ 0 ] // 4 ], cmap = 'gray' )            
-        ax12.imshow( edm[ edm.shape[ 0 ] // 2 ], cmap = 'gray' )            
-        ax13.imshow( edm[ ( edm.shape[ 0 ] // 4 ) * 3 ], cmap='gray')          
-        
+    def obtainEuclidDistanceMap( self, aggregate ):      
+        print('\nFinding Euclidian distance map (EDM)')
+        aggregate.euclidDistanceMap = edt( aggregate.binaryMap )             
         print( "EDM Created" )        
-        tiffy.imsave( 'EDM.tiff', aggregate.euclidDistanceMap )
+        edmImageFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-EDM.tiff'
+        tiffy.imsave( edmImageFileName , aggregate.euclidDistanceMap )
 
 
-    def localMaximaMarkers( self, aggregate ):       
-        print( "Finding local maxima in EDM" )       
+    def obtainLocalMaximaMarkers( self, aggregate ):       
+        print( '\nFinding local maxima in EDM' )       
         aggregate.markers = localMaxima(aggregate.euclidDistanceMap, allow_borders = False).astype(int)
         
         count=0       
@@ -294,29 +307,30 @@ class Segment:
                     if aggregate.markers[ i ][ j ][ k ] == 1:                       
                         aggregate.markers[ i ][ j ][ k ] = count + 1                       
                         count = count + 1
-                        
+        makerFileLocationAndName = aggregate.dataOutputDirectory + aggregate.fileName + '-markers.tiff'                
+        print( 'Local maxima file created' )
         tiffy.imsave('Markers.tiff',aggregate.markers )
 
 
-    def localhMaxima( self, aggregate, h ):    
-        
-        print( "Finding local maxima in EDM" )    
+    def obtainLocalHMaximaMarkers( self, aggregate, h ):    
+        print( '\nFinding local maxima in EDM' )    
         aggregate.markers = hmax( aggregate.euclidDistanceMap, h ).astype(int)    
         
         count=0    
-        for i in range( 0, aggregate.markers.shape[ 0 ] ):            
-            for j in range( 0, aggregate.markers.shape[ 1 ] ):                
-                for k in range( 0, aggregate.markers.shape[ 2 ] ):                    
-                    if aggregate.markers[ i ][ j ][ k ] == 1:                        
-                        aggregate.markers[ i ][ j ][ k ] = count + 1                        
+        for frame in range( 0, aggregate.markers.shape[ 0 ] ):            
+            for row in range( 0, aggregate.markers.shape[ 1 ] ):                
+                for col in range( 0, aggregate.markers.shape[ 2 ] ):                    
+                    if aggregate.markers[ frame ][ row ][ col ] == 1:                        
+                        aggregate.markers[ frame ][ row ][ col ] = count + 1                        
                         count = count + 1
-                        
-        tiffy.imsave('Markers.tiff',aggregate.markers)
-
-
-    def topoWatershed( self, aggregate ):
         
-        print( "Segmenting particles by topological watershed" )        
+        makerFileLocationAndName = aggregate.dataOutputDirectory + aggregate.fileName + '-hMarkers.tiff'                
+        print( 'Local maxima file created' )
+        tiffy.imsave(makerFileLocationAndName, aggregate.markers)
+
+
+    def obtainTopoWatershed( self, aggregate ):
+        print( '\nSegmenting particles by topological watershed' )        
         edm_invert = -aggregate.euclidDistanceMap                  
         binMask = aggregate.binaryMap.astype( bool )              
         particleMarkers = aggregate.markers                    
@@ -334,7 +348,9 @@ class Segment:
             aggregate.particleList.append( p )                                      
         
         print( "Done! List of particles created" )        
-        tiffy.imsave( 'watershedSegmentation.tif', aggregate.labelledMap )
+        watershedSegmentationFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-watershedSegmentation.tiff'
+        tiffy.imsave( watershedSegmentationFileName, aggregate.labelledMap )
+        print( 'Watershed segmentation complete' )
 
     def fixErrorsInSegmentation(self, aggregate):
         '''
@@ -345,12 +361,36 @@ class Segment:
 
         Returns
         -------
-        Updates aggregate object to correct oversegmentation and fixes the particle lists
+        Updates aggregate object to correct over-segmentation and fixes the particle lists
 
         '''
+        checkCorrectionMethod = input( 'Manual or automated error correction? ["m"/a]: ' )
+
+        if checkCorrectionMethod.lower() == 'a':
+            print( 'Not coded yet' )
+
+        else:
+            print( '-------------------------------------*' )
+            print( '\n\nEntering manual correction method' )
+            print( 'Carry out manual correction in ImageJ' )
+            print( 'Once manual correction is complete, save corrected labelled file as sandName-updatedWatershedSegmentation.tiff in output folder' )
+            correctedWatershedFileName = input( 'Enter name of corrected file: ')
+            completeCorrectedWatershedFileName = aggregate.dataOutputDirectory + correctedWatershedFileName
+            aggregate.labelledMap = tiffy.imread(completeCorrectedWatershedFileName)
+
         
     def resetParticleList(self, aggregate):
-        
+        '''
+        Parameters
+        ----------
+        aggregate : Object
+            
+
+        Returns
+        -------
+        Updates particle list after manual correction of segmentation
+ 
+        '''
         aggregate.numberOfParticles = int( aggregate.labelledMap.max() )        
         aggregate.particleList = []         
         aggregate.particleList.append(None) 
@@ -365,6 +405,3 @@ class Segment:
             p = Particle.Particle( i, numberOfParticleVoxel, locData )                             
             aggregate.particleList.append( p )
 
-
-    def randomWalkerWatershed2Particles( self ):
-        print( "Segmentation using random walker watershed for 2 particles" )

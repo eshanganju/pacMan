@@ -1,22 +1,6 @@
-# -*- coding: utf-8 -*-
-"""
-Outline:
-This a part of the PAC code; this module is for measurement of size, fabric and state parameters of the segmented CT data
+'''
 
----
-Features:
-    1.
-
-
----
-References:
-    [1]
-
-"""
-
-# %% Importing libraries
-
-# Python libs
+'''
 
 import numpy as np
 import math
@@ -24,11 +8,7 @@ import statistics
 import pandas as pd
 import scipy
 
-# Spam libraries
-#
 #import spam.label as slab
-
-#%%  Measure class and methods CalmPatientFocused
 
 class Measure:
 
@@ -166,8 +146,9 @@ class Measure:
             aggregate.particleSizeDataSummary[ i ][ 4 ] = aggregate.particleList[ i ].feretMed             
             aggregate.particleSizeDataSummary[ i ][ 5 ] = aggregate.particleList[ i ].feretMin 
             
-
-        np.savetxt( "DataGSD.csv", aggregate.particleSizeDataSummary, delimiter = "," )        
+        grainSizeDistributionFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-PSD.csv'
+        print('Outputting files as: ' + grainSizeDistributionFileName)
+        np.savetxt( grainSizeDistributionFileName, aggregate.particleSizeDataSummary, delimiter = "," )        
 
 
     # Morphology
@@ -177,6 +158,10 @@ class Measure:
         Compute some measure of roundness for a particle
         Sphericity - stick to probably ratio of "Feret sizes"
         '''
+
+    # REV size analysis
+    def revSizeAnalysis( self, aggregate ):
+        print('\nStarting REV size analysis')
 
     # Contact Normals
 #    def measureContactNormalsSpam(self,aggregate):
@@ -233,14 +218,5 @@ class Measure:
 #                j=j+1
 #        aggregate.contactTableITK = tempOrtsITK[0:j,:]
 #        np.savetxt("ContactTableITK.csv", aggregate.contactTableITK, delimiter=",")
-#
-#    def measureContactNormalGeneral(self,aggregate):
-#      print("Measuring contact normals - non SPAM - using pixel data")
-#      """
-#      1. Contact determination for pixel data
-#      2. Contact normal from PCA - probabilistic distrbution
-#      """
-#
-#    def measureContactNormalLevelSet(self,aggregate):
-#      print("Measuring contact normals - using level set data")
+
 

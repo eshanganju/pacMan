@@ -1,17 +1,12 @@
-# -*- coding: utf-8 -*-
+'''
 
-"""
-This is the filtering class - contains filter tools. 
-2019-08-27: Coded Non-local Means filter loop - single loop, no input from users
+'''
 
-"""
-
-from skimage import restoration
 import skimage.external.tifffile as tiffy
-import numpy as np
+from skimage import restoration
 import matplotlib.pyplot as plt
+import numpy as np
 import time
-import classes.LemmeC
 
 class Filter:
 
@@ -19,13 +14,13 @@ class Filter:
         print("Filter activated")
 
         
-    def checkForFiltration(self, aggregate):
+    def filterSample(self, aggregate):
         
         checkForFiltrationData = input( 'Is filtered data available? [y/n]: ' )
         
         if checkForFiltrationData == 'y':
             
-            print('Default data location is: C:/Users/eganj/Google Drive/(02) Research/(07) EIDPS/(02) Data/(05) Tomo/(02) Physics - nCT/(05) 1D compression study/(02) REV analysis/density based binarization/OTC/superCube/Filtered.tiff')
+            print('\nDefault data location is: C:/Users/eganj/Google Drive/(02) Research/(07) EIDPS/(02) Data/(05) Tomo/(02) Physics - nCT/(05) 1D compression study/(02) REV analysis/density based binarization/OTC/superCube/Filtered.tiff')
             defaultDataLocationCorrect = input( 'is this correct? ["y"/n]: ' )
             
             if defaultDataLocationCorrect == 'n':
@@ -55,9 +50,7 @@ class Filter:
             noiseFileName =  aggregate.dataOutputDirectory + aggregate.fileName + '-noise.tiff'
             tiffy.imsave(filteredFileName, aggregate.filteredGreyLevelMap)
             tiffy.imsave(noiseFileName, aggregate.imageNoise)
-
-
-            
+           
     def filterDenoiseNlm( self, sandName, gli, gliMax, outputDir ):
 
         # Local variables for central CS of maps
@@ -70,7 +63,7 @@ class Filter:
         inputMap = gli       
         filteredMap = np.zeros_like( inputMap )
 
-       
+            
         # Histograms      
         numHistPts = inputImage.shape[ 0 ] * inputImage.shape[ 1 ]       
         numHistPtsMap = inputMap.shape[ 0 ] * inputMap.shape[ 1 ] * inputMap.shape[ 2 ]      
@@ -195,9 +188,10 @@ class Filter:
         print( '.\n.\n.\nFilter for entire grey level map completed--------*' )       
         timeTakenThisLoop = ( time.time() - start_time )        
         print( "\n--- Time taken: %s seconds ---\n" % round( timeTakenThisLoop ) )
-        
+
         # Updating filtered parameters
-        f = open("NonLocalMeansFilterParameters.txt","w+")
+        filterParameterFileName = outputDir + sandName + '-NLMParameters.txt'
+        f = open(filterParameterFileName,"w+")
         f.write("NLM filter parameters---------------------*\n") 
         f.write("Patch size = %f\n" % patchSize) 
         f.write("Patch distance = %f\n" % patchDistance)
