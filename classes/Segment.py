@@ -14,7 +14,6 @@ import skimage.external.tifffile as tiffy
 import matplotlib.pyplot as plt
 import numpy as np
 
-from classes import Tangibles as Tangibles
 
 # %% Class
 

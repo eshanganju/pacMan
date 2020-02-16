@@ -2,15 +2,8 @@
 
 '''
 
-from classes import PAC as pac
+from classes import PAC as PAC
 
-pac = pac.ParticleAnalysisCode()
+pac = PAC.PAC()
 
-pac.checkfolderLocations()
-pac.checkSampleDetails()
-pac.collectDataFiles()
-
-pac.filterData()
-pac.segmentData()
-pac.measureParticleSizeParams() 
-pac.performREVSizeAnalysis()
+pac.readNewData()

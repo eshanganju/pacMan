@@ -14,24 +14,34 @@ import gc
 class Reader:
 
     def __init__( self ):
-        print("Reader activated")
+        print('\n-----------------')
+        print('Reader activated')
+        print('-----------------')
 
 
-    def readTiffStack( self, fileName ):       
-        data = tiffy.imread( fileName )
+    def readTiffStack( self, folderAndFileLocation, cntrZ, cntrY, cntrX, lngt, calib ):       
+        print('\nReading tiff stakc from: ' + folderAndFileLocation) 
+        upperSlice = cntrZ + round( ( lngt / 2 ) / calib )
+        lowerSlice = cntrZ - round( ( lngt / 2 ) / calib )
+        upperRow = cntrY + round( ( lngt / 2 ) / calib )
+        lowerRow = cntrY - round( ( lngt / 2 ) / calib )
+        upperCol = cntrX + round( ( lngt / 2 ) / calib )
+        lowerCol = cntrX - round( ( lngt / 2 ) / calib )
+
+        dataBig = tiffy.imread( folderAndFileLocation )
+        data = dataBig[ lowerSlice:upperSlice, lowerRow : upperRow, lowerCol : upperCol ] 
         return data 
 
 
-    def readTiffSequence( self, folderLocation, centerSlice, centerRow, centerCol, edgeLength, calib):
-        
-        plot = LemmeC.LemmeC()
-        
-        upperSlice = centerSlice + round( ( edgeLength / 2 ) / calib )
-        lowerSlice = centerSlice - round( ( edgeLength / 2 ) / calib )
-        upperRow = centerRow + round( ( edgeLength / 2 ) / calib )
-        lowerRow = centerRow - round( ( edgeLength / 2 ) / calib )
-        upperCol = centerCol + round( ( edgeLength / 2 ) / calib )
-        lowerCol = centerCol - round( ( edgeLength / 2 ) / calib )
+    def readTiffFileSequence( self, folderLocation, cntrZ, cntrY, cntrX, lngt, calib):
+        print( 'Reading tiff files from: ' + folderLocation )
+
+        upperSlice = cntrZ + round( ( lngt / 2 ) / calib )
+        lowerSlice = cntrZ - round( ( lngt / 2 ) / calib )
+        upperRow = cntrY + round( ( lngt / 2 ) / calib )
+        lowerRow = cntrY - round( ( lngt / 2 ) / calib )
+        upperCol = cntrX + round( ( lngt / 2 ) / calib )
+        lowerCol = cntrX - round( ( lngt / 2 ) / calib )
                 
         print( 'Reading files from: ' + folderLocation )      
         searchString = folderLocation + '\*tiff'       
@@ -58,36 +68,4 @@ class Reader:
         
         print( '\nFinished reading files...' ) 
         croppedGLIMap = gliMap[ :, lowerRow : upperRow, lowerCol : upperCol ] 
-        return croppedGLIMap
-                
-    def normalizeArray(self, arrayGLI, minVal, maxVal):
-        print("Normalizing array...\n")
-        
-        minVal = float(minVal)
-        maxVal = float(maxVal)
-        
-        normArrayGli = np.zeros_like(arrayGLI)
-        
-        for i in range(0,arrayGLI.shape[0]):
-            normArrayGli[i]=(float(arrayGLI[i])-minVal)/(maxVal-minVal)
-        return normArrayGli
-
-    def maxGliPossible(self, arrayGli):
-        dataType = str(arrayGli.dtype)   
-         
-        if dataType=='uint8':
-            maxValOption = (2**8-1)
-
-        elif dataType=='uint16':
-            maxValOption = (2**16-1)
-        
-        elif dataType=='uint32':
-            maxValOption = (2**32-1)     
-        elif dataType=='uint64':
-            maxValOption = (2**64-1)
-        
-        return maxValOption
-            
-
-
- 
+        return croppedGLIMap 

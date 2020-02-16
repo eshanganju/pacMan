@@ -1,26 +1,16 @@
-# -*- coding: utf-8 -*-
+'''
 
-"""
-Outline:
-
----
-Features:
-
-
----
-References: 
-
-
-"""
+'''
 
 import numpy as np
 import skimage.external.tifffile as tiffy
 
 from classes import Particle as Particle
+from classes import Reader as Reader
 
 class Aggregate:
 
-    def __init__( self, dataStorageDirectory, sampleLocation, sampleName, pxlSize, bitDpth, mmToPxcalibration, greyLvlMap):
+    def __init__( sampleName, sampleCalib, cubeEdgeLength, samplCenterZ, sampleCenterY, sampleCenterZ, d50Known, voidRatioKnown, tiffFileFolderLocation):
         self.dataOutputDirectory = dataStorageDirectory
         self.sampleLocation = sampleLocation
         self.sampleName = sampleName
