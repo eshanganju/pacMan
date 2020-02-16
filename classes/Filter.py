@@ -11,45 +11,9 @@ import time
 class Filter:
 
     def __init__(self):
-        print("Filter activated")
-
-        
-    def filterSample(self, aggregate):
-        
-        checkForFiltrationData = input( 'Is filtered data available? [y/n]: ' )
-        
-        if checkForFiltrationData == 'y':
-            
-            print('\nDefault data location is: C:/Users/eganj/Google Drive/(02) Research/(07) EIDPS/(02) Data/(05) Tomo/(02) Physics - nCT/(05) 1D compression study/(02) REV analysis/density based binarization/OTC/superCube/Filtered.tiff')
-            defaultDataLocationCorrect = input( 'is this correct? ["y"/n]: ' )
-            
-            if defaultDataLocationCorrect == 'n':
-                newDataLocation = input( 'Enter filtered tiff stack location: ' )
-                print('Reading GLI data from new location')
-                aggregate.filteredGreyLevelMap = tiffy.imread(newDataLocation)
-                
-            else:
-                print('Reading GLI data from default location')
-                aggregate.filteredGreyLevelMap = tiffy.imread( 'C:/Users/eganj/Google Drive/(02) Research/(07) EIDPS/(02) Data/(05) Tomo/(02) Physics - nCT/(05) 1D compression study/(02) REV analysis/density based binarization/OTC/superCube/Filtered.tiff' )
-            
-            aggregate.imageNoise = aggregate.greyLevelMap - aggregate.filteredGreyLevelMap
-            
-            # Keeping records
-            filteredFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-filtered.tiff'       
-            tiffy.imsave(filteredFileName, aggregate.filteredGreyLevelMap)
-
-            noiseFileName =  aggregate.dataOutputDirectory + aggregate.fileName + '-noise.tiff'            
-            tiffy.imsave(noiseFileName, aggregate.imageNoise)
-            
-        else:
-            aggregate.filteredGreyLevelMap = self.filterDenoiseNlm(aggregate.fileName, aggregate.greyLevelMap, aggregate.GLIMax, aggregate.dataOutputDirectory)
-            aggregate.imageNoise = aggregate.greyLevelMap - aggregate.filteredGreyLevelMap
-            
-            # Keeping records
-            filteredFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-filtered.tiff'
-            noiseFileName =  aggregate.dataOutputDirectory + aggregate.fileName + '-noise.tiff'
-            tiffy.imsave(filteredFileName, aggregate.filteredGreyLevelMap)
-            tiffy.imsave(noiseFileName, aggregate.imageNoise)
+        print('\n----------------*')
+        print('Filter activated')
+        print('\n----------------*')
            
     def filterDenoiseNlm( self, sandName, gli, gliMax, outputDir ):
 
@@ -89,7 +53,7 @@ class Filter:
         # Loop for checking filtering parameters; run on CS of data        
         runSliceFilter = True        
         while runSliceFilter == True:           
-            print('\n\nNew filtering loop started on cross-section--------*\n\n\n')            
+            print('\n\nNew filtering loop started on central cross-section--------*\n')            
             start_time = time.time()            
             filteredImage = restoration.denoise_nl_means(inputImage,
                                                          patch_size = patchSize, 
@@ -139,7 +103,7 @@ class Filter:
             plt.close()
         
             timeTakenThisLoop = ( time.time() - start_time )            
-            print( "\n--- %s seconds ---" %round( timeTakenThisLoop ) )
+            print( "\n--- Time taken: %s seconds ---" %round( timeTakenThisLoop ) )
             answer = input( "\n\nCheck files - are filter parameters suitable (y/n)?:" )
             
             if answer == 'y':
@@ -154,6 +118,7 @@ class Filter:
         
         # Filtering entire grey level map with chosen parameters
         print( '\n\nFilter for entire grey level map started--------*' )
+        print( 'This take a lot of time...' )
         start_time = time.time()        
         filteredMap = restoration.denoise_nl_means(inputMap, 
                                                    patch_size = patchSize, 
@@ -187,7 +152,7 @@ class Filter:
         
         print( '.\n.\n.\nFilter for entire grey level map completed--------*' )       
         timeTakenThisLoop = ( time.time() - start_time )        
-        print( "\n--- Time taken: %s seconds ---\n" % round( timeTakenThisLoop ) )
+        print( "\n--- Time taken: %s minutes ---\n" % round( timeTakenThisLoop // 60 ) )
 
         # Updating filtered parameters
         filterParameterFileName = outputDir + sandName + '-NLMParameters.txt'

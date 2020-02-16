@@ -10,58 +10,56 @@ from classes import Reader as Reader
 
 class Aggregate:
 
-    def __init__( sampleName, sampleCalib, cubeEdgeLength, samplCenterZ, sampleCenterY, sampleCenterZ, d50Known, voidRatioKnown, tiffFileFolderLocation):
-        self.dataOutputDirectory = dataStorageDirectory
-        self.sampleLocation = sampleLocation
+    def __init__( self, sampleName, bitDpth, sampleCalib, cubeEdgeLength, centerZ, centerY, centerX, d50Known, voidRatioKnown, dataFromTiffStack, tiffFileLocation, unfilteredGLIData):
+        self.sampleLocation = tiffFileLocation
         self.sampleName = sampleName
-        self.pixelSize = pxlSize
         self.bitDepth = bitDpth
-        self.GLIMax = 2 ** bitDpth - 1
-        self.calib = mmToPxcalibration
+        self.gliMax = 2 ** bitDpth - 1
+        self.calib = sampleCalib
         
+        self.sampleEdgeLength = cubeEdgeLength
+        self.sampleCenterZ = centerZ
+        self.sampleCenterY = centerY
+        self.sampleCenterX = centerX
+
+        self.originalD50FromSieve = d50Known
+        self.currentD50FromSieve = 0.0
+
+        self.currentvoidRatioMeasured = voidRatioKnown
+        self.currentvoidRatioFromCT = 0.0
         
-        self.greyLevelMap = greyLvlMap
-        self.filteredGreyLevelMap = greyLvlMap
+        self.dataTakenFromTiffStack = dataFromTiffStack
+        self.locationOfDataFile = tiffFileLocation
+
+        self.greyLevelMap = unfilteredGLIData
+        self.filteredGreyLevelMap = self.greyLevelMap
         self.imageNoise = np.zeros_like( self.filteredGreyLevelMap )
-        self.binaryMap = np.zeros_like( self.greyLevelMap )
-        self.binaryMapUser = np.zeros_like( self.greyLevelMap )
+        self.greyLevelHistogram = np.zeros( ( self.gliMax, 2 ) )                    
+        self.filteredGreyLevelHistogram = np.zeros( ( self.gliMax, 2 ) )
+        
+        self.otsuThreshold = 0
+        self.binaryMapOtsuThreshold = np.zeros_like( self.greyLevelMap )
+        
+        self.userThreshold = 0
+        self.binaryMapUserThreshold = np.zeros_like( self.greyLevelMap )
+        
+        self.densityThreshold = 0
+        self.binaryMapDensityThreshold = np.zeros_like( self.greyLevelMap )
+        
         self.euclidDistanceMap = np.zeros_like( self.greyLevelMap )
         self.markers = np.zeros_like( self.greyLevelMap )
-        self.labelledMapFromEDTWS = np.zeros_like( self.greyLevelMap )      
-        self.particleList = [ ]         
-        self.particleList.append( None ) # Background taken as 0th particle
+        
+        self.labelledMapFromEDTWS = np.zeros_like( self.greyLevelMap )     
+        self.particleListFromEDTWS = [ ]         
+        self.numberOfParticlesFromEDTWS = 0   
+        
+        self.particleSizeDataSummaryFromEDTWS= np.zeros( ( 5000, 6 ) ) 
+        self.grainSizeDistributionEquivalentSphereFromEDTWS = np.zeros( ( 5000, 2 ) )     
+        self.grainSizeDistributionFeretMaxFromEDTWS = np.zeros( ( 5000, 2 ) )         
+        self.grainSizeDistributionFeretMinFromEDTWS = np.zeros( ( 5000, 2 ) )             
+        self.grainSizeDistributionFeretMedFromEDTWS = np.zeros( ( 5000, 2 ) )             
+                      
 
-        self.superCubeCenterSlice = int( 0 )
-        
-        self.globalOtsuBasedThreshold = 0
-        self.globalUserBasedThreshold = 0
-        self.globalDensityBasedThreshold = 0
-
-        self.numberOfParticles = 0      
-        
-        self.particleSizeDataSummary = np.zeros( ( 5000, 6 ) ) 
-        self.grainSizeDistributionEquivalentSphere = np.zeros( ( 5000, 2 ) )     
-        self.grainSizeDistributionFeretMax = np.zeros( ( 5000, 2 ) )         
-        self.grainSizeDistributionFeretMin = np.zeros( ( 5000, 2 ) )             
-        self.grainSizeDistributionFeretMed = np.zeros( ( 5000, 2 ) )             
-        
-        self.greyLevelHistogram = np.zeros( ( 1000, 2 ) )                    
-        self.filteredGreyLevelHistogram = np.zeros( ( 1000, 2 ) )
-               
-        self.measuredD50 = 0
-        self.ctD50 = 0
-
-        self.measuredVoidRatio = 0       
-        self.ctVoidRatio = 0
-        
-        createGLIFile = input('Do you want to save a copy of the GLI[y/"n"]')
-        if createGLIFile.lower() == 'y':
-            unfilteredImageName = str(self.dataOutputDirectory) + str( self.fileName ) + '.tiff'
-            tiffy.imsave( unfilteredImageName, self.greyLevelMap )
-            print( "\nUnfiltered GLI file saved as " + imageName )         
-        else:
-            print('File not saved...')
-        
         print("\nAggregate activated")
         print('--------------------*')
 
