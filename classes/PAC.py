@@ -1,8 +1,5 @@
 '''
 PAC  class
-This is like the controller. All the subsequest classes are accessed through this file. 
-This class can do the following: 
-    1. 
 '''
 
 # General imports
@@ -174,34 +171,36 @@ class PAC:
         '''
         Filters data using the aggregate
         '''
-        defaultFilterDataLocation = self.inputFilesLocation
-        checkForFiltrationDataAvailibility = input( 'Is filtered data available? (y/[n]): ' )
+        print( '\n\nStarting filtration module' )
+        print( '----------------------------*\n' )
+
+        filteredDataAvailable = input( 'Is filtered data available? (y/[n]): ' )
         
-        if checkForFiltrationDataAvailibility == 'y':
-            print('\nDefault filter data location is: ' + defaultFilterDataLocation)
-            defaultFilteredDataLocationCorrect = input( 'is this correct? ([y]/n): ' )
+        if filteredDataAvailable == 'y':
+            print('\nDefault filter data location is: ' + self.inputFilesLocation)
+            defaultFilteredDataLocationCorrect = input( 'Is this correct? ([y]/n): ' )
             
             if defaultFilteredDataLocationCorrect == 'n':
                 newFilteredDataLocation = input( 'Enter filtered tiff stack location: ' )
-                newFilteredDataName = input('Enter the name of the file located in ' + newFilteredDataLocation)
+                newFilteredFileName = input('Enter the name of the file located in ' + newFilteredDataLocation + ' :')
                 print('Reading GLI data from new location...')
-                newFileLocation = newFilteredDataLocation + newFilteredDataName
-                self.aggregateList[0].filteredGreyLevelMap = tiffy.imread( newFileLocation )
+                newFilteredFileLocation = newFilteredDataLocation + newFilteredFileName
+                self.aggregateList[0].filteredGreyLevelMap = tiffy.imread( newFilteredFileLocation )
             
             else:
-                filteredFileName = input('Enter the name of the file located in ' + defaultFilterDataLocation)
-                fileLocation = defaultFilterDataLocation + filteredFileName
+                filteredFileName = input( 'Enter the name of the file located in ' + self.inputFilesLocation )
+                filteredFileLocation = self.inputFilesLocation + filteredFileName
                 print('Reading GLI data from default location')
-                self.aggregateList[0].filteredGreyLevelMap = tiffy.imread( fileLocation )
+                self.aggregateList[0].filteredGreyLevelMap = tiffy.imread( filteredFileLocation )
             
             self.aggregateList[0].imageNoise = abs( self.aggregateList[0].greyLevelMap - self.aggregateList[0].filteredGreyLevelMap )
             
             # Keeping records
-            filteredFileName = self.outputFilesLocation + self.aggregateList[0].sampleName + '-filtered.tiff'       
-            tiffy.imsave(filteredFileName, self.aggregateList[0].filteredGreyLevelMap)
+            finalFilteredFileLocation = self.outputFilesLocation + self.aggregateList[0].sampleName + '-filtered.tiff'       
+            tiffy.imsave(finalFilteredFileLocation, self.aggregateList[0].filteredGreyLevelMap)
 
-            noiseFileName =  self.outputFilesLocation + self.aggregateList[0].sampleName +  '-noise.tiff'            
-            tiffy.imsave(noiseFileName, self.aggregateList[0].imageNoise)    
+            finalNoiseFileLocation =  self.outputFilesLocation + self.aggregateList[0].sampleName +  '-noise.tiff'            
+            tiffy.imsave(finalNoiseFileLocation, self.aggregateList[0].imageNoise)    
         
         else:
             f = Filter.Filter()
@@ -226,6 +225,70 @@ class PAC:
             Level set
             Random walker      
         '''
+        print( '\n\nStarting segmentation module' )
+        print( '----------------------------*\n' )       
+
+        s = Segment.Segment()        
+        
+        labelledDataAvailable = input( 'Is labelled data available? (y/[n]):' )
+        if labelledDataAvailable = 'y':
+            print( 'Default labelled data location is: ' + self.inputFilesLocation )
+            defaultLabelledDataLocationCorrect = input( 'Is this correct? ([y]/n): ' )
+
+            if defaultLabelledDataLocationCorrect == 'n':
+                newLabelledDataLocation = input('Enter labelled tiff stack location: ')
+                newLabelledFileName = input('Enter name of the file located in ' + newLabelledDataLocation + ':')
+                print('Reading labelled data from new location...')
+                newLabelledFileLocation = newLabelledDataLocation + newLabelledFileName
+                self.aggregateList[0].labelledMap = tiffy.imread( newLabelledFileLocation )
+            
+            else:
+                labelledFileName = input( 'Enter the name of the file located in ' + self.inputFilesLocation )
+                labelledFileLocation = self.inputFilesLocation + labelledFileName
+                print('Reading labelled data from location...')
+                self.aggregateList[0].labelledMap = tiffy.imread( labelledFileLocation )
+
+            # Keeping record
+            finalLabelledFileLocation = self.outputFilesLocation + self.aggregateList[0].sampleName + '-labelled.tiff' 
+            tiffy.imsave(finalLabelledFileLocation, self.aggregateList[0].labelledMap)
+        else:
+            s=Segment.Segment()
+
+            print('\nSegmentation method: ')
+            segmentationMethod = int( input( 'Choose: ([1]) EDT-WS, (2) LS-WS, (3) RW (choose 1, 2 or 3): ') )
+
+            # Random Walker watershed
+            if segmentationMethod == 3:
+                print('\nStarting Random Walker Segmentation...')
+
+            # Level set segmentation
+            elif segmentationMethod == 2:
+                print('\nStarting Level Set Segmentation...')
+
+            # Euclidian distance map watershed segmentation
+            else:
+                print('\nStarting EDT - Watershed segmentation...')
+                binMap, voidRatioCT, edMap, mrkrMap, lblCorrectionMethod, correctedLabelledMap = s.performEDTWS( self.aggregateList[0].filteredGreyLevelMap, 
+                                                                                                                 self.aggregateList[0].currentvoidRatioMeasured, 
+                                                                                                                 self.outputFilesLocation,
+                                                                                                                 self.sampleName ) 
+                self.aggregateList[0].binaryMap = binMap
+                self.aggregateList[0].currentvoidRatioFromCT = voidRatioCT
+                self.aggregateList[0].euclidDistanceMap = edMap
+                self.aggregateList[0].edPeakMarkers = mrkrMap
+                self.aggregateList[0].labelledMap = correctedLabelledMap
+
+                del binMap, voidRatioCT, edMap, mrkrMap, correctedLabelledMap
+
+                finalBinaryFileLocation = self.outputFilesLocation + self.aggregateList[0].sampleName + '-binary.tiff'
+                finalEDMLocation = self.outputFilesLocation + self.aggregateList[0].sampleName + '-edm.tiff'
+                finalEDPeakMarkersLocation = self.outputFilesLocation + self.aggregateList[0].sampleName + '-edmPeaks.tiff'
+                finalLabelledMapLocation = self.outputFilesLocation + self.aggregateList[0].sampleName + '-labelledMap.tiff'
+
+                tiffy.imsave(finalBinaryFileLocation, self.aggregateList[0].binaryMap)
+                tiffy.imsave(finalEDMLocation, self.aggregateList[0].euclidDistanceMap)
+                tiffy.imsave(finalEDPeakMarkersLocation, self.aggregateList[0].edPeakMarkers)
+                tiffy.imsave(finalLabelledMapLocation, self.aggregateList[0].labelledMap)
 
     def measureParticleSizeParam( self ):
         '''
@@ -236,4 +299,11 @@ class PAC:
         '''
         Cycle through different size to obtain REV size
         '''
+
+    def plotCTSlices(self, imageDataAs3DNumpyArray):
+        '''
+        Plotting slices
+        '''
+
+
 

@@ -1,5 +1,5 @@
 '''
-
+Segment class
 '''
 
 # Importing libraries
@@ -20,39 +20,102 @@ import numpy as np
 class Segment:
 
     def __init__( self ):
-        print( "Segmenter activated" )
+        print('\n-----------------')
+        print('Segment activated')
+        print('-----------------')
 
+    def performEDTWS( self, filteredGLIMap, currentVoidRatio, outputFilesLocation, sampleName):
+        '''
+        Binarize
+        EDM
+        EDM peaks
+        Topological watershed with EDM peaks
+        '''
 
-    def binarizeAccordingToOtsu( self, aggregate ):       
-        print('\nRunning Otsu Binarization')
-        greyLvlMap = aggregate.filteredGreyLevelMap
-        aggregate.globalOtsuThreshold = threshold_otsu( greyLvlMap )      
-        aggregate.binaryMap = np.zeros_like( greyLvlMap )        
-        aggregate.binaryMap[ np.where( greyLvlMap > aggregate.globalOtsuThreshold ) ] = 1
-        aggregate.binaryMap = aggregate.binaryMap.astype( int )
-        e1 = self.calcVoidRatio(aggregate.binaryMap)
-        print( 'Void ratio after Otsu binarization= %f' % e1 )
-          
-        # Filling Holes
-        aggregate.binaryMap = fillHoles(aggregate.binaryMap)
-        aggregate.binaryMap = aggregate.binaryMap.astype( int )
-        e2 = self.calcVoidRatio(aggregate.binaryMap)        
-        print('Void ratio after filling holes = %f' % e2)
+        print('Starting EDT-WS module')
+        print('----------------------*\n')
         
-        # Removing specks
-        aggregate.binaryMap = removeSpecks(aggregate.binaryMap)
-        aggregate.binaryMap = aggregate.binaryMap.astype( int )        
-        e3 = self.calcVoidRatio(aggregate.binaryMap)        
-        aggregate.ctVoidRatio = e3       
-        print('Void ratio after removing specks = %f' % e3)
+        # Binarize
+        print('Which binarization method to follow?')
+        binarizationMethodToFollow = input('(1) Otsu threshold, (2) User input based threshold, ([3]) Density based threshold: ')
+        
+        # Otsu threshold
+        if binarizationMethodToFollow == '1':
+            binMap = self.binarizeAccordingToOtsu( filteredGLIMap, outputFilesLocation, sampleName)
+            voidRatioCT = self.calcVoidRatio( binMap )
+        
+        # User input based threshold
+        elif binarizationMethodToFollow == '2':
+            userThreshold = int(input('Enter user threshold: '))
+            binMap = self.binarizeAccordingToUserThreshold( filteredGLIMap, userThreshold )
+            voidRatioCT = self.calcVoidRatio( binMap )
+        
+        # Density based threshold
+        else:
+            binMap = self.binarizeAccordingToDensity(filteredGLIMap, currentVoidRatio)
+            voidRatioCT = self.calcVoidRatio( binMap )
+        
+        # EDM
+        edMap = self.obtainEuclidDistanceMap( binMap )
+
+        # Markers
+        mrkrMap = self.obtainLocalMaximaMarkers( edMap )
+
+        # Labelled Map
+        labelledMap = self.obtainLabelledMapUsingWaterShedAlgorithm( binMap, edMap, mrkrMap )
+
+        # Correction of labelled map
+        lblCorrectionMethod, correctedLabelledMap = self.fixErrorsInSegmentation( labelledMap )
+
+        # Returns
+        return binMap, voidRatioCT, edMap, mrkrMap, lblCorrectionMethod, correctedLabelledMap
+
+        print( '\nSegmenting particles by topological watershed' )        
+        edm_invert = -aggregate.euclidDistanceMap                  
+        binMask = aggregate.binaryMap.astype( bool )              
+        particleMarkers = aggregate.markers                    
+        aggregate.labelledMap = wsd( edm_invert, markers = particleMarkers, mask = binMask) 
+        aggregate.numberOfParticles = aggregate.labelledMap.max()
+
+        for i in range( 1, aggregate.numberOfParticles + 1 ):            
+            numberOfParticleVoxel = np.where( aggregate.labelledMap == i)[ 0 ].shape[ 0 ]              
+            locData = np.zeros( ( numberOfParticleVoxel, 3 ) )                                        
+
+            for j in range(0, 3):
+                locData[ :, j ] = np.where( aggregate.labelledMap == i )[ j ]                            
+
+            p = Particle.Particle( i, numberOfParticleVoxel, locData )                               
+            aggregate.particleList.append( p )                                      
+        
+        print( "Done! List of particles created" )        
+        watershedSegmentationFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-watershedSegmentation.tiff'
+        tiffy.imsave( watershedSegmentationFileName, aggregate.labelledMap )
+        print( 'Watershed segmentation complete' )
+
+
+    def binarizeAccordingToOtsu( self, gliMapToBinarize, outputLocation, sampleName ):       
+        print('\nRunning Otsu Binarization')
+        otsuThreshold = threshold_otsu( gliMapToBinarize )      
+        binaryMap = np.zeros_like( gliMapToBinarize )        
+        
+        binaryMap[ np.where( gliMapToBinarize > otsuThreshold ) ] = 1
+        binaryMap = binaryMap.astype( int )
+        e1 = self.calcVoidRatio( binaryMap )
+        
+        binaryMap = self.fillHoles( binaryMap )
+        e2 = self.calcVoidRatio( binaryMap )        
+        
+        binaryMap = self.removeSpecks( binaryMap )      
+        e3 = self.calcVoidRatio( binaryMap )        
         
         # Saving files
-        print( "Completed binarization using Otsu threshold of %d" % aggregate.globalOtsuThreshold)                
-        otsuBinaryFileName = aggregate.dataOutputDirectory + aggregate.fileName+'-otsuBinary.tiff'
-        tiffy.imsave( otsuBinaryFileName, aggregate.binaryMap )        
-        otsuTextFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-OtsuThreshold.txt'
-        f = open( otsuTextFileName, "w+" )        
-        f.write( "\nGlobal User threshold = %f\n" % aggregate.globalOtsuThreshold )        
+        otsuThresholdFileName = outputLocation + sampleName + '-otsuThresholdDetails.txt'
+        f = open( otsuThresholdFileName, 'w+' )        
+        f.write( 'Global Otsu threshold = %f' % otsuThreshold )
+        f.write( '\nVoid ration after threshold = %f' % e1 )  
+        f.write( '\nVoid ration after filling holes = %f' % e2 )   
+        f.write( '\nVoid ration after removing specks = %f' % e3 )
+        f.close()  
                
     def binarizeAccordingToUserThreshold( self, aggregate, userThreshold):        
         print('\nRunning Otsu Binarization')
@@ -231,9 +294,7 @@ class Segment:
         f = open( userThresholdTextFileName, "w+" )               
         f.write( "\nGlobal User threshold (density based) = %f\n" % aggregate.globalUserThreshold )
         f.close()    
-            
-        
-        
+              
     def calcVoidRatio(self, binaryMapforVoidRatioCalc):
         '''
         Parameters
@@ -252,8 +313,7 @@ class Segment:
         currentVoidRatio = ( volTotal - volSolids ) / volSolids
         return currentVoidRatio
         
-    
-    def fillholes( self, oldBinaryMap ):
+    def fillHoles( self, oldBinaryMap ):
         '''
         
         Parameters
@@ -268,9 +328,8 @@ class Segment:
         '''
         newBinaryMap = fillHoles( oldBinaryMap )
         return newBinaryMap.astype(int) 
-
-                   
-    def removespecks( self, oldBinaryMap ):
+                  
+    def removeSpecks( self, oldBinaryMap ):
         '''
         
         Parameters
@@ -285,8 +344,7 @@ class Segment:
         '''
         newBinaryMap = removeSpecks( oldBinaryMap )   
         return newBinaryMap.astype(int)
-
-        
+       
     def obtainEuclidDistanceMap( self, aggregate ):      
         print('\nFinding Euclidian distance map (EDM)')
         aggregate.euclidDistanceMap = edt( aggregate.binaryMap )             
@@ -294,24 +352,7 @@ class Segment:
         edmImageFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-EDM.tiff'
         tiffy.imsave( edmImageFileName , aggregate.euclidDistanceMap )
 
-
-    def obtainLocalMaximaMarkers( self, aggregate ):       
-        print( '\nFinding local maxima in EDM' )       
-        aggregate.markers = localMaxima(aggregate.euclidDistanceMap, allow_borders = False).astype(int)
-        
-        count=0       
-        for i in range( 0, aggregate.markers.shape[ 0 ] ):           
-            for j in range( 0, aggregate.markers.shape[ 1 ] ):               
-                for k in range( 0, aggregate.markers.shape[ 2 ] ):                   
-                    if aggregate.markers[ i ][ j ][ k ] == 1:                       
-                        aggregate.markers[ i ][ j ][ k ] = count + 1                       
-                        count = count + 1
-        makerFileLocationAndName = aggregate.dataOutputDirectory + aggregate.fileName + '-markers.tiff'                
-        print( 'Local maxima file created' )
-        tiffy.imsave('Markers.tiff',aggregate.markers )
-
-
-    def obtainLocalHMaximaMarkers( self, aggregate, h ):    
+    def obtainLocalMaximaMarkers( self, aggregate, h ):    
         print( '\nFinding local maxima in EDM' )    
         aggregate.markers = hmax( aggregate.euclidDistanceMap, h ).astype(int)    
         
@@ -327,29 +368,10 @@ class Segment:
         print( 'Local maxima file created' )
         tiffy.imsave(makerFileLocationAndName, aggregate.markers)
 
-
-    def obtainTopoWatershed( self, aggregate ):
-        print( '\nSegmenting particles by topological watershed' )        
-        edm_invert = -aggregate.euclidDistanceMap                  
-        binMask = aggregate.binaryMap.astype( bool )              
-        particleMarkers = aggregate.markers                    
-        aggregate.labelledMap = wsd( edm_invert, markers = particleMarkers, mask = binMask) 
-        aggregate.numberOfParticles = aggregate.labelledMap.max()
-
-        for i in range( 1, aggregate.numberOfParticles + 1 ):            
-            numberOfParticleVoxel = np.where( aggregate.labelledMap == i)[ 0 ].shape[ 0 ]              
-            locData = np.zeros( ( numberOfParticleVoxel, 3 ) )                                        
-
-            for j in range(0, 3):
-                locData[ :, j ] = np.where( aggregate.labelledMap == i )[ j ]                            
-
-            p = Particle.Particle( i, numberOfParticleVoxel, locData )                               
-            aggregate.particleList.append( p )                                      
-        
-        print( "Done! List of particles created" )        
-        watershedSegmentationFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-watershedSegmentation.tiff'
-        tiffy.imsave( watershedSegmentationFileName, aggregate.labelledMap )
-        print( 'Watershed segmentation complete' )
+    def obtainLabelledMapUsingWaterShedAlgorithm(self, binaryMap, euclidDistMap, edPeaksMap):
+        '''
+        Returns labelled map
+        '''
 
     def fixErrorsInSegmentation(self, aggregate):
         '''
@@ -377,6 +399,7 @@ class Segment:
             completeCorrectedWatershedFileName = aggregate.dataOutputDirectory + correctedWatershedFileName
             aggregate.labelledMap = tiffy.imread(completeCorrectedWatershedFileName)
 
+        return labelCorrectionMethod, correctedLabelMap
         
     def resetParticleList(self, aggregate):
         '''

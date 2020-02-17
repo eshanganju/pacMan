@@ -1,5 +1,5 @@
 '''
-
+Filter class
 '''
 
 import skimage.external.tifffile as tiffy

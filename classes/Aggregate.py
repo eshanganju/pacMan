@@ -36,22 +36,17 @@ class Aggregate:
         self.imageNoise = np.zeros_like( self.filteredGreyLevelMap )
         self.greyLevelHistogram = np.zeros( ( self.gliMax, 2 ) )                    
         self.filteredGreyLevelHistogram = np.zeros( ( self.gliMax, 2 ) )
-        
-        self.otsuThreshold = 0
-        self.binaryMapOtsuThreshold = np.zeros_like( self.greyLevelMap )
-        
-        self.userThreshold = 0
-        self.binaryMapUserThreshold = np.zeros_like( self.greyLevelMap )
-        
-        self.densityThreshold = 0
-        self.binaryMapDensityThreshold = np.zeros_like( self.greyLevelMap )
+       
+        self.gliThreshold = 0
+        self.binaryMap = np.zeros_like( self.greyLevelMap )
         
         self.euclidDistanceMap = np.zeros_like( self.greyLevelMap )
-        self.markers = np.zeros_like( self.greyLevelMap )
+        self.edPeakMarkers = np.zeros_like( self.greyLevelMap )
         
-        self.labelledMapFromEDTWS = np.zeros_like( self.greyLevelMap )     
-        self.particleListFromEDTWS = [ ]         
-        self.numberOfParticlesFromEDTWS = 0   
+        self.segmentationMethod = '' 
+        self.labelledMap = np.zeros_like( self.greyLevelMap )     
+        self.particleList = [ ]         
+        self.numberOfParticles = 0         
         
         self.particleSizeDataSummaryFromEDTWS= np.zeros( ( 5000, 6 ) ) 
         self.grainSizeDistributionEquivalentSphereFromEDTWS = np.zeros( ( 5000, 2 ) )     
