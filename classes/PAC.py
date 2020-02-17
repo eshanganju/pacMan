@@ -298,6 +298,34 @@ class PAC:
                 f.write( self.aggregateList[0].completeSegmentationMethod )
                 f.close()
 
+            # Create particle objects in aggregate variable particleList
+
+    def createParticle( self, labelledMap):
+        '''
+        Create labelled map
+        '''
+        #----------------------------------------------------------Fix
+        # edm_invert = -aggregate.euclidDistanceMap                  
+        # binMask = aggregate.binaryMap.astype( bool )              
+        # particleMarkers = aggregate.markers                    
+        # aggregate.labelledMap = wsd( edm_invert, markers = particleMarkers, mask = binMask) 
+        # aggregate.numberOfParticles = aggregate.labelledMap.max()
+
+        # for i in range( 1, aggregate.numberOfParticles + 1 ):            
+        #     numberOfParticleVoxel = np.where( aggregate.labelledMap == i)[ 0 ].shape[ 0 ]              
+        #     locData = np.zeros( ( numberOfParticleVoxel, 3 ) )                                        
+
+        #     for j in range(0, 3):
+        #         locData[ :, j ] = np.where( aggregate.labelledMap == i )[ j ]                            
+
+        #     p = Particle.Particle( i, numberOfParticleVoxel, locData )                               
+        #     aggregate.particleList.append( p )                                      
+        
+        # print( "Done! List of particles created" )        
+        # watershedSegmentationFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-watershedSegmentation.tiff'
+        # tiffy.imsave( watershedSegmentationFileName, aggregate.labelledMap )
+        #----------------------------------------------------------Fix
+
     def measureParticleSizeParam( self ):
         '''
         Obtain particle size params of the entire sample

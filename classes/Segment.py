@@ -56,43 +56,18 @@ class Segment:
 
         # EDM
         edMap = self.obtainEuclidDistanceMap( binMap )
-        # 
+         
         # Markers
-        mrkrMap = self.obtainLocalMaximaMarkers( edMap )
+        edPeakMrkrMap = self.obtainLocalMaximaMarkers( edMap )
         
         # Labelled Map
-        labelledMap = self.obtainLabelledMapUsingWaterShedAlgorithm( binMap, edMap, mrkrMap )
+        labelledMap = self.obtainLabelledMapUsingWaterShedAlgorithm( binMap, edMap, edPeakMrkrMap )
         
         # Correction of labelled map
         lblCorrectionMethod, correctedLabelledMap = self.fixErrorsInSegmentation( labelledMap )
 
         # Returns
-        return gliThreshold, binMap, voidRatioCT, edMap, mrkrMap, lblCorrectionMethod, correctedLabelledMap
-
-        #----------------------------------------------------------Fix
-        print( '\nSegmenting particles by topological watershed' )        
-        edm_invert = -aggregate.euclidDistanceMap                  
-        binMask = aggregate.binaryMap.astype( bool )              
-        particleMarkers = aggregate.markers                    
-        aggregate.labelledMap = wsd( edm_invert, markers = particleMarkers, mask = binMask) 
-        aggregate.numberOfParticles = aggregate.labelledMap.max()
-
-        for i in range( 1, aggregate.numberOfParticles + 1 ):            
-            numberOfParticleVoxel = np.where( aggregate.labelledMap == i)[ 0 ].shape[ 0 ]              
-            locData = np.zeros( ( numberOfParticleVoxel, 3 ) )                                        
-
-            for j in range(0, 3):
-                locData[ :, j ] = np.where( aggregate.labelledMap == i )[ j ]                            
-
-            p = Particle.Particle( i, numberOfParticleVoxel, locData )                               
-            aggregate.particleList.append( p )                                      
-        
-        print( "Done! List of particles created" )        
-        watershedSegmentationFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-watershedSegmentation.tiff'
-        tiffy.imsave( watershedSegmentationFileName, aggregate.labelledMap )
-
-        print( 'Watershed segmentation complete' )
-        #----------------------------------------------------------Fix
+        return gliThreshold, binMap, voidRatioCT, edMap, edPeakMrkrMap, lblCorrectionMethod, correctedLabelledMap
 
     def binarizeAccordingToOtsu( self, gliMapToBinarize, outputLocation, sampleName ):       
         print('\nRunning Otsu Binarization')
@@ -111,17 +86,17 @@ class Segment:
         e3 = self.calcVoidRatio( binaryMap ) 
 
         print( 'Global Otsu threshold = %f' % otsuThreshold )
-        print( 'Void ration after threshold = %f' % e1 )  
-        print( 'Void ration after filling holes = %f' % e2 )   
-        print( 'Void ration after removing specks = %f' % e3 )       
+        print( 'Void ratio after threshold = %f' % e1 )  
+        print( 'Void ratio after filling holes = %f' % e2 )   
+        print( 'Void ratio after removing specks = %f' % e3 )       
         
         # Saving files
         otsuThresholdFileName = outputLocation + sampleName + '-otsuThresholdDetails.txt'
         f = open( otsuThresholdFileName, 'w+' )        
         f.write( 'Global Otsu threshold = %f' % otsuThreshold )
-        f.write( '\nVoid ration after threshold = %f' % e1 )  
-        f.write( '\nVoid ration after filling holes = %f' % e2 )   
-        f.write( '\nVoid ration after removing specks = %f' % e3 )
+        f.write( '\nVoid ratio after threshold = %f' % e1 )  
+        f.write( '\nVoid ratio after filling holes = %f' % e2 )   
+        f.write( '\nVoid ratio after removing specks = %f' % e3 )
         f.close()
 
         print('Output file saved as ' + otsuThresholdFileName)
@@ -145,17 +120,17 @@ class Segment:
         e3 = self.calcVoidRatio( binaryMap )     
 
         print( 'Global User threshold = %f' % userThreshold )
-        print( 'Void ration after threshold = %f' % e1 )  
-        print( 'Void ration after filling holes = %f' % e2 )   
-        print( 'Void ration after removing specks = %f' % e3 )    
+        print( 'Void ratio after threshold = %f' % e1 )  
+        print( 'Void ratio after filling holes = %f' % e2 )   
+        print( 'Void ratio after removing specks = %f' % e3 )    
                 
         # Saving files
         userThresholdFileName = outputLocation + sampleName + '-userThresholdDetails.txt'
         f = open( userThresholdFileName, 'w+' )        
         f.write( 'Global user threshold = %f' % userThreshold )
-        f.write( '\nVoid ration after threshold = %f' % e1 )  
-        f.write( '\nVoid ration after filling holes = %f' % e2 )   
-        f.write( '\nVoid ration after removing specks = %f' % e3 )
+        f.write( '\nVoid ratio after threshold = %f' % e1 )  
+        f.write( '\nVoid ratio after filling holes = %f' % e2 )   
+        f.write( '\nVoid ratio after removing specks = %f' % e3 )
         f.close() 
 
         print('Output file saved as ' + userThresholdFileName)
@@ -301,26 +276,44 @@ class Segment:
         print( "EDM Created" )        
         return edMap
 
-    def obtainLocalMaximaMarkers( self, aggregate, h ):    
-        print( '\nFinding local maxima in EDM' )    
-        aggregate.markers = hmax( aggregate.euclidDistanceMap, h ).astype(int)    
+    def obtainLocalMaximaMarkers( self, edMapForPeaks ):    
+        '''
+        Fix this to be better at obtaining markers
+        Expected number of particles?
+        Particle size?
+        '''
+        print('\nObtaining peaks of EDM...')
+        print('------------------------------*')  
+        h = int( input( 'Enter the minimum height for a peak (px): ') )
+        print( 'Finding local maxima in EDM' )
+                
+        edmPeakMarkers = hmax( edMapForPeaks, h ).astype(int)    
         
-        count=0    
-        for frame in range( 0, aggregate.markers.shape[ 0 ] ):            
-            for row in range( 0, aggregate.markers.shape[ 1 ] ):                
-                for col in range( 0, aggregate.markers.shape[ 2 ] ):                    
-                    if aggregate.markers[ frame ][ row ][ col ] == 1:                        
-                        aggregate.markers[ frame ][ row ][ col ] = count + 1                        
-                        count = count + 1
-        
-        makerFileLocationAndName = aggregate.dataOutputDirectory + aggregate.fileName + '-hMarkers.tiff'                
-        print( 'Local maxima file created' )
-        tiffy.imsave(makerFileLocationAndName, aggregate.markers)
+        print( 'Found local maximas in EDM (greater than %i px)' % h )
 
-    def obtainLabelledMapUsingWaterShedAlgorithm(self, binaryMap, euclidDistMap, edPeaksMap):
+        print( 'Resetting count of peaks' )
+        count=0    
+        for frame in range( 0, edmPeakMarkers.shape[ 0 ] ):            
+            for row in range( 0, edmPeakMarkers.shape[ 1 ] ):                
+                for col in range( 0, edmPeakMarkers.shape[ 2 ] ):                    
+                    if edmPeakMarkers[ frame ][ row ][ col ] == 1:                        
+                        edmPeakMarkers[ frame ][ row ][ col ] = count + 1                        
+                        count = count + 1
+            print( 'Processed ' + str(frame + 1) + ' out of ' + str(edmPeakMarkers.shape[ 0 ]) + ' slices' )
+        
+        return edmPeakMarkers
+
+    def obtainLabelledMapUsingWaterShedAlgorithm(self, binaryMap, euclidDistMap, edPeaksMap ):
         '''
         Returns labelled map
         '''
+        print( '\nSegmenting particles by topological watershed' ) 
+        binMask = binaryMap.astype( bool )
+        invertedEdMap = -euclidDistMap
+        labelledMap = wsd( invertedEdMap, markers = edPeaksMap, mask = binMask )
+        print( 'Watershed segmentation complete' )
+        
+        return labelledMap
 
     def fixErrorsInSegmentation(self, aggregate):
         '''

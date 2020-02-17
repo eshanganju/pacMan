@@ -10,9 +10,34 @@ currentVoidRatio = 0.5404
 
 s = Segment.Segment()
 
-# binMap, threshold = s.binarizeAccordingToOtsu(fltr,outputFile,name) 
-binMap, threshold = s.binarizeAccordingToUserThreshold(fltr, outputLocation, fileName) 
-# binMap, threshold = s.binarizeAccordingToDensity(fltr, currentVoidRatio, outputLocation, fileName)
-edMap = s.obtainEuclidDistanceMap(binMap)
+binMap, threshold = s.binarizeAccordingToOtsu( fltr,
+											   outputLocation,
+											   fileName) 
 
-plt.imshow( edMap[edMap.shape[0] // 2 ] )
+binMap, threshold = s.binarizeAccordingToUserThreshold( fltr, 
+														outputLocation, 
+														fileName ) 
+
+binMap, threshold = s.binarizeAccordingToDensity( fltr, 
+												  currentVoidRatio, 
+												  outputLocation, 
+												  fileName)
+
+edMap = s.obtainEuclidDistanceMap(binMap)
+edPeaksMarkerMap = s.obtainLocalMaximaMarkers(edMap)
+
+labelledMap = s.obtainLabelledMapUsingWaterShedAlgorithm( binMap, 
+														  edMap, 
+														  edPeaksMarkerMap )
+
+plt.figure()
+plt.imshow( binMap[binMap.shape[0] // 2 ], cmap ='gray' )
+
+plt.figure()
+plt.imshow( edMap[edMap.shape[0] // 2 ], cmap ='gray' )
+
+plt.figure()
+plt.imshow( edPeaksMarkerMap[edPeaksMarkerMap.shape[0] // 2 ], cmap ='gray' )
+
+plt.figure()
+plt.imshow( labelledMap[labelledMap.shape[0] // 2 ], cmap ='rainbow' )
