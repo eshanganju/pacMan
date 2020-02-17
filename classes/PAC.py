@@ -276,9 +276,10 @@ class PAC:
                 self.aggregateList[0].currentvoidRatioFromCT = voidRatioCT
                 self.aggregateList[0].euclidDistanceMap = edMap
                 self.aggregateList[0].edPeakMarkers = mrkrMap
+                self.aggregateList[0].completeSegmentationMethod = lblCorrectionMethod
                 self.aggregateList[0].labelledMap = correctedLabelledMap
 
-                del binMap, voidRatioCT, edMap, mrkrMap, correctedLabelledMap
+                del binMap, voidRatioCT, edMap, mrkrMap, lblCorrectionMethod, correctedLabelledMap
 
                 finalBinaryFileLocation = self.outputFilesLocation + self.aggregateList[0].sampleName + '-binary.tiff'
                 finalEDMLocation = self.outputFilesLocation + self.aggregateList[0].sampleName + '-edm.tiff'
@@ -289,6 +290,12 @@ class PAC:
                 tiffy.imsave(finalEDMLocation, self.aggregateList[0].euclidDistanceMap)
                 tiffy.imsave(finalEDPeakMarkersLocation, self.aggregateList[0].edPeakMarkers)
                 tiffy.imsave(finalLabelledMapLocation, self.aggregateList[0].labelledMap)
+
+                # Saving files
+                segmentationDetailsFileName = self.outputFilesLocation + self.sampleName + '-segmentationDetails.txt'
+                f = open( segmentationDetailsFileName, 'w+' )        
+                f.write( self.aggregateList[0].completeSegmentationMethod )
+                f.close()
 
     def measureParticleSizeParam( self ):
         '''

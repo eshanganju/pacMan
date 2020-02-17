@@ -43,7 +43,7 @@ class Aggregate:
         self.euclidDistanceMap = np.zeros_like( self.greyLevelMap )
         self.edPeakMarkers = np.zeros_like( self.greyLevelMap )
         
-        self.segmentationMethod = '' 
+        self.completeSegmentationMethod = '' 
         self.labelledMap = np.zeros_like( self.greyLevelMap )     
         self.particleList = [ ]         
         self.numberOfParticles = 0         
