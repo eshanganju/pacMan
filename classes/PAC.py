@@ -268,10 +268,11 @@ class PAC:
             # Euclidian distance map watershed segmentation
             else:
                 print('\nStarting EDT - Watershed segmentation...')
-                binMap, voidRatioCT, edMap, mrkrMap, lblCorrectionMethod, correctedLabelledMap = s.performEDTWS( self.aggregateList[0].filteredGreyLevelMap, 
+                gliThresh, binMap, voidRatioCT, edMap, mrkrMap, lblCorrectionMethod, correctedLabelledMap = s.performEDTWS( self.aggregateList[0].filteredGreyLevelMap, 
                                                                                                                  self.aggregateList[0].currentvoidRatioMeasured, 
                                                                                                                  self.outputFilesLocation,
                                                                                                                  self.sampleName ) 
+                self.aggregateList[0].gliThreshold = gliThresh
                 self.aggregateList[0].binaryMap = binMap
                 self.aggregateList[0].currentvoidRatioFromCT = voidRatioCT
                 self.aggregateList[0].euclidDistanceMap = edMap

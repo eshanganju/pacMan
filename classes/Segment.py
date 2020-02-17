@@ -56,15 +56,18 @@ class Segment:
 
         # EDM
         edMap = self.obtainEuclidDistanceMap( binMap )
+        # 
         # Markers
         mrkrMap = self.obtainLocalMaximaMarkers( edMap )
+        
         # Labelled Map
         labelledMap = self.obtainLabelledMapUsingWaterShedAlgorithm( binMap, edMap, mrkrMap )
+        
         # Correction of labelled map
         lblCorrectionMethod, correctedLabelledMap = self.fixErrorsInSegmentation( labelledMap )
 
         # Returns
-        return binMap, voidRatioCT, edMap, mrkrMap, lblCorrectionMethod, correctedLabelledMap
+        return gliThreshold, binMap, voidRatioCT, edMap, mrkrMap, lblCorrectionMethod, correctedLabelledMap
 
         #----------------------------------------------------------Fix
         print( '\nSegmenting particles by topological watershed' )        
@@ -291,12 +294,12 @@ class Segment:
         newBinaryMap = removeSpecks( oldBinaryMap )   
         return newBinaryMap.astype(int)
        
-    def obtainEuclidDistanceMap( self, aggregate ):      
+    def obtainEuclidDistanceMap( self, binaryMapForEDM ):      
         print('\nFinding Euclidian distance map (EDM)')
-        aggregate.euclidDistanceMap = edt( aggregate.binaryMap )             
+        print('------------------------------------*')
+        edMap = edt( binaryMapForEDM )             
         print( "EDM Created" )        
-        edmImageFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-EDM.tiff'
-        tiffy.imsave( edmImageFileName , aggregate.euclidDistanceMap )
+        return edMap
 
     def obtainLocalMaximaMarkers( self, aggregate, h ):    
         print( '\nFinding local maxima in EDM' )    

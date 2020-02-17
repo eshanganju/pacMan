@@ -1,5 +1,6 @@
 from classes import Segment
 import skimage.external.tifffile as tiffy
+import matplotlib.pyplot as plt
 
 fltr = tiffy.imread('C:/Users/eganj/gitHub/pacOutput/otc-filtered.tiff')
 outputLocation = 'C:/Users/eganj/gitHub/pacOutput/'
@@ -9,6 +10,9 @@ currentVoidRatio = 0.5404
 
 s = Segment.Segment()
 
-# binMap = s.binarizeAccordingToOtsu(fltr,outputFile,name) 
-# binMap = s.binarizeAccordingToUserThreshold(fltr, outputLocation, fileName) 
-binMap = s.binarizeAccordingToDensity(fltr, currentVoidRatio, outputLocation, fileName)
+# binMap, threshold = s.binarizeAccordingToOtsu(fltr,outputFile,name) 
+binMap, threshold = s.binarizeAccordingToUserThreshold(fltr, outputLocation, fileName) 
+# binMap, threshold = s.binarizeAccordingToDensity(fltr, currentVoidRatio, outputLocation, fileName)
+edMap = s.obtainEuclidDistanceMap(binMap)
+
+plt.imshow( edMap[edMap.shape[0] // 2 ] )
