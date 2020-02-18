@@ -25,14 +25,7 @@ class Segment:
         print('-----------------')
 
     def performEDTWS( self, filteredGLIMap, currentVoidRatio, outputFilesLocation, sampleName):
-        '''
-        Binarize
-        EDM
-        EDM peaks
-        Topological watershed with EDM peaks
-        '''
-
-        print('Starting EDT-WS module')
+        print('Starting EDT-WS')
         print('----------------------*\n')
         
         # Binarize

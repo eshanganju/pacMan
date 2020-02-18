@@ -63,8 +63,8 @@ class PAC:
         print('\n\nChecking folder locations: ')
         print('---------------------------*')
 
-        defaultInputFilesLocation = 'C:/Users/eganj/gitHub/pacInput/'
-        defaultOutputFilesLocation = 'C:/Users/eganj/gitHub/pacOutput/'       
+        defaultInputFilesLocation = '/home/eg/codes/pacInput/'
+        defaultOutputFilesLocation = '/home/eg/codes/pacOutput/'       
         
         # Check default input: 
         inputLocationIsCorrect = input( '\nBy default, input files are supposed to be at: \n' + defaultInputFilesLocation + ', Is this correct? ([y]/n): ' )        
@@ -161,7 +161,7 @@ class PAC:
                 tiffFileFolderName = input('\nName of data folder in ' + self.inputFilesLocation + ' where tiff file sequences are located: ')
             
             else: 
-                tiffFileFolderName = 'OTC-0N'
+                tiffFileFolderName = 'OTC-ZeroNewton'
 
             tiffFileFolderLocation = self.inputFilesLocation + tiffFileFolderName
 
@@ -231,7 +231,7 @@ class PAC:
         s = Segment.Segment()        
         
         labelledDataAvailable = input( 'Is labelled data available? (y/[n]):' )
-        if labelledDataAvailable = 'y':
+        if labelledDataAvailable == 'y':
             print( 'Default labelled data location is: ' + self.inputFilesLocation )
             defaultLabelledDataLocationCorrect = input( 'Is this correct? ([y]/n): ' )
 

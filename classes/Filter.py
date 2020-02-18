@@ -104,16 +104,16 @@ class Filter:
         
             timeTakenThisLoop = ( time.time() - start_time )            
             print( "\n--- Time taken: %s seconds ---" %round( timeTakenThisLoop ) )
-            answer = input( "\n\nCheck files - are filter parameters suitable (y/n)?:" )
-            
-            if answer == 'y':
-                runSliceFilter = False
-            
-            else:
+
+            answer = input( "\n\nCheck files - are filter parameters suitable ([y]/n)?:" )
+            if answer == 'n':
                 print( "Enter new parameters: \n\n" )                
                 patchSize = int( input( "Patch size (pixel): " ) )               
                 patchDistance = int( input( "Patch distance (pixel):" ) )               
                 hVal = float( input( "Cut-off pixel intensity: " ) )
+            
+            else:
+                runSliceFilter = False
 
         
         # Filtering entire grey level map with chosen parameters

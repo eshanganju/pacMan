@@ -44,7 +44,7 @@ class Reader:
         lowerCol = cntrX - round( ( lngt / 2 ) / calib )
                 
         print( 'Reading files from: ' + folderLocation )      
-        searchString = folderLocation + '\*tiff'       
+        searchString = folderLocation + '/*tiff'       
         fileList = glob.glob( searchString )        
         fileList.sort()
         
