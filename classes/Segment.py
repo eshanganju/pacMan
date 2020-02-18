@@ -61,7 +61,7 @@ class Segment:
         edPeakMrkrMap = self.obtainLocalMaximaMarkers( edMap )
         
         # Labelled Map
-        labelledMap = self.obtainLabelledMapUsingWaterShedAlgorithm( binMap, edMap, edPeakMrkrMap )
+        labelledMap = self.obtainLabelledMapUsingWaterShedAlgorithm( binMap, edMap, edPeakMrkrMap, outputFilesLocation )
         
         # Correction of labelled map
         lblCorrectionMethod, correctedLabelledMap = self.fixErrorsInSegmentation( labelledMap )
@@ -303,7 +303,7 @@ class Segment:
         
         return edmPeakMarkers
 
-    def obtainLabelledMapUsingWaterShedAlgorithm(self, binaryMap, euclidDistMap, edPeaksMap ):
+    def obtainLabelledMapUsingWaterShedAlgorithm(self, binaryMap, euclidDistMap, edPeaksMap):
         '''
         Returns labelled map
         '''
@@ -315,57 +315,25 @@ class Segment:
         
         return labelledMap
 
-    def fixErrorsInSegmentation(self, aggregate):
-        '''
-        Parameters
-        ----------
-        aggregate : Object
-            
-
-        Returns
-        -------
-        Updates aggregate object to correct over-segmentation and fixes the particle lists
-
-        '''
-        checkCorrectionMethod = input( 'Manual or automated error correction? ["m"/a]: ' )
+    def fixErrorsInSegmentation(self, labelledMapForCorrection, outputLocation):
+        print('\nEntering label edition mode')
+        print('---------------------------*')
+        
+        checkCorrectionMethod = input( 'Manual or automated error correction? ([m]/a): ' )
 
         if checkCorrectionMethod.lower() == 'a':
             print( 'Not coded yet' )
+            '''
+            Check contacting labels
+            Labels with a flat contact or very divided contact need to be updated
+            '''
 
         else:
-            print( '-------------------------------------*' )
-            print( '\n\nEntering manual correction method' )
+            print( '\nEntering manual correction method' )
             print( 'Carry out manual correction in ImageJ' )
-            print( 'Once manual correction is complete, save corrected labelled file as sandName-updatedWatershedSegmentation.tiff in output folder' )
-            correctedWatershedFileName = input( 'Enter name of corrected file: ')
-            completeCorrectedWatershedFileName = aggregate.dataOutputDirectory + correctedWatershedFileName
-            aggregate.labelledMap = tiffy.imread(completeCorrectedWatershedFileName)
+            print( 'Once manual correction is complete, save corrected labelled in pacOutput directory' )
+            correctedWatershedFileName = input( 'Enter name of corrected file (incl. extension): ')
+            completeCorrectedWatershedFileName = outputLocation + correctedWatershedFileName
+            correctedLabelMap = tiffy.imread(completeCorrectedWatershedFileName)
 
-        return labelCorrectionMethod, correctedLabelMap
-        
-    def resetParticleList(self, aggregate):
-        '''
-        Parameters
-        ----------
-        aggregate : Object
-            
-
-        Returns
-        -------
-        Updates particle list after manual correction of segmentation
- 
-        '''
-        aggregate.numberOfParticles = int( aggregate.labelledMap.max() )        
-        aggregate.particleList = []         
-        aggregate.particleList.append(None) 
-        
-        for i in range( 1, aggregate.numberOfParticles + 1 ):          
-            numberOfParticleVoxel = np.where( aggregate.labelledMap == i)[ 0 ].shape[ 0 ]            
-            locData = np.zeros( ( numberOfParticleVoxel, 3 ) )                            
-            
-            for j in range(0, 3):              
-                locData[ :, j ] = np.where( aggregate.labelledMap == i )[ j ]                
-            
-            p = Particle.Particle( i, numberOfParticleVoxel, locData )                             
-            aggregate.particleList.append( p )
-
+        return correctedLabelMap

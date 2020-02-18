@@ -30,6 +30,9 @@ labelledMap = s.obtainLabelledMapUsingWaterShedAlgorithm( binMap,
 														  edMap, 
 														  edPeaksMarkerMap )
 
+correctedLabelledMap = s.fixErrorsInSegmentation( labelledMap )
+
+
 plt.figure()
 plt.imshow( binMap[binMap.shape[0] // 2 ], cmap ='gray' )
 

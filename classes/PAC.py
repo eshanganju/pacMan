@@ -269,9 +269,9 @@ class PAC:
             else:
                 print('\nStarting EDT - Watershed segmentation...')
                 gliThresh, binMap, voidRatioCT, edMap, mrkrMap, lblCorrectionMethod, correctedLabelledMap = s.performEDTWS( self.aggregateList[0].filteredGreyLevelMap, 
-                                                                                                                 self.aggregateList[0].currentvoidRatioMeasured, 
-                                                                                                                 self.outputFilesLocation,
-                                                                                                                 self.sampleName ) 
+                                                                                                                            self.aggregateList[0].currentvoidRatioMeasured, 
+                                                                                                                            self.outputFilesLocation,
+                                                                                                                            self.sampleName ) 
                 self.aggregateList[0].gliThreshold = gliThresh
                 self.aggregateList[0].binaryMap = binMap
                 self.aggregateList[0].currentvoidRatioFromCT = voidRatioCT
