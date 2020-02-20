@@ -1,7 +1,3 @@
-'''
-Segment class
-'''
-
 # Importing libraries
 from scipy.ndimage.morphology import distance_transform_edt as edt
 from scipy.ndimage.morphology import binary_fill_holes as fillHoles
@@ -27,21 +23,21 @@ class Segment:
     def performEDTWS( self, filteredGLIMap, currentVoidRatio, outputFilesLocation, sampleName):
         print('Starting EDT-WS')
         print('----------------------*\n')
-        
+
         # Binarize
         print('Which binarization method to follow?')
         binarizationMethodToFollow = input('(1) Otsu threshold, (2) User input based threshold, ([3]) Density based threshold: ')
-        
+
         # Otsu threshold
         if binarizationMethodToFollow == '1':
             binMap, gliThreshold = self.binarizeAccordingToOtsu( filteredGLIMap, outputFilesLocation, sampleName)
             voidRatioCT = self.calcVoidRatio( binMap )
-        
+
         # User input based threshold
         elif binarizationMethodToFollow == '2':
             binMap, gliThreshold = self.binarizeAccordingToUserThreshold( filteredGLIMap, outputFilesLocation, sampleName )
             voidRatioCT = self.calcVoidRatio( binMap )
-        
+
         # Density based threshold
         else:
             binMap, gliThreshold = self.binarizeAccordingToDensity(filteredGLIMap, currentVoidRatio, outputFilesLocation, sampleName )
@@ -49,32 +45,32 @@ class Segment:
 
         # EDM
         edMap = self.obtainEuclidDistanceMap( binMap )
-         
+
         # Markers
         edPeakMrkrMap = self.obtainLocalMaximaMarkers( edMap )
-        
+
         # Labelled Map
         labelledMap = self.obtainLabelledMapUsingWaterShedAlgorithm( binMap, edMap, edPeakMrkrMap, outputFilesLocation )
-        
+
         # Correction of labelled map
         lblCorrectionMethod, correctedLabelledMap = self.fixErrorsInSegmentation( labelledMap )
 
         # Returns
         return gliThreshold, binMap, voidRatioCT, edMap, edPeakMrkrMap, lblCorrectionMethod, correctedLabelledMap
 
-    def binarizeAccordingToOtsu( self, gliMapToBinarize, outputLocation, sampleName ):       
+    def binarizeAccordingToOtsu( self, gliMapToBinarize, outputLocation, sampleName ):
         print('\nRunning Otsu Binarization')
         print('----------------------------*')
         otsuThreshold = threshold_otsu( gliMapToBinarize )      
         binaryMap = np.zeros_like( gliMapToBinarize )        
-        
+
         binaryMap[ np.where( gliMapToBinarize > otsuThreshold ) ] = 1
         binaryMap = binaryMap.astype( int )
         e1 = self.calcVoidRatio( binaryMap )
-        
+
         binaryMap = self.fillHoles( binaryMap )
         e2 = self.calcVoidRatio( binaryMap )        
-        
+
         binaryMap = self.removeSpecks( binaryMap )      
         e3 = self.calcVoidRatio( binaryMap ) 
 
@@ -82,7 +78,7 @@ class Segment:
         print( 'Void ratio after threshold = %f' % e1 )  
         print( 'Void ratio after filling holes = %f' % e2 )   
         print( 'Void ratio after removing specks = %f' % e3 )       
-        
+
         # Saving files
         otsuThresholdFileName = outputLocation + sampleName + '-otsuThresholdDetails.txt'
         f = open( otsuThresholdFileName, 'w+' )        
@@ -96,18 +92,18 @@ class Segment:
         print('---------------------*')
 
         return binaryMap, otsuThreshold 
-              
-    def binarizeAccordingToUserThreshold( self, gliMapToBinarize, outputLocation, sampleName):        
+
+    def binarizeAccordingToUserThreshold( self, gliMapToBinarize, outputLocation, sampleName):
         userThreshold = int( input( 'Enter user threshold: ' ) )        
         binaryMap = np.zeros_like( gliMapToBinarize )        
         binaryMap[ np.where( gliMapToBinarize > userThreshold ) ] = 1
         binaryMap = binaryMap.astype( int )
         e1 = self.calcVoidRatio( binaryMap ) 
-                
+
         # Filling Holes
         binaryMap = fillHoles( binaryMap )      
         e2 = self.calcVoidRatio( binaryMap )    
-  
+
         # Removing specks
         binaryMap = self.removeSpecks( binaryMap )
         e3 = self.calcVoidRatio( binaryMap )     
@@ -116,7 +112,7 @@ class Segment:
         print( 'Void ratio after threshold = %f' % e1 )  
         print( 'Void ratio after filling holes = %f' % e2 )   
         print( 'Void ratio after removing specks = %f' % e3 )    
-                
+
         # Saving files
         userThresholdFileName = outputLocation + sampleName + '-userThresholdDetails.txt'
         f = open( userThresholdFileName, 'w+' )        
@@ -131,22 +127,22 @@ class Segment:
 
         return binaryMap, userThreshold
 
-    def binarizeAccordingToDensity( self, gliMapToBinarize, knownVoidRatio, outputLocation, sampleName):      
+    def binarizeAccordingToDensity( self, gliMapToBinarize, knownVoidRatio, outputLocation, sampleName):
         otsuBinMap, otsuThreshold = self.binarizeAccordingToOtsu(gliMapToBinarize, outputLocation, sampleName)
         currentThreshold = otsuThreshold
         currentVoidRatio = self.calcVoidRatio( otsuBinMap )
         targetVoidRatio = knownVoidRatio
         greyLvlMap = gliMapToBinarize
-            
+
         tolerance = 0.0001
         deltaVoidRatio = targetVoidRatio - currentVoidRatio
-            
+
         absDeltaThreshold = 0
         maxAbsDeltaThreshold = 500
-            
+
         iterationNum = 1
         maxIterations = 50
-            
+
         userThresholdStepsTextFileName = outputLocation +  sampleName + '-userThresholdDensitySteps.txt'
         f = open( userThresholdStepsTextFileName, "w+")
         f.write( "Steps of density based user threshold\n\n" )
@@ -154,38 +150,38 @@ class Segment:
 
         while( abs( deltaVoidRatio ) > tolerance and iterationNum <= maxIterations ):
             incrementSign = deltaVoidRatio/abs(deltaVoidRatio)  
-               
+
             if abs( deltaVoidRatio ) > 0.100:
                 absDeltaThreshold = 500
-                
+
             elif abs( deltaVoidRatio ) > 0.05:
                 absDeltaThreshold = 250
-                
+
             elif abs( deltaVoidRatio ) > 0.01:
                 absDeltaThreshold = 100
-                
+
             elif abs( deltaVoidRatio ) > 0.005:
                 absDeltaThreshold = 50
-                
+
             elif abs( deltaVoidRatio ) > 0.001:
                 absDeltaThreshold = 25
-                
+
             elif abs( deltaVoidRatio ) > 0.0005:
                 absDeltaThreshold = 10
-                
+
             else:
                 absDeltaThreshold = 1
-                
+
             currentThreshold = currentThreshold + absDeltaThreshold*incrementSign
             currentBinaryMap = np.zeros_like( greyLvlMap )        
             currentBinaryMap[ np.where( greyLvlMap > currentThreshold ) ] = 1
-                
+
             currentBinaryMap = self.fillHoles( currentBinaryMap )
             currentBinaryMap = self.removeSpecks( currentBinaryMap )
-                
+
             currentVoidRatio = self.calcVoidRatio( currentBinaryMap )
             deltaVoidRatio = targetVoidRatio - currentVoidRatio
-                
+
             print( '\nIteration %d:' % iterationNum )
             print( 'Current threshold: %d' % round( currentThreshold ) )
             print( 'Otsu Threshold: %d' % round( otsuThreshold ) )
@@ -203,21 +199,20 @@ class Segment:
             f.close()
 
             iterationNum = iterationNum + 1
-            
-            
+
         densityBasedThresholdTextFileName = outputLocation +  sampleName + '-userThresholdDensityBased.txt'
         f = open( densityBasedThresholdTextFileName, "w+" )               
         f.write( "Global density based threshold = %f\n" % currentThreshold )
         f.close()
 
         return currentBinaryMap, currentThreshold
-              
+
     def calcVoidRatio(self, binaryMapforVoidRatioCalc):
         '''
         Parameters
         ----------
         binaryMap : numpy array with 1 and 0
-        
+
         Returns
         -------
         void ratio of the binary map assumin 1 is particle
@@ -229,10 +224,9 @@ class Segment:
         volTotal =  lenZ * lenY * lenX 
         currentVoidRatio = ( volTotal - volSolids ) / volSolids
         return currentVoidRatio
-        
+
     def fillHoles( self, oldBinaryMap ):
         '''
-        
         Parameters
         ----------
         oldBinaryMap : Numpy array of binary data
@@ -245,10 +239,9 @@ class Segment:
         '''
         newBinaryMap = fillHoles( oldBinaryMap )
         return newBinaryMap.astype(int) 
-                  
+
     def removeSpecks( self, oldBinaryMap ):
         '''
-        
         Parameters
         ----------
         oldBinaryMap : Numpy array of binary data
@@ -261,15 +254,15 @@ class Segment:
         '''
         newBinaryMap = removeSpecks( oldBinaryMap )   
         return newBinaryMap.astype(int)
-       
-    def obtainEuclidDistanceMap( self, binaryMapForEDM ):      
+
+    def obtainEuclidDistanceMap( self, binaryMapForEDM ):
         print('\nFinding Euclidian distance map (EDM)')
         print('------------------------------------*')
         edMap = edt( binaryMapForEDM )             
         print( "EDM Created" )        
         return edMap
 
-    def obtainLocalMaximaMarkers( self, edMapForPeaks ):    
+    def obtainLocalMaximaMarkers( self, edMapForPeaks ):
         '''
         Fix this to be better at obtaining markers
         Expected number of particles?
@@ -279,48 +272,38 @@ class Segment:
         print('------------------------------*')  
         h = int( input( 'Enter the minimum height for a peak (px): ') )
         print( 'Finding local maxima in EDM' )
-                
+
         edmPeakMarkers = hmax( edMapForPeaks, h ).astype(int)    
-        
+
         print( 'Found local maximas in EDM (greater than %i px)' % h )
 
         print( 'Resetting count of peaks' )
         count=0    
-        for frame in range( 0, edmPeakMarkers.shape[ 0 ] ):            
-            for row in range( 0, edmPeakMarkers.shape[ 1 ] ):                
-                for col in range( 0, edmPeakMarkers.shape[ 2 ] ):                    
-                    if edmPeakMarkers[ frame ][ row ][ col ] == 1:                        
-                        edmPeakMarkers[ frame ][ row ][ col ] = count + 1                        
+        for frame in range( 0, edmPeakMarkers.shape[ 0 ] ):
+            for row in range( 0, edmPeakMarkers.shape[ 1 ] ):
+                for col in range( 0, edmPeakMarkers.shape[ 2 ] ):
+                    if edmPeakMarkers[ frame ][ row ][ col ] == 1:
+                        edmPeakMarkers[ frame ][ row ][ col ] = count + 1
                         count = count + 1
             print( 'Processed ' + str(frame + 1) + ' out of ' + str(edmPeakMarkers.shape[ 0 ]) + ' slices' )
-        
+
         return edmPeakMarkers
 
     def obtainLabelledMapUsingWaterShedAlgorithm(self, binaryMap, euclidDistMap, edPeaksMap):
-        '''
-        Returns labelled map
-        '''
-        print( '\nSegmenting particles by topological watershed' ) 
+        print( '\nSegmenting particles by topological watershed' )
         binMask = binaryMap.astype( bool )
         invertedEdMap = -euclidDistMap
         labelledMap = wsd( invertedEdMap, markers = edPeaksMap, mask = binMask )
         print( 'Watershed segmentation complete' )
-        
         return labelledMap
 
-    def fixErrorsInSegmentation(self, labelledMapForCorrection, outputLocation):
+    def fixErrorsInSegmentation(self, labelledMapForCorrection ):
         print('\nEntering label edition mode')
         print('---------------------------*')
-        
         checkCorrectionMethod = input( 'Manual or automated error correction? ([m]/a): ' )
-
+        # Automation ? 
         if checkCorrectionMethod.lower() == 'a':
             print( 'Not coded yet' )
-            '''
-            Check contacting labels
-            Labels with a flat contact or very divided contact need to be updated
-            '''
-
         else:
             print( '\nEntering manual correction method' )
             print( 'Carry out manual correction in ImageJ' )
@@ -330,3 +313,4 @@ class Segment:
             correctedLabelMap = tiffy.imread(completeCorrectedWatershedFileName)
 
         return correctedLabelMap
+

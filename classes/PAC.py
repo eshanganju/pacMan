@@ -26,14 +26,13 @@ class PAC:
         print( '-------------------------------*' )
 
     def readNewData( self ):
-
         self.checkFolderLocations()
         smplName, btdpth, smplClb, cubEdgLngt, smplCntrZ, smplCntrY, smplCntrX, d50, voidRatio, datFrmTifStk, tifFilFldrLoc = self.getSampleDetails()
-        
+
         # Read GLI data
         r = Reader.Reader()
-        
-        if datFrmTifStk == True:           
+
+        if datFrmTifStk == True:
             gliDat = r.readTiffStack( tifFilFldrLoc, smplCntrZ, smplCntrY, smplCntrX, cubEdgLngt, smplClb )
             self.aggregateList.append(Aggregate.Aggregate( smplName, btdpth, smplClb, cubEdgLngt, smplCntrZ, smplCntrY, smplCntrX, d50, voidRatio, datFrmTifStk, tifFilFldrLoc, gliDat ))
         else:
@@ -42,7 +41,7 @@ class PAC:
 
         # Update directory
         self.totalNumberOfAggregates = self.totalNumberOfAggregates + 1
-        
+
         # Create Aggregate
         createGLIFile = input('Do you want to save a copy of the GLI as a stack in the output foder (y/[n])?')
         if createGLIFile.lower() == 'y':
@@ -51,10 +50,10 @@ class PAC:
             print( "\nUnfiltered GLI file saved as " + str( smplName ) + '.tiff' )         
         else:
             print('Ok, File not saved')
-        
+
         print('Total number of aggregates is %d\n' % self.totalNumberOfAggregates)
         print('Data reading complete------------*\n\n')
-        
+
         # Cleanup
         del r
         del gliDat
@@ -65,7 +64,7 @@ class PAC:
 
         defaultInputFilesLocation = '/home/eg/codes/pacInput/'
         defaultOutputFilesLocation = '/home/eg/codes/pacOutput/'       
-        
+
         # Check default input: 
         inputLocationIsCorrect = input( '\nBy default, input files are supposed to be at: \n' + defaultInputFilesLocation + ', Is this correct? ([y]/n): ' )        
         if inputLocationIsCorrect.lower() == 'n':
@@ -83,7 +82,6 @@ class PAC:
         print('\nFolder locations established...')
 
     def getSampleDetails(self):
-        
         print('\n\nChecking sample details: ')
         print('---------------------------*')
 
@@ -106,26 +104,26 @@ class PAC:
         if useDefaultSampleCalib.lower() == 'n':
             sampleCalib = float( input( 'Enter calibration (mm/px): ' ) )       
         else:
-            sampleCalib = 0.01193 
-                
-        # Size: 
+            sampleCalib = 0.01193
+
+        # Size:
         useDefaultCubeEdgeLength = input( '\nUse default cube edge lenght of 5.5 mm? ([y]/n): ' )      
         if useDefaultCubeEdgeLength.lower() == 'n':
             cubeEdgeLength = float( input( 'Enter new edge length (mm): ' ) )
         else:
             cubeEdgeLength = 5.5
-        
-        # Center location:         
+
+        # Center location:
         useDefaultOtcCenterPoints = input('\nUse default center of the slices? [Z = 513][Y = 430][X = 490] ([y]/n)')
         if useDefaultOtcCenterPoints == 'n':
             sampleCenterZ = int(input( 'Location of center slice of the sample (px): ' ))
             sampleCenterY = int(input( 'Location of center row of the sample (px): ' ))
             sampleCenterX = int(input( 'Location of center column of the sample (px): ' ))
-        else: 
+        else:
             sampleCenterZ = 513
             sampleCenterY = 430
             sampleCenterX = 490
-        
+
         # Average particle size: 
         d50Known = input( '\nIs the original D50 of sample know ([y]/n): ' )
         if d50Known == 'n':
@@ -156,11 +154,11 @@ class PAC:
         else: 
             dataFromTiffStack = False
             useDefault0NFolderForOTCSample = input('Use the default folder [OTC-0N]? ([y]/n): ')
-            
+
             if useDefault0NFolderForOTCSample == 'n':
                 tiffFileFolderName = input('\nName of data folder in ' + self.inputFilesLocation + ' where tiff file sequences are located: ')
-            
-            else: 
+
+            else:
                 tiffFileFolderName = 'OTC-ZeroNewton'
 
             tiffFileFolderLocation = self.inputFilesLocation + tiffFileFolderName
@@ -175,43 +173,43 @@ class PAC:
         print( '----------------------------*\n' )
 
         filteredDataAvailable = input( 'Is filtered data available? (y/[n]): ' )
-        
+
         if filteredDataAvailable == 'y':
             print('\nDefault filter data location is: ' + self.inputFilesLocation)
             defaultFilteredDataLocationCorrect = input( 'Is this correct? ([y]/n): ' )
-            
+
             if defaultFilteredDataLocationCorrect == 'n':
                 newFilteredDataLocation = input( 'Enter filtered tiff stack location: ' )
                 newFilteredFileName = input('Enter the name of the file located in ' + newFilteredDataLocation + ' :')
                 print('Reading GLI data from new location...')
                 newFilteredFileLocation = newFilteredDataLocation + newFilteredFileName
                 self.aggregateList[0].filteredGreyLevelMap = tiffy.imread( newFilteredFileLocation )
-            
+
             else:
                 filteredFileName = input( 'Enter the name of the file located in ' + self.inputFilesLocation )
                 filteredFileLocation = self.inputFilesLocation + filteredFileName
                 print('Reading GLI data from default location')
                 self.aggregateList[0].filteredGreyLevelMap = tiffy.imread( filteredFileLocation )
-            
+
             self.aggregateList[0].imageNoise = abs( self.aggregateList[0].greyLevelMap - self.aggregateList[0].filteredGreyLevelMap )
-            
+
             # Keeping records
             finalFilteredFileLocation = self.outputFilesLocation + self.aggregateList[0].sampleName + '-filtered.tiff'       
             tiffy.imsave(finalFilteredFileLocation, self.aggregateList[0].filteredGreyLevelMap)
 
             finalNoiseFileLocation =  self.outputFilesLocation + self.aggregateList[0].sampleName +  '-noise.tiff'            
-            tiffy.imsave(finalNoiseFileLocation, self.aggregateList[0].imageNoise)    
-        
+            tiffy.imsave(finalNoiseFileLocation, self.aggregateList[0].imageNoise)
+
         else:
             f = Filter.Filter()
             fileName = self.aggregateList[0].sampleName
             gliMap = self.aggregateList[0].greyLevelMap
             gliMaxVal = self.aggregateList[0].gliMax
             outputDirectory = self.outputFilesLocation
-            
+
             self.aggregateList[0].filteredGreyLevelMap = f.filterDenoiseNlm(fileName, gliMap, gliMaxVal, outputDirectory)
             self.aggregateList[0].imageNoise = abs( self.aggregateList[0].greyLevelMap - self.aggregateList[0].filteredGreyLevelMap )
-            
+
             # Keeping records
             filteredFileName = outputDirectory + fileName + '-filtered.tiff'
             noiseFileName =  outputDirectory + fileName +  '-noise.tiff'
@@ -219,18 +217,12 @@ class PAC:
             tiffy.imsave(noiseFileName, self.aggregateList[0].imageNoise)
 
     def segmentData( self ):
-        '''
-        Segments data following one of the following
-            EDT-WS
-            Level set
-            Random walker      
-        '''
         print( '\n\nStarting segmentation module' )
-        print( '----------------------------*\n' )       
+        print( '----------------------------*\n' )
 
-        s = Segment.Segment()        
-        
+        s = Segment.Segment()
         labelledDataAvailable = input( 'Is labelled data available? (y/[n]):' )
+
         if labelledDataAvailable == 'y':
             print( 'Default labelled data location is: ' + self.inputFilesLocation )
             defaultLabelledDataLocationCorrect = input( 'Is this correct? ([y]/n): ' )
@@ -241,7 +233,6 @@ class PAC:
                 print('Reading labelled data from new location...')
                 newLabelledFileLocation = newLabelledDataLocation + newLabelledFileName
                 self.aggregateList[0].labelledMap = tiffy.imread( newLabelledFileLocation )
-            
             else:
                 labelledFileName = input( 'Enter the name of the file located in ' + self.inputFilesLocation )
                 labelledFileLocation = self.inputFilesLocation + labelledFileName
@@ -251,6 +242,7 @@ class PAC:
             # Keeping record
             finalLabelledFileLocation = self.outputFilesLocation + self.aggregateList[0].sampleName + '-labelled.tiff' 
             tiffy.imsave(finalLabelledFileLocation, self.aggregateList[0].labelledMap)
+
         else:
             s=Segment.Segment()
 
@@ -267,11 +259,12 @@ class PAC:
 
             # Euclidian distance map watershed segmentation
             else:
+                fgli = self.aggregateList[0].filteredGreyLevelMap
+                outLoc = self.outputFilesLocation
+                smpNam = self.sampleName
+                eMeasured = self.aggregateList[0].currentvoidRatioMeasured
                 print('\nStarting EDT - Watershed segmentation...')
-                gliThresh, binMap, voidRatioCT, edMap, mrkrMap, lblCorrectionMethod, correctedLabelledMap = s.performEDTWS( self.aggregateList[0].filteredGreyLevelMap, 
-                                                                                                                            self.aggregateList[0].currentvoidRatioMeasured, 
-                                                                                                                            self.outputFilesLocation,
-                                                                                                                            self.sampleName ) 
+                gliThresh, binMap, voidRatioCT, edMap, mrkrMap, lblCorrectionMethod, correctedLabelledMap = s.performEDTWS(fgli, eMeasured, outLoc, smpNam)
                 self.aggregateList[0].gliThreshold = gliThresh
                 self.aggregateList[0].binaryMap = binMap
                 self.aggregateList[0].currentvoidRatioFromCT = voidRatioCT
@@ -298,33 +291,26 @@ class PAC:
                 f.write( self.aggregateList[0].completeSegmentationMethod )
                 f.close()
 
-            # Create particle objects in aggregate variable particleList
-
     def createParticle( self, labelledMap):
-        '''
-        Create labelled map
-        '''
-        #----------------------------------------------------------Fix
-        # edm_invert = -aggregate.euclidDistanceMap                  
-        # binMask = aggregate.binaryMap.astype( bool )              
-        # particleMarkers = aggregate.markers                    
-        # aggregate.labelledMap = wsd( edm_invert, markers = particleMarkers, mask = binMask) 
-        # aggregate.numberOfParticles = aggregate.labelledMap.max()
+        edm_invert = -aggregate.euclidDistanceMap
+        binMask = aggregate.binaryMap.astype( bool )
+        particleMarkers = aggregate.markers
+        aggregate.labelledMap = wsd( edm_invert, markers = particleMarkers, mask = binMask)
+        aggregate.numberOfParticles = aggregate.labelledMap.max()
 
-        # for i in range( 1, aggregate.numberOfParticles + 1 ):            
-        #     numberOfParticleVoxel = np.where( aggregate.labelledMap == i)[ 0 ].shape[ 0 ]              
-        #     locData = np.zeros( ( numberOfParticleVoxel, 3 ) )                                        
+        # Appending particle list
+        for i in range( 1, aggregate.numberOfParticles + 1 ):
+            numberOfParticleVoxel = np.where( aggregate.labelledMap == i)[ 0 ].shape[ 0 ]
+            locData = np.zeros( ( numberOfParticleVoxel, 3 ) )
 
-        #     for j in range(0, 3):
-        #         locData[ :, j ] = np.where( aggregate.labelledMap == i )[ j ]                            
-
-        #     p = Particle.Particle( i, numberOfParticleVoxel, locData )                               
-        #     aggregate.particleList.append( p )                                      
-        
-        # print( "Done! List of particles created" )        
-        # watershedSegmentationFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-watershedSegmentation.tiff'
-        # tiffy.imsave( watershedSegmentationFileName, aggregate.labelledMap )
-        #----------------------------------------------------------Fix
+        # Getting location of Data
+            for j in range(0, 3):
+                locData[ :, j ] = np.where( aggregate.labelledMap == i )[ j ]
+            p = Particle.Particle( i, numberOfParticleVoxel, locData )
+            aggregate.particleList.append( p )
+            print( "Done! List of particles created" )
+        watershedSegmentationFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-watershedSegmentation.tiff'
+        tiffy.imsave( watershedSegmentationFileName, aggregate.labelledMap )
 
     def measureParticleSizeParam( self ):
         '''
