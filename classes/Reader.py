@@ -42,30 +42,30 @@ class Reader:
         lowerRow = cntrY - round( ( lngt / 2 ) / calib )
         upperCol = cntrX + round( ( lngt / 2 ) / calib )
         lowerCol = cntrX - round( ( lngt / 2 ) / calib )
-                
+
         print( 'Reading files from: ' + folderLocation )      
         searchString = folderLocation + '/*tiff'       
         fileList = glob.glob( searchString )        
         fileList.sort()
-        
+
         numTiffFilesInFolder = len(fileList)
         numTiffFilesToRead = ( upperSlice - lowerSlice)
-        
+
         print('Number of files in the folder %d' % numTiffFilesInFolder)
         print('Number of files to read %d' % numTiffFilesToRead)
-        
+
         tempFile = tiffy.imread( str( fileList[ 0 ] ) ) 
         rows = tempFile.shape[ 0 ]
         columns = tempFile.shape[ 1 ]
         del tempFile
-        
+
         gliMap = np.empty( ( numTiffFilesToRead, rows, columns ) ) 
-        
+
         # Reading individual files - file number offset
         for i in range( lowerSlice , upperSlice ):
             gliMap[ i - lowerSlice ] = tiffy.imread ( fileList [ i ] )    
             print('Read ' + str( i - lowerSlice + 1 ) + '/' + str( numTiffFilesToRead ) + ' files...')
-        
+
         print( '\nFinished reading files...' ) 
         croppedGLIMap = gliMap[ :, lowerRow : upperRow, lowerCol : upperCol ] 
-        return croppedGLIMap 
+        return croppedGLIMap

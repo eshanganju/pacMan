@@ -8,7 +8,7 @@ import statistics
 import pandas as pd
 import scipy
 
-#import spam.label as slab
+import spam.label as slab
 
 class Measure:
 
@@ -16,140 +16,82 @@ class Measure:
     def __init__( self ):
         print( "Measurer activated" )
 
-    def measureBenchMarkSizeAndNormal( self, aggregate, radii, centres ):      
-        aggregate.benchMarkNumberOfParticles = radii.shape[ 0 ]        
-        aggregate.benchMarkCentres = np.zeros( ( aggregate.benchMarkNumberOfParticles, 3 ) )       
-        aggregate.benchMarkRadii = np.zeros( ( aggregate.benchMarkNumberOfParticles, 1 ) )        
-        aggregate.benchMarkCentres = centres       
-        aggregate.benchMarkRadii = radii
-
-        # Compute grain size distribution
-        aggregate.benchMarkGrainSizeDistribution = np.zeros( ( aggregate.benchMarkNumberOfParticles, 2 ) )        
-        aggregate.benchMarkGrainSizeDistribution[ :, 0 ] = ( aggregate.benchMarkRadii ) * 2        
-        aggregate.benchMarkGrainSizeDistribution = np.sort( aggregate.benchMarkGrainSizeDistribution.view( 'f8,f8' ), order = [ 'f1' ], axis = 0 ).view( np.float )
-
-        for i in range( 0, aggregate.benchMarkNumberOfParticles ):        
-            a = sum( ( aggregate.benchMarkGrainSizeDistribution[ 0:i+1, 0 ] ) ** 3 )           
-            b = sum( ( aggregate.benchMarkGrainSizeDistribution[ :, 0 ] ) ** 3 )            
-            aggregate.benchMarkGrainSizeDistribution[ i, 1 ] = ( a / b ) * 100
-
-        # Find contact normals of benchMarkData
-        aggregate.benchMarkNumberOfContacts = 0       
-        contactingParticlesOne = []       
-        contactingParticlesTwo = []
-
-        for i in range( 0, aggregate.benchMarkNumberOfParticles - 1 ):           
-            for j in range(i+1,aggregate.benchMarkNumberOfParticles):       
-                a = aggregate.benchMarkCentres[ i, 0 ] - aggregate.benchMarkCentres[ j, 0 ]               
-                b = aggregate.benchMarkCentres[ i, 1 ] - aggregate.benchMarkCentres[ j, 1 ]                
-                c = aggregate.benchMarkCentres[ i, 2 ] - aggregate.benchMarkCentres[ j, 2 ]                
-                distanceCentres = ( a ** 2 + b ** 2 + c ** 2 ) ** 0.5
-
-                if distanceCentres <= (aggregate.benchMarkRadii[ i ] + aggregate.benchMarkRadii[ j ] ):                    
-                    aggregate.benchMarkNumberOfContacts = aggregate.benchMarkNumberOfContacts + 1                   
-                    contactingParticlesOne.append( i )                    
-                    contactingParticlesTwo.append( j )
-
-        aggregate.benchMarkContactNormal = np.zeros( ( aggregate.benchMarkNumberOfContacts, 5 ) )
-
-        for k in range( 0, len( contactingParticlesOne ) ):            
-            aggregate.benchMarkContactNormal[ k, 0 ] = contactingParticlesOne[ k ]            
-            aggregate.benchMarkContactNormal[ k, 1 ] = contactingParticlesTwo[ k ]           
-            a = aggregate.benchMarkCentres[ contactingParticlesOne[ k ], 0 ] - aggregate.benchMarkCentres[ contactingParticlesTwo[ k ], 0 ]            
-            b = aggregate.benchMarkCentres[ contactingParticlesOne[ k ], 1 ] - aggregate.benchMarkCentres[ contactingParticlesTwo[ k ], 1 ]            
-            c = aggregate.benchMarkCentres[ contactingParticlesOne[ k ], 2 ] - aggregate.benchMarkCentres[ contactingParticlesTwo[ k ], 2 ]            
-            d = ( a ** 2 + b ** 2 + c ** 2 ) ** 0.5
-
-            # If Z if positive, the sign of all are retained
-            if a >= 0:               
-                aggregate.benchMarkContactNormal[ k, 2 ] = a / d               
-                aggregate.benchMarkContactNormal[ k, 3 ] = b / d               
-                aggregate.benchMarkContactNormal[ k, 4 ] = c / d
-
-            # If Z is negative, the sign of all are flipped to get positive Z
-            elif a <= 0:                
-                aggregate.benchMarkContactNormal[ k, 2 ] = - a / d                 
-                aggregate.benchMarkContactNormal[ k, 3 ] = - b / d                
-                aggregate.benchMarkContactNormal[ k, 4 ] = - c / d
-
-        np.savetxt( "benchMarkContactNormals.csv", aggregate.benchMarkContactNormal, delimiter = "," )      
-        np.savetxt( "benchMarkGSD.csv", aggregate.benchMarkGrainSizeDistribution, delimiter = "," )
-
     # Particle Size distribution
-    def measureParticleSizeDistribution( self, aggregate ):
-        aggregate.particleSizeDataSummary = np.zeros( ( aggregate.numberOfParticles + 1 , 6 ) )
+    def measureParticleSizeDistribution( self, labelledMapForParticleSizeAnalysis):
+        numberOfParticles = int(labelledMapForParticleSizeAnalysis.max())
+
+        # Particle size summary columns (0) Index, (1) Volume, (2) Eqsp, (3) Centroidal - max, (4) Centroidal - med, (5) Centroidal - min, (6) and (7) are open
+        particleSizeDataSummary = np.zeros( ( numberOfParticles + 1 , 8 ) )
         print( "Starting measurement of particles..." )
 
-        for i in range( 1, aggregate.numberOfParticles + 1 ):                                          
-            print( "Computing size of", i, "/", aggregate.numberOfParticles, "particle" )         
+        for particleNum in range( 1, numberOfParticles + 1 ):
+            print( "Computing size of", particleNum, "/", numberOfParticles, "particle" )
+            particleSizeDataSummary[particleNum, 0] = particleNum
 
-            #-------------Equivalent sphere diameter
-            vol = aggregate.particleList[ i ].volume        
-            sphDia = 2 * ( ( ( 3 * vol ) / ( 4 * math.pi ) ) ** ( 1 / 3 ) )                                       
-            aggregate.particleList[ i ].equivalentSphereDiameter = sphDia            
+            # Equivalent sphere diameter
+            vol = self.computeVolumeOfLabel(labelledMapForParticleSizeAnalysis,particleNum)
+            particleSizeDataSummary[particleNum, 1] = vol
+            sphDia = 2 * ( ( ( 3 * vol ) / ( 4 * math.pi ) ) ** ( 1 / 3 ) )
+            particleSizeDataSummary[particleNum, 2] = sphDia
 
-
-            #-------------Feret diameters
-
+            # Feret diameters
             # Get z, y, x locations of particle
-            pointCloud = aggregate.particleList[ i ].locationData                   
+            pointCloud = self.getZYXLocationOfLabel(labelledMapForParticleSizeAnalysis,particleNum)
 
             # Get covariance matrix of particle point cloud
-            aggregate.particleList[ i ].covarianceMatrix = np.cov( pointCloud.T )   
+            covarianceMatrix = np.cov( pointCloud.T )
 
-            # 
-            cov = aggregate.particleList[ i ].covarianceMatrix
-            eigval, eigvec = np.linalg.eig( cov )
+            # Covariance matrix
+            eigval, eigvec = np.linalg.eig( covarianceMatrix )
+            
+            meanZ = np.average( pointCloud[ :, 0 ] )
+            meanY = np.average( pointCloud[ :, 1 ] )
+            meanX = np.average( pointCloud[ :, 2 ] )
 
-            aggregate.particleList[ i ].eigenValue = eigval                            
-            aggregate.particleList[ i ].eigenVector = eigvec                          
+            meanMatrix = np.zeros_like( pointCloud )
 
-            aggregate.particleList[ i ].meanZ = np.average( pointCloud[ :, 0 ] )           
-            aggregate.particleList[ i ].meanY = np.average( pointCloud[ :, 1 ] )              
-            aggregate.particleList[ i ].meanX = np.average( pointCloud[ :, 2 ] )             
+            meanMatrix[ :, 0 ] = meanZ
+            meanMatrix[ :, 1 ] = meanY
+            meanMatrix[ :, 2 ] = meanX
 
-            meanMatrix = np.zeros_like( pointCloud )                                   
+            centeredLocationData = pointCloud - meanMatrix 
 
-            meanMatrix[ :, 0 ] = aggregate.particleList[ i ].meanZ                       
-            meanMatrix[ :, 1 ] = aggregate.particleList[ i ].meanY                      
-            meanMatrix[ :, 2 ] = aggregate.particleList[ i ].meanX                     
+            rotationMatrix = np.zeros( ( 3, 3 ) )
 
-            aggregate.particleList[ i ].centeredLocationData = pointCloud - meanMatrix 
+            rotationMatrix[ :, 0 ] = eigvec[ 0 ]
+            rotationMatrix[ :, 1 ] = eigvec[ 1 ]
+            rotationMatrix[ :, 2 ] = eigvec[ 2 ]
 
-            centeredPointCloud = aggregate.particleList[ i ].centeredLocationData        
+            rotCentPointCloud = ( np.matmul( rotationMatrix, centeredLocationData.T ) ).T
+            
+            feretDims = np.zeros( ( 3, 1 ) )
+            feretDims[ 0 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 0 ].min()
+            feretDims[ 1 ] = rotCentPointCloud[ :, 1 ].max() - rotCentPointCloud[ :, 1 ].min()
+            feretDims[ 2 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 2 ].min()
 
-            rotationMatrix = np.zeros( ( 3, 3 ) )                                          
+            feretMax = max( feretDims )[ 0 ]
+            feretMin = min( feretDims )[ 0 ]
+            feretMed = statistics.median( feretDims )[ 0 ]
 
-            rotationMatrix[ :, 0 ] = eigvec[ 0 ]                                        
-            rotationMatrix[ :, 1 ] = eigvec[ 1 ]                                       
-            rotationMatrix[ :, 2 ] = eigvec[ 2 ]                                            
+            particleSizeDataSummary[particleNum, 3] = feretMax
+            particleSizeDataSummary[particleNum, 4] = feretMed
+            particleSizeDataSummary[particleNum, 5] = feretMin
 
-            rotCentPointCloud = ( np.matmul( rotationMatrix, centeredPointCloud.T ) ).T     
-            aggregate.particleList[ i ].rotatedCenteredLocationData = rotCentPointCloud  
+        return particleSizeDataSummary
 
-            feretDims = np.zeros( ( 3, 1 ) )                                                
-            feretDims[ 0 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 0 ].min()     
-            feretDims[ 1 ] = rotCentPointCloud[ :, 1 ].max() - rotCentPointCloud[ :, 1 ].min()     
-            feretDims[ 2 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 2 ].min()     
+    def computeVolumeOfLabel(self, labelledMap, label):
+        labelOnlyMap = np.zeros_like(labelledMap)
+        labelOnlyMap[np.where(labelledMap == label)] = 1
+        volumeOfLabel = labelOnlyMap.sum()
+        return volumeOfLabel 
 
-            aggregate.particleList[ i ].feretMax = max( feretDims )[ 0 ]                     
-            aggregate.particleList[ i ].feretMin = min( feretDims )[ 0 ]                     
-            aggregate.particleList[ i ].feretMed = statistics.median( feretDims )[ 0 ]       
-
-
-            # Storing data in neat table
-            aggregate.particleSizeDataSummary[ i ][ 0 ] = i            
-            aggregate.particleSizeDataSummary[ i ][ 1 ] = aggregate.particleList[ i ].volume            
-            aggregate.particleSizeDataSummary[ i ][ 2 ] = aggregate.particleList[ i ].equivalentSphereDiameter            
-            aggregate.particleSizeDataSummary[ i ][ 3 ] = aggregate.particleList[ i ].feretMax            
-            aggregate.particleSizeDataSummary[ i ][ 4 ] = aggregate.particleList[ i ].feretMed             
-            aggregate.particleSizeDataSummary[ i ][ 5 ] = aggregate.particleList[ i ].feretMin 
-
-        grainSizeDistributionFileName = aggregate.dataOutputDirectory + aggregate.fileName + '-PSD.csv'
-        print('Outputting files as: ' + grainSizeDistributionFileName)
-        np.savetxt( grainSizeDistributionFileName, aggregate.particleSizeDataSummary, delimiter = "," )       
-        #return gsdTable
-        #Output a np array with gsd corresponding to each particle size parameter on each slice
+    def getZYXLocationOfLabel(self, labelledMap, label):
+        particleLocationArrays = np.where(labelledMap == label)
+        zyxLocationData = np.zeros( ( particleLocationArrays[ 0 ].shape[ 0 ], 3 ) )
+        zyxLocationData[:,0] = particleLocationArrays[0]
+        zyxLocationData[:,1] = particleLocationArrays[1]
+        zyxLocationData[:,2] = particleLocationArrays[2]
+        return zyxLocationData
 
     # Morphology
     def measureMorphology(self,aggregate):
@@ -162,6 +104,9 @@ class Measure:
     # REV size analysis
     def revSizeAnalysis( self, aggregate ):
         print('\nStarting REV size analysis')
+        '''
+        Check different rev sizes and get GSD and other stuff
+        '''
 
     # Contact Normals
     def measureContactNormalsSpam(self,aggregate):
