@@ -10,14 +10,14 @@ currentVoidRatio = 0.5170
 cntrZ = (20+1006)//2
 cntrY = 461
 cntrX = 502
-lngt = 5.5
+lngt = 2.5
 calib = 0.01193
 bitDepth = 16
 gliMax = 2**bitDepth-1
 
-folderLocation = '/home/eg/codes/pacInput/OTC-1500N'
+folderLocation = '/home/eg/codes/pacInput/OTC-0N'
 outputLocation = '/home/eg/codes/pacOutput/'
-fileName = 'otc-1500n'
+fileName = 'otc-0n-small'
 
 gliMap = r.readTiffFileSequence(folderLocation,cntrZ,cntrY,cntrX,lngt,calib)
 gliMapName = outputLocation + fileName + '-gliMap.tiff'

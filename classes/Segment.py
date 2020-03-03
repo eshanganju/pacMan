@@ -1,7 +1,7 @@
 # Importing libraries
 from scipy.ndimage.morphology import distance_transform_edt as edt
-from scipy.ndimage.morphology import binary_fill_holes as fillHoles
-from scipy.ndimage.morphology import binary_opening as removeSpecks
+from scipy.ndimage.morphology import binary_fill_holes
+from scipy.ndimage.morphology import binary_opening
 from skimage.morphology import local_maxima as localMaxima
 from skimage.morphology import h_maxima as hmax
 from skimage.morphology import watershed as wsd
@@ -15,7 +15,7 @@ import spam.label as slab
 VERBOSE = True
 
 
-def performEDTWS( self, filteredGLIMap, currentVoidRatio, outputFilesLocation, sampleName):
+def performEDTWS( filteredGLIMap, currentVoidRatio, outputFilesLocation, sampleName):
     print('Starting EDT-WS')
     print('----------------------*\n')
 
@@ -25,35 +25,35 @@ def performEDTWS( self, filteredGLIMap, currentVoidRatio, outputFilesLocation, s
 
     # Otsu threshold
     if binarizationMethodToFollow == '1':
-        binMap, gliThreshold = self.binarizeAccordingToOtsu( filteredGLIMap, outputFilesLocation, sampleName)
-        voidRatioCT = self.calcVoidRatio( binMap )
+        binMap, gliThreshold = binarizeAccordingToOtsu( filteredGLIMap, outputFilesLocation, sampleName)
+        voidRatioCT = calcVoidRatio( binMap )
 
     # User input based threshold
     elif binarizationMethodToFollow == '2':
-        binMap, gliThreshold = self.binarizeAccordingToUserThreshold( filteredGLIMap, outputFilesLocation, sampleName )
-        voidRatioCT = self.calcVoidRatio( binMap )
+        binMap, gliThreshold = binarizeAccordingToUserThreshold( filteredGLIMap, outputFilesLocation, sampleName )
+        voidRatioCT = calcVoidRatio( binMap )
 
     # Density based threshold
     else:
-        binMap, gliThreshold = self.binarizeAccordingToDensity(filteredGLIMap, currentVoidRatio, outputFilesLocation, sampleName )
-        voidRatioCT = self.calcVoidRatio( binMap )
+        binMap, gliThreshold = binarizeAccordingToDensity(filteredGLIMap, currentVoidRatio, outputFilesLocation, sampleName )
+        voidRatioCT = calcVoidRatio( binMap )
 
     # EDM
-    edMap = self.obtainEuclidDistanceMap( binMap )
+    edMap = obtainEuclidDistanceMap( binMap )
 
     # Markers
-    edPeakMrkrMap = self.obtainLocalMaximaMarkers( edMap )
+    edPeakMrkrMap = obtainLocalMaximaMarkers( edMap )
 
     # Labelled Map
-    labelledMap = self.obtainLabelledMapUsingWaterShedAlgorithm( binMap, edMap, edPeakMrkrMap, outputFilesLocation )
+    labelledMap = obtainLabelledMapUsingWaterShedAlgorithm( binMap, edMap, edPeakMrkrMap, outputFilesLocation )
 
     # Correction of labelled map
-    lblCorrectionMethod, correctedLabelledMap = self.fixErrorsInSegmentation( labelledMap )
+    lblCorrectionMethod, correctedLabelledMap = fixErrorsInSegmentation( labelledMap )
 
     # Returns
     return gliThreshold, binMap, voidRatioCT, edMap, edPeakMrkrMap, lblCorrectionMethod, correctedLabelledMap
 
-def binarizeAccordingToOtsu( self, gliMapToBinarize, outputLocation, sampleName ):
+def binarizeAccordingToOtsu( gliMapToBinarize, outputLocation, sampleName ):
     print('\nRunning Otsu Binarization')
     print('----------------------------*')
     otsuThreshold = threshold_otsu( gliMapToBinarize )      
@@ -61,13 +61,13 @@ def binarizeAccordingToOtsu( self, gliMapToBinarize, outputLocation, sampleName 
 
     binaryMap[ np.where( gliMapToBinarize > otsuThreshold ) ] = 1
     binaryMap = binaryMap.astype( int )
-    e1 = self.calcVoidRatio( binaryMap )
+    e1 = calcVoidRatio( binaryMap )
 
-    binaryMap = self.fillHoles( binaryMap )
-    e2 = self.calcVoidRatio( binaryMap )        
+    binaryMap2 = fillHoles( binaryMap )
+    e2 = calcVoidRatio( binaryMap2 )        
 
-    binaryMap = self.removeSpecks( binaryMap )      
-    e3 = self.calcVoidRatio( binaryMap ) 
+    binaryMap3 = removeSpecks( binaryMap )      
+    e3 = calcVoidRatio( binaryMap3 ) 
 
     print( 'Global Otsu threshold = %f' % otsuThreshold )
     print( 'Void ratio after threshold = %f' % e1 )  
@@ -86,22 +86,22 @@ def binarizeAccordingToOtsu( self, gliMapToBinarize, outputLocation, sampleName 
     print('Output file saved as ' + otsuThresholdFileName)
     print('---------------------*')
 
-    return binaryMap, otsuThreshold 
+    return binaryMap3, otsuThreshold 
 
-def binarizeAccordingToUserThreshold( self, gliMapToBinarize, outputLocation, sampleName):
+def binarizeAccordingToUserThreshold( gliMapToBinarize, outputLocation, sampleName):
     userThreshold = int( input( 'Enter user threshold: ' ) )        
     binaryMap = np.zeros_like( gliMapToBinarize )        
     binaryMap[ np.where( gliMapToBinarize > userThreshold ) ] = 1
     binaryMap = binaryMap.astype( int )
-    e1 = self.calcVoidRatio( binaryMap ) 
+    e1 = calcVoidRatio( binaryMap ) 
 
     # Filling Holes
     binaryMap = fillHoles( binaryMap )      
-    e2 = self.calcVoidRatio( binaryMap )    
+    e2 = calcVoidRatio( binaryMap )    
 
     # Removing specks
-    binaryMap = self.removeSpecks( binaryMap )
-    e3 = self.calcVoidRatio( binaryMap )     
+    binaryMap = removeSpecks( binaryMap )
+    e3 = calcVoidRatio( binaryMap )     
 
     print( 'Global User threshold = %f' % userThreshold )
     print( 'Void ratio after threshold = %f' % e1 )  
@@ -122,10 +122,10 @@ def binarizeAccordingToUserThreshold( self, gliMapToBinarize, outputLocation, sa
 
     return binaryMap, userThreshold
 
-def binarizeAccordingToDensity( self, gliMapToBinarize, knownVoidRatio, outputLocation, sampleName):
-    otsuBinMap, otsuThreshold = self.binarizeAccordingToOtsu(gliMapToBinarize, outputLocation, sampleName)
+def binarizeAccordingToDensity(gliMapToBinarize, knownVoidRatio, outputLocation, sampleName):
+    otsuBinMap, otsuThreshold = binarizeAccordingToOtsu(gliMapToBinarize, outputLocation, sampleName)
     currentThreshold = otsuThreshold
-    currentVoidRatio = self.calcVoidRatio( otsuBinMap )
+    currentVoidRatio = calcVoidRatio( otsuBinMap )
     targetVoidRatio = knownVoidRatio
     greyLvlMap = gliMapToBinarize
 
@@ -171,10 +171,10 @@ def binarizeAccordingToDensity( self, gliMapToBinarize, knownVoidRatio, outputLo
         currentBinaryMap = np.zeros_like( greyLvlMap )        
         currentBinaryMap[ np.where( greyLvlMap > currentThreshold ) ] = 1
 
-        currentBinaryMap = self.fillHoles( currentBinaryMap )
-        currentBinaryMap = self.removeSpecks( currentBinaryMap )
+        currentBinaryMap = fillHoles( currentBinaryMap )
+        currentBinaryMap = removeSpecks( currentBinaryMap )
 
-        currentVoidRatio = self.calcVoidRatio( currentBinaryMap )
+        currentVoidRatio = calcVoidRatio( currentBinaryMap )
         deltaVoidRatio = targetVoidRatio - currentVoidRatio
 
         print( '\nIteration %d:' % iterationNum )
@@ -202,7 +202,7 @@ def binarizeAccordingToDensity( self, gliMapToBinarize, knownVoidRatio, outputLo
 
     return currentBinaryMap
 
-def calcVoidRatio(self, binaryMapforVoidRatioCalc):
+def calcVoidRatio(binaryMapforVoidRatioCalc):
     '''
     Parameters
     ----------
@@ -220,7 +220,7 @@ def calcVoidRatio(self, binaryMapforVoidRatioCalc):
     currentVoidRatio = ( volTotal - volSolids ) / volSolids
     return currentVoidRatio
 
-def fillHoles( self, oldBinaryMap ):
+def fillHoles( oldBinaryMapWithHoles ):
     '''
     Parameters
     ----------
@@ -232,10 +232,10 @@ def fillHoles( self, oldBinaryMap ):
     newBinaryMap holes in the map is filled
 
     '''
-    newBinaryMap = fillHoles( oldBinaryMap )
-    return newBinaryMap.astype(int) 
+    newNoHoleBinaryMap = binary_fill_holes( oldBinaryMapWithHoles )
+    return newNoHoleBinaryMap.astype(int) 
 
-def removeSpecks( self, oldBinaryMap ):
+def removeSpecks( oldBinaryMapWithSpecks ):
     '''
     Parameters
     ----------
@@ -247,17 +247,17 @@ def removeSpecks( self, oldBinaryMap ):
     newBinaryMap with white specks in the map removed
 
     '''
-    newBinaryMap = removeSpecks( oldBinaryMap )   
-    return newBinaryMap.astype(int)
+    newNoSpekBinaryMap = binary_opening( oldBinaryMapWithSpecks )   
+    return newNoSpekBinaryMap.astype(int)
 
-def obtainEuclidDistanceMap( self, binaryMapForEDM ):
+def obtainEuclidDistanceMap(binaryMapForEDM ):
     print('\nFinding Euclidian distance map (EDM)')
     print('------------------------------------*')
     edMap = edt( binaryMapForEDM )             
     print( "EDM Created" )        
     return edMap
 
-def obtainLocalMaximaMarkers( self, edMapForPeaks ):
+def obtainLocalMaximaMarkers( edMapForPeaks ):
     '''
     Fix this to be better at obtaining markers
     Expected number of particles?
@@ -284,7 +284,7 @@ def obtainLocalMaximaMarkers( self, edMapForPeaks ):
 
     return edmPeakMarkers
 
-def obtainLabelledMapUsingWaterShedAlgorithm(self, binaryMap, euclidDistMap, edPeaksMap):
+def obtainLabelledMapUsingWaterShedAlgorithm(binaryMap, euclidDistMap, edPeaksMap):
     print( '\nSegmenting particles by topological watershed' )
     binMask = binaryMap.astype( bool )
     invertedEdMap = -euclidDistMap
@@ -292,84 +292,146 @@ def obtainLabelledMapUsingWaterShedAlgorithm(self, binaryMap, euclidDistMap, edP
     print( 'Watershed segmentation complete' )
     return labelledMap
 
-def fixErrorsInSegmentation(self, labelledMapForOSCorr):
+def fixErrorsInSegmentation(labelledMapForOSCorr):
     print('\nEntering label correction')
     print('---------------------------*')
-    
-    useDefaultAreaLimit = int(input('Use default area limit (px) as 25 ([y]/n): '))
+
+    useDefaultAreaLimit = input('Use default area limit (px) as 25 ([y]/n): ')
     if useDefaultAreaLimit.lower() == 'n':
-        areaLimit = int(input('Enter area limit (px): '))
+        areaLimit = input('Enter area limit (px): ').astype(int)
     else: areaLimit = int(25)
 
-    lastLabel = labelledMap.max()
+    lastLabel = labelledMapForOSCorr.max()
     currentLabel = 1
     correctedLabelMap = labelledMapForOSCorr
-    
+
     # Loop through labels till all labels are merged
     while currentLabel <= lastLabel:
-        isEdgeLable = self.checkIfEdgeLabel( correctedLabelMap, currentLabel )
+        isEdgeLabel = checkIfEdgeLabel( correctedLabelMap, currentLabel )
 
         # If edge label, move to next label
         if isEdgeLabel == True:
-            print('Label %d is an edge label, moving to next label\n' % currentLabel)
+            print('Label %d is an edge label, moving to next label' % currentLabel)
             currentLabel = currentLabel +1
-        
+
         # If edge label, check contacting labels
-        else: 
-            contactLabel, contactArea = SOMEFUNCTION(correctedLabelMap, currentLabel)
-            
+        else:
+            contactLabel, contactArea = slab.contactingLabels(correctedLabelMap, currentLabel, areas=True)
+
             for positionNumber in range(0, contactArea.shape[0]):
-                
-                updateCurrentLabel = True    
-                
+
+                updateCurrentLabel = True
+
                 if contactArea[positionNumber] > areaLimit:
                     print('Area between label %d and %d is greater than limit' %(currentLabel, contactLabel[positionNumber]))
-                
+
                     if currentLabel < contactLabel[positionNumber]: 
                         correctedLabelMap[np.where(correctedLabelMap == contactLabel[positionNumber])] = int(currentLabel)
-                        correctedLabelMap = self.moveLabelsUp(correctedLabelMap,contactLabel[positionNumber])
+
+                        if VERBOSE: print('Merging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
+                        correctedLabelMap = moveLabelsUp(correctedLabelMap,contactLabel[positionNumber])
                         lastLabel = lastLabel - 1
                         updateCurrentLabel = False
-                        if VERBOSE: print('Merging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
-                        break
-                    
-                    else:
-                        correctedLabelMap[np.where(correctedLabelMap == currentLabel)] = int(contactLabel[positionNumber])
-                        correctedLabelMap = self.moveLabelsUp(correctedLabelMap,currentLabel)
-                        lastLabel = lastLabel - 1
-                        currentLable = contactLabel[positionNumber]
-                        updateCurrentLabel = False
-                        if VERBOSE: print('Merging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
+
                         break
 
-                else: if VERBOSE: print('Area between label %d and %d is ok' %(currentLabel, contactLabel[positionNumber]))
+                    else:
+                        correctedLabelMap[np.where(correctedLabelMap == currentLabel)] = int(contactLabel[positionNumber])
+
+                       if VERBOSE: print('Merging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
+
+                        correctedLabelMap = moveLabelsUp(correctedLabelMap,currentLabel)
+                        lastLabel = lastLabel - 1
+                        currentLabel = contactLabel[positionNumber]
+                        updateCurrentLabel = False
+                        break
+
+                else:
+                    print('Area between label %d and %d is ok' % ( currentLabel, contactLabel[positionNumber]))
 
             if updateCurrentLabel == True:
                 currentLabel = currentLabel + 1
                 print( 'Moving to next label %d now' % currentLabel )
-            else: print( 'Checking for label %d now' % currentLabel )
+            else: print( 'Checking from label %d onwards now' % currentLabel )
 
     print('Label edition completed.')
     return correctedLabelMap
 
-def moveLabelsUp(self, labelMapToFix, labelStartingWhichMoveUp):
+def getTableOfContactAndArea(labelledMapForContactAndArea):
     '''
+    RETURN:
+        np array of shape: Number of contacts X 7
+            contactingLabel1
+            contactingLabel2
+            contactArea
+            normalZZ
+            normalYY
+            normalXX
+            note
     '''
 
-def removeEdgeLabels(self, labelledMapForEdgeLabelRemoval):
+def getTableOfContactingLabels(labelledMapForContactDetection):
+    '''
+    RETURN:
+        np Array of shape: Number of contacts X 2
+            contactingLabel1
+            contactingLabel2
+    '''
+
+def getContactAreaAndNormals(labelledMap, contactList):
+    '''
+    RETURN:
+        np Array of shape Number of contact X 3
+            contactingLabel1
+            contactingLabel2
+            contactArea
+            contactNormalZZ
+            contactNormalYY
+            contactNormalXX
+    '''
+
+def moveLabelsUp(labelMapToFix, labelStartingWhichMoveUp):
+    print('Updating Labels after %d' % labelStartingWhichMoveUp)
+    deltaMatrix = np.zeros_like(labelMapToFix)
+    deltaMatrix[np.where(labelMapToFix > labelStartingWhichMoveUp)]=1
+    fixedLabelMap = labelMapToFix - deltaMatrix
+    return fixedLabelMap
+
+def removeEdgeLabels(labelledMapForEdgeLabelRemoval):
     '''
     Check edges,
     for each 
     '''
 
-def checkIfEdgeLabel(self, labelledMap, label): 
-    '''
-    get point cloud
-    check if any point on point cloud is at the edges
-    z,y,x = 0, MaxZ
-    If yes return true
-    '''
+def checkIfEdgeLabel(labelledMap, label): 
     pointCloudArray = np.where(labelledMap == label)
+
+    maxZindex = labelledMap.shape[0] - 1
+    maxYindex = labelledMap.shape[1] - 1
+    maxXindex = labelledMap.shape[2] - 1
+
+    if 0 in pointCloudArray[0]:
+        return True
+    else:
+        if maxZindex in pointCloudArray[0]:
+            return True
+        else:
+            if 0 in pointCloudArray[1]:
+                return True
+            else:
+                if maxYindex in pointCloudArray[1]:
+                    return True
+                else:
+                    if 0 in pointCloudArray[2]:
+                        return True
+                    else:
+                        if maxXindex in pointCloudArray[2]: 
+                            return True
+                        else: 
+                            return False
+
+
+
 
 
 

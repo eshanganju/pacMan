@@ -2,15 +2,14 @@ import spam.label as slab
 import skimage.external.tifffile as tf
 from classes import Segment
 
-s = Segment.Segment()
 
-knownVoidRatio = 0.4983
+knownVoidRatio = 0.5405
 outputLocation = '/home/eg/codes/pacOutput/'
-sampleName = 'otc-1500n'
+sampleName = 'otc-0n-small'
 
-fgli = tf.imread('/home/eg/codes/pacOutput/otc-1500n-fgliMap.tiff')
-binMap = s.binarizeAccordingToDensity(fgli,knownVoidRatio,outputLocation,sampleName)
+fgli = tf.imread('/home/eg/codes/pacOutput/otc-0n-small-fgliMap.tiff')
+binMap = Segment.binarizeAccordingToDensity(fgli,knownVoidRatio,outputLocation,sampleName)
 
 labMap = slab.watershed(binMap) 
 
-tf.imsave('/home/eg/codes/pacOutput/specialSPAM/otc-1500n-labMapITKWatershed.tiff',labMap)
+tf.imsave('/home/eg/codes/pacOutput/specialSPAM/otc-0n-small-labMapITKWatershed.tiff',labMap)
