@@ -1,3 +1,7 @@
+'''
+Segment
+'''
+
 # Importing libraries
 from scipy.ndimage.morphology import distance_transform_edt as edt
 from scipy.ndimage.morphology import binary_fill_holes
@@ -56,18 +60,18 @@ def performEDTWS( filteredGLIMap, currentVoidRatio, outputFilesLocation, sampleN
 def binarizeAccordingToOtsu( gliMapToBinarize, outputLocation, sampleName ):
     print('\nRunning Otsu Binarization')
     print('----------------------------*')
-    otsuThreshold = threshold_otsu( gliMapToBinarize )      
-    binaryMap = np.zeros_like( gliMapToBinarize )        
+    otsuThreshold = threshold_otsu( gliMapToBinarize )
+    binaryMap = np.zeros_like( gliMapToBinarize )
 
     binaryMap[ np.where( gliMapToBinarize > otsuThreshold ) ] = 1
     binaryMap = binaryMap.astype( int )
     e1 = calcVoidRatio( binaryMap )
 
     binaryMap2 = fillHoles( binaryMap )
-    e2 = calcVoidRatio( binaryMap2 )        
+    e2 = calcVoidRatio( binaryMap2 )
 
-    binaryMap3 = removeSpecks( binaryMap )      
-    e3 = calcVoidRatio( binaryMap3 ) 
+    binaryMap3 = removeSpecks( binaryMap )
+    e3 = calcVoidRatio( binaryMap3 )
 
     print( 'Global Otsu threshold = %f' % otsuThreshold )
     print( 'Void ratio after threshold = %f' % e1 )  
@@ -264,16 +268,16 @@ def obtainLocalMaximaMarkers( edMapForPeaks ):
     Particle size?
     '''
     print('\nObtaining peaks of EDM...')
-    print('------------------------------*')  
+    print('------------------------------*')
     h = int( input( 'Enter the minimum height for a peak (px): ') )
     print( 'Finding local maxima in EDM' )
 
-    edmPeakMarkers = hmax( edMapForPeaks, h ).astype(int)    
+    edmPeakMarkers = hmax( edMapForPeaks, h ).astype(int)
 
     print( 'Found local maximas in EDM (greater than %i px)' % h )
 
     print( 'Resetting count of peaks' )
-    count=0    
+    count=0
     for frame in range( 0, edmPeakMarkers.shape[ 0 ] ):
         for row in range( 0, edmPeakMarkers.shape[ 1 ] ):
             for col in range( 0, edmPeakMarkers.shape[ 2 ] ):
@@ -338,7 +342,7 @@ def fixErrorsInSegmentation(labelledMapForOSCorr):
                     else:
                         correctedLabelMap[np.where(correctedLabelMap == currentLabel)] = int(contactLabel[positionNumber])
 
-                       if VERBOSE: print('Merging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
+                        if VERBOSE: print('Merging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
 
                         correctedLabelMap = moveLabelsUp(correctedLabelMap,currentLabel)
                         lastLabel = lastLabel - 1

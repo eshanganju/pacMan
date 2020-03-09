@@ -1,5 +1,5 @@
 '''
-Reader class
+Reader
 '''
 
 
@@ -11,61 +11,89 @@ import numpy as np
 import glob
 import gc
 
-class Reader:
+def readTiffStack( folderAndFileLocation, cntrZ, cntrY, cntrX, lngt, calib ):
+    print('\nReading tiff stakc from: ' + folderAndFileLocation)
+    upperSlice = cntrZ + round( ( lngt / 2 ) / calib )
+    lowerSlice = cntrZ - round( ( lngt / 2 ) / calib )
+    upperRow = cntrY + round( ( lngt / 2 ) / calib )
+    lowerRow = cntrY - round( ( lngt / 2 ) / calib )
+    upperCol = cntrX + round( ( lngt / 2 ) / calib )
+    lowerCol = cntrX - round( ( lngt / 2 ) / calib )
 
-    def __init__( self ):
-        print('\n-----------------')
-        print('Reader activated')
-        print('-----------------')
-
-
-    def readTiffStack( self, folderAndFileLocation, cntrZ, cntrY, cntrX, lngt, calib ):       
-        print('\nReading tiff stakc from: ' + folderAndFileLocation) 
-        upperSlice = cntrZ + round( ( lngt / 2 ) / calib )
-        lowerSlice = cntrZ - round( ( lngt / 2 ) / calib )
-        upperRow = cntrY + round( ( lngt / 2 ) / calib )
-        lowerRow = cntrY - round( ( lngt / 2 ) / calib )
-        upperCol = cntrX + round( ( lngt / 2 ) / calib )
-        lowerCol = cntrX - round( ( lngt / 2 ) / calib )
-
-        dataBig = tiffy.imread( folderAndFileLocation )
-        data = dataBig[ lowerSlice:upperSlice, lowerRow : upperRow, lowerCol : upperCol ] 
-        return data 
+    dataBig = tiffy.imread( folderAndFileLocation )
+    data = dataBig[ lowerSlice:upperSlice, lowerRow : upperRow, lowerCol : upperCol ]
+    return data
 
 
-    def readTiffFileSequence( self, folderLocation, cntrZ, cntrY, cntrX, lngt, calib):
-        print( 'Reading tiff files from: ' + folderLocation )
+def readTiffFileSequence( folderLocation, cntrZ, cntrY, cntrX, lngt, calib):
+    print( 'Reading tiff files from: ' + folderLocation )
 
-        upperSlice = cntrZ + round( ( lngt / 2 ) / calib )
-        lowerSlice = cntrZ - round( ( lngt / 2 ) / calib )
-        upperRow = cntrY + round( ( lngt / 2 ) / calib )
-        lowerRow = cntrY - round( ( lngt / 2 ) / calib )
-        upperCol = cntrX + round( ( lngt / 2 ) / calib )
-        lowerCol = cntrX - round( ( lngt / 2 ) / calib )
+    upperSlice = cntrZ + round( ( lngt / 2 ) / calib )
+    lowerSlice = cntrZ - round( ( lngt / 2 ) / calib )
+    upperRow = cntrY + round( ( lngt / 2 ) / calib )
+    lowerRow = cntrY - round( ( lngt / 2 ) / calib )
+    upperCol = cntrX + round( ( lngt / 2 ) / calib )
+    lowerCol = cntrX - round( ( lngt / 2 ) / calib )
 
-        print( 'Reading files from: ' + folderLocation )      
-        searchString = folderLocation + '/*tiff'       
-        fileList = glob.glob( searchString )        
+    print( 'Reading files from: ' + folderLocation )
+    searchString = folderLocation + '/*tif'
+    searchString2 = folderLocation + '/*tiff'
+
+    fileList1 = glob.glob(searchString)
+    fileList2 = glob.glob(searchString2)
+
+    if len(fileList1)>len(fileList2):
+        fileList = fileList1
+        fileList.sort()
+    else:
+        fileList = fileList2
         fileList.sort()
 
-        numTiffFilesInFolder = len(fileList)
-        numTiffFilesToRead = ( upperSlice - lowerSlice)
+    numTiffFilesInFolder = len(fileList)
+    numTiffFilesToRead = ( upperSlice - lowerSlice)
 
-        print('Number of files in the folder %d' % numTiffFilesInFolder)
-        print('Number of files to read %d' % numTiffFilesToRead)
+    print('Number of files in the folder %d' % numTiffFilesInFolder)
+    print('Number of files to read %d' % numTiffFilesToRead)
 
-        tempFile = tiffy.imread( str( fileList[ 0 ] ) ) 
-        rows = tempFile.shape[ 0 ]
-        columns = tempFile.shape[ 1 ]
-        del tempFile
+    tempFile = tiffy.imread( str( fileList[ 0 ] ) )
+    rows = tempFile.shape[ 0 ]
+    columns = tempFile.shape[ 1 ]
+    del tempFile
 
-        gliMap = np.empty( ( numTiffFilesToRead, rows, columns ) ) 
+    gliMap = np.empty( ( numTiffFilesToRead, rows, columns ) )
 
-        # Reading individual files - file number offset
-        for i in range( lowerSlice , upperSlice ):
-            gliMap[ i - lowerSlice ] = tiffy.imread ( fileList [ i ] )    
-            print('Read ' + str( i - lowerSlice + 1 ) + '/' + str( numTiffFilesToRead ) + ' files...')
+    # Reading individual files - file number offset
+    for i in range( lowerSlice , upperSlice ):
+        gliMap[ i - lowerSlice ] = tiffy.imread ( fileList [ i ] )
+        print('Read ' + str( i - lowerSlice + 1 ) + '/' + str( numTiffFilesToRead ) + ' files...')
 
-        print( '\nFinished reading files...' ) 
-        croppedGLIMap = gliMap[ :, lowerRow : upperRow, lowerCol : upperCol ] 
-        return croppedGLIMap
+    invGliMap = invertImageData(gliMap)
+    print( '\nFinished reading files...' )
+    croppedGLIMap = invGliMap[ :, lowerRow : upperRow, lowerCol : upperCol ]
+    return croppedGLIMap
+
+def invertImageData( gliMapToInvert ):
+    invertedGliMap = gliMapToInvert
+
+    invertZ = input('Invert Z direction(y/[n]):')
+    if invertZ.lower() == 'y': invertZ = True
+    else: invertZ = False
+
+    invertY = input('Invert Y direction(y/[n]):')
+    if invertY.lower() == 'y': invertY = True
+    else: invertY = False
+
+    invertX = input('Invert X direction(y/[n]):')
+    if invertX.lower() == 'y': invertX = True
+    else: invertX = False
+
+    if invertZ == True:
+        invertedGliMap = np.flip( invertedGliMap , 0 )
+
+    if invertY == True:
+        invertedGliMap = np.flip( invertedGliMap , 1 )
+
+    if invertX == True:
+        invertedGliMap = np.flip( invertedGliMap , 2 )
+
+    return invertedGliMap

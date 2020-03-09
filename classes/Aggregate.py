@@ -16,7 +16,7 @@ class Aggregate:
         self.bitDepth = bitDpth
         self.gliMax = 2 ** bitDpth - 1
         self.calib = sampleCalib
-        
+
         self.sampleEdgeLength = cubeEdgeLength
         self.sampleCenterZ = centerZ
         self.sampleCenterY = centerY
@@ -27,7 +27,7 @@ class Aggregate:
 
         self.currentvoidRatioMeasured = voidRatioKnown
         self.currentvoidRatioFromCT = 0.0
-        
+
         self.dataTakenFromTiffStack = dataFromTiffStack
         self.locationOfDataFile = tiffFileLocation
 
@@ -36,24 +36,24 @@ class Aggregate:
         self.imageNoise = np.zeros_like( self.filteredGreyLevelMap )
         self.greyLevelHistogram = np.zeros( ( self.gliMax, 2 ) )                    
         self.filteredGreyLevelHistogram = np.zeros( ( self.gliMax, 2 ) )
-       
+
         self.gliThreshold = 0
         self.binaryMap = np.zeros_like( self.greyLevelMap )
-        
+
         self.euclidDistanceMap = np.zeros_like( self.greyLevelMap )
         self.edPeakMarkers = np.zeros_like( self.greyLevelMap )
-        
+
         self.completeSegmentationMethod = '' 
         self.labelledMap = np.zeros_like( self.greyLevelMap )     
         self.particleList = [ ]         
         self.numberOfParticles = 0         
-        
+
         self.particleSizeDataSummaryFromEDTWS= np.zeros( ( 5000, 6 ) ) 
         self.grainSizeDistributionEquivalentSphereFromEDTWS = np.zeros( ( 5000, 2 ) )     
         self.grainSizeDistributionFeretMaxFromEDTWS = np.zeros( ( 5000, 2 ) )         
         self.grainSizeDistributionFeretMinFromEDTWS = np.zeros( ( 5000, 2 ) )             
         self.grainSizeDistributionFeretMedFromEDTWS = np.zeros( ( 5000, 2 ) )             
-                      
+
 
         print("\nAggregate activated")
         print('--------------------*')
