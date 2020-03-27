@@ -57,7 +57,7 @@ def performEDTWS( filteredGLIMap, currentVoidRatio, outputFilesLocation, sampleN
     # Returns
     return gliThreshold, binMap, voidRatioCT, edMap, edPeakMrkrMap, lblCorrectionMethod, correctedLabelledMap
 
-def binarizeAccordingToOtsu( gliMapToBinarize, outputLocation, sampleName ):
+def binarizeAccordingToOtsu( gliMapToBinarize ):
     print('\nRunning Otsu Binarization')
     print('----------------------------*')
     otsuThreshold = threshold_otsu( gliMapToBinarize )
@@ -74,23 +74,11 @@ def binarizeAccordingToOtsu( gliMapToBinarize, outputLocation, sampleName ):
     e3 = calcVoidRatio( binaryMap3 )
 
     print( 'Global Otsu threshold = %f' % otsuThreshold )
-    print( 'Void ratio after threshold = %f' % e1 )  
-    print( 'Void ratio after filling holes = %f' % e2 )   
-    print( 'Void ratio after removing specks = %f' % e3 )       
+    print( 'Void ratio after threshold = %f' % e1 )
+    print( 'Void ratio after filling holes = %f' % e2 )
+    print( 'Void ratio after removing specks = %f' % e3 )
 
-    # Saving files
-    otsuThresholdFileName = outputLocation + sampleName + '-otsuThresholdDetails.txt'
-    f = open( otsuThresholdFileName, 'w+' )        
-    f.write( 'Global Otsu threshold = %f' % otsuThreshold )
-    f.write( '\nVoid ratio after threshold = %f' % e1 )  
-    f.write( '\nVoid ratio after filling holes = %f' % e2 )   
-    f.write( '\nVoid ratio after removing specks = %f' % e3 )
-    f.close()
-
-    print('Output file saved as ' + otsuThresholdFileName)
-    print('---------------------*')
-
-    return binaryMap3, otsuThreshold 
+    return binaryMap3
 
 def binarizeAccordingToUserThreshold( gliMapToBinarize, outputLocation, sampleName):
     userThreshold = int( input( 'Enter user threshold: ' ) )        
@@ -288,11 +276,12 @@ def obtainLocalMaximaMarkers( edMapForPeaks ):
 
     return edmPeakMarkers
 
-def obtainLabelledMapUsingWaterShedAlgorithm(binaryMap, euclidDistMap, edPeaksMap):
-    print( '\nSegmenting particles by topological watershed' )
-    binMask = binaryMap.astype( bool )
-    invertedEdMap = -euclidDistMap
-    labelledMap = wsd( invertedEdMap, markers = edPeaksMap, mask = binMask )
+def obtainLabelledMapUsingITKWS( gliMap ):
+    print( '\nSegmenting particles by ITK topological watershed' )
+    binMask = binarizeAccordingToOtsu( gliMap )
+    edMap = obtainEuclidDistanceMap( binMask )
+    edPeaksMap = obtainLocalMaximaMarkers(edMap)
+    labelledMap = wsd( -edMap, markers = edPeaksMap, mask = binMask )
     print( 'Watershed segmentation complete' )
     return labelledMap
 

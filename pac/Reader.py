@@ -1,9 +1,8 @@
 '''
-Reader
+This library assists in reading and cropping the CT data files
 '''
 
-
-# General
+# General imports
 from skimage.util import img_as_float
 import skimage.external.tifffile as tiffy
 import matplotlib.pyplot as plt
