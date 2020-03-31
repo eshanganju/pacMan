@@ -14,8 +14,9 @@ import skimage.external.tifffile as tiffy
 import matplotlib.pyplot as plt
 import numpy as np
 import spam.label as slab
+import time
 
-
+# This is to plot all the text in the methods
 VERBOSE = True
 
 
@@ -238,6 +239,7 @@ def removeSpecks( oldBinaryMapWithSpecks ):
     -------
     newBinaryMap with white specks in the map removed
 
+
     '''
     newNoSpekBinaryMap = binary_opening( oldBinaryMapWithSpecks )   
     return newNoSpekBinaryMap.astype(int)
@@ -285,70 +287,108 @@ def obtainLabelledMapUsingITKWS( gliMap ):
     print( 'Watershed segmentation complete' )
     return labelledMap
 
-def fixErrorsInSegmentation(labelledMapForOSCorr):
-    print('\nEntering label correction')
+def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2):
+    print('\n---------------------------*')
+    print('Entering label correction')
     print('---------------------------*')
 
-    useDefaultAreaLimit = input('Use default area limit (px) as 25 ([y]/n): ')
-    if useDefaultAreaLimit.lower() == 'n':
-        areaLimit = input('Enter area limit (px): ').astype(int)
-    else: areaLimit = int(25)
+    areaLimit = int(input('Input area limit (px): '))
 
+    if pad > 0: labelledMapForOSCorr = applyPaddingToLabelledMap(labelledMapForOSCorr, pad)
     lastLabel = labelledMapForOSCorr.max()
     currentLabel = 1
     correctedLabelMap = labelledMapForOSCorr
+    timeStart = time.time()
 
-    # Loop through labels till all labels are merged
+    print('Currently padding is ' + str(pad) + ' px')
+
+    considerEdgeLabels = input("Consolidate edge labels also ([y]/n): ")
+    if considerEdgeLabels == 'n':
+        print('\tOk, not consolidating edge labels')
+        edgePad = pad
+    else:
+        print('\tOk, consolidating edge labels')
+        edgePad = 0
+
+    # Loop through labels till all OS labels are merged
     while currentLabel <= lastLabel:
-        isEdgeLabel = checkIfEdgeLabel( correctedLabelMap, currentLabel )
+        isEdgeLabel = checkIfEdgeLabel( correctedLabelMap, currentLabel, edgePad )
 
         # If edge label, move to next label
         if isEdgeLabel == True:
             print('Label %d is an edge label, moving to next label' % currentLabel)
-            currentLabel = currentLabel +1
+            currentLabel += 1
 
-        # If edge label, check contacting labels
+        # If not edge label, check contacting labels
         else:
             contactLabel, contactArea = slab.contactingLabels(correctedLabelMap, currentLabel, areas=True)
+            print('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
+            print('\tWith areas: ' + str( contactArea ) )
 
+            '''
+            TODO:
+                Read only those labels that have area larger than the limit - speed up the process
+                When consolidating the edge lables, account for non-contact labels
+            '''
+
+            # Check if any contact is greater than threshold area
+            '''
+            Check if any contact area is larger than a limit
+            find the first contact that is larger and merge
+            '''
             for positionNumber in range(0, contactArea.shape[0]):
-
-                updateCurrentLabel = True
-
                 if contactArea[positionNumber] > areaLimit:
                     print('Area between label %d and %d is greater than limit' %(currentLabel, contactLabel[positionNumber]))
 
-                    if currentLabel < contactLabel[positionNumber]: 
+                    if currentLabel < contactLabel[positionNumber]:
                         correctedLabelMap[np.where(correctedLabelMap == contactLabel[positionNumber])] = int(currentLabel)
-
-                        if VERBOSE: print('Merging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
+                        if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
                         correctedLabelMap = moveLabelsUp(correctedLabelMap,contactLabel[positionNumber])
-                        lastLabel = lastLabel - 1
-                        updateCurrentLabel = False
-
+                        lastLabel = correctedLabelMap.max()
+                        print( 'Checking from label %d again' % currentLabel )
                         break
 
                     else:
                         correctedLabelMap[np.where(correctedLabelMap == currentLabel)] = int(contactLabel[positionNumber])
-
-                        if VERBOSE: print('Merging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
-
+                        if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
                         correctedLabelMap = moveLabelsUp(correctedLabelMap,currentLabel)
-                        lastLabel = lastLabel - 1
+                        lastLabel = correctedLabelMap.max()
                         currentLabel = contactLabel[positionNumber]
-                        updateCurrentLabel = False
+                        print( 'Checking from label %d onwards now' % currentLabel )
                         break
-
                 else:
                     print('Area between label %d and %d is ok' % ( currentLabel, contactLabel[positionNumber]))
-
-            if updateCurrentLabel == True:
-                currentLabel = currentLabel + 1
-                print( 'Moving to next label %d now' % currentLabel )
-            else: print( 'Checking from label %d onwards now' % currentLabel )
+                    if positionNumber == contactArea.shape[0]-1:
+                        currentLabel = currentLabel + 1
+                        print( 'Moving to next label %d now' % currentLabel )
 
     print('Label edition completed.')
+
+    if pad > 0: correctedLabelMap = removePaddingFromLabelledMap(correctedLabelMap, pad)
+
+    timeEnd = time.time()
+    timeTaken = (timeEnd - timeStart)//60
+
+    print( 'Time taken for correction loop: ' + str( timeTaken ) + ' mins' )
+
     return correctedLabelMap
+
+def applyPaddingToLabelledMap(labelledMap, pad):
+    '''
+    Some spam function have problems with edge labels
+    This function applys a padding of zeros (2px) to the edges 
+    '''
+    paddedMap = labelledMap
+    padLabMap = np.zeros( ( labelledMap.shape[0]+2*pad, labelledMap.shape[0]+2*pad, labelledMap.shape[0]+2*pad ) )
+    padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ] = labelledMap
+    return padLabMap.astype(int)
+
+def removePaddingFromLabelledMap(padLabMap, pad):
+    '''
+    This removes padding around the 
+    '''
+    cleanLabMap = padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ].astype(int)
+    return cleanLabMap
 
 def getTableOfContactAndArea(labelledMapForContactAndArea):
     '''
@@ -384,47 +424,71 @@ def getContactAreaAndNormals(labelledMap, contactList):
     '''
 
 def moveLabelsUp(labelMapToFix, labelStartingWhichMoveUp):
-    print('Updating Labels after %d' % labelStartingWhichMoveUp)
+    print('\tUpdating Labels after %d' % labelStartingWhichMoveUp)
     deltaMatrix = np.zeros_like(labelMapToFix)
     deltaMatrix[np.where(labelMapToFix > labelStartingWhichMoveUp)]=1
     fixedLabelMap = labelMapToFix - deltaMatrix
     return fixedLabelMap
 
-def removeEdgeLabels(labelledMapForEdgeLabelRemoval):
-    '''
-    Check edges,
-    for each 
-    '''
+def removeEdgeLabels(labelledMapForEdgeLabelRemoval,pad=0):
+    labMap = labelledMapForEdgeLabelRemoval
+    numberOfLabels = labMap.max()
+    currentLabel = 1
+    print('\n\nRemoving Edge Labels...')
+    print('Starting total number of labels = ' + str(labMap.max()) + '\n')
 
-def checkIfEdgeLabel(labelledMap, label): 
+    while currentLabel <= numberOfLabels:
+        print('\nChecking label #' + str(currentLabel))
+        edgeLabel = checkIfEdgeLabel(labMap,currentLabel,pad)
+        if edgeLabel == True:
+            if VERBOSE: print('\tLabel #' + str(currentLabel) + ' is an on the edge: REMOVING')
+            labMap[np.where(labMap == currentLabel)] = int(0)
+            if VERBOSE: print('\tShifting labels up...')
+            labMap = moveLabelsUp(labMap,currentLabel)
+            numberOfLabels = labMap.max()
+        else:
+            if VERBOSE: print('\tLabel #' + str(currentLabel) + ' is not on the edge: KEEP')
+            currentLabel += 1
+
+    print( 'Total Number of labels remaining:' + str( numberOfLabels ) + '\n' )
+    return labMap
+
+def checkIfEdgeLabel(labelledMap, label, pad):
     pointCloudArray = np.where(labelledMap == label)
 
-    maxZindex = labelledMap.shape[0] - 1
-    maxYindex = labelledMap.shape[1] - 1
-    maxXindex = labelledMap.shape[2] - 1
+    z = pointCloudArray[0].reshape( 1 , pointCloudArray[ 0 ].shape[ 0 ] )
+    y = pointCloudArray[1].reshape( 1 , pointCloudArray[ 1 ].shape[ 0 ] )
+    x = pointCloudArray[2].reshape( 1 , pointCloudArray[ 2 ].shape[ 0 ] )
 
-    if 0 in pointCloudArray[0]:
+    zLower = 0 + pad
+    yLower = 0 + pad
+    xLower = 0 + pad
+
+    zUpper = labelledMap.shape[0]-1 - pad
+    yUpper = labelledMap.shape[1]-1 - pad
+    xUpper = labelledMap.shape[2]-1 - pad
+
+    lowerEdge = np.any( z == zLower ) + np.any( y == yLower  ) + np.any( x == xLower  )
+    upperEdge = np.any( z == zUpper ) + np.any( y == yUpper  ) + np.any( x == xUpper  )
+
+    if lowerEdge + upperEdge > 0:
         return True
-    else:
-        if maxZindex in pointCloudArray[0]:
-            return True
-        else:
-            if 0 in pointCloudArray[1]:
-                return True
-            else:
-                if maxYindex in pointCloudArray[1]:
-                    return True
-                else:
-                    if 0 in pointCloudArray[2]:
-                        return True
-                    else:
-                        if maxXindex in pointCloudArray[2]: 
-                            return True
-                        else: 
-                            return False
+    else: return False
 
+def countEdgeLabels(labelledMap):
+    countTrue = 0
+    countFalse = 0
+    for i in range(1,labelledMap.max() + 1):
 
+        edge = checkIfEdgeLabel(labelledMap,i,pad=0)
 
+        if VERBOSE: print('Label ' + str(i) + ' is edge? : ' + str(edge))
 
+        if edge == True: countTrue+=1
+        else: countFalse+=1
+
+    print('Total Number of labels: ' + str( labelledMap.max() ) )
+    print('Edge labels: ' + str( countTrue ) )
+    print('Non-edge labels: ' + str( countFalse ) )
 
 

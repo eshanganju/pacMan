@@ -74,7 +74,7 @@ def readTiffFileSequence( folderLocation, cntrZ, cntrY, cntrX, lngt, calib):
 def invertImageData( gliMapToInvert ):
     invertedGliMap = gliMapToInvert
 
-    invertZ = input('Invert Z direction(y/[n]):')
+    invertZ = input('\nInvert Z direction(y/[n]):')
     if invertZ.lower() == 'y': invertZ = True
     else: invertZ = False
 

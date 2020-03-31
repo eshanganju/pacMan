@@ -4,6 +4,14 @@ Misc notes
   1. We choose a smaller cube to prevent effects of edge
   2. Cube should be big enough to accomodate the REV
 
+Code notes:
+  20200331
+    The code works well till segmentation - the edges are removed and 
+    the dilation error that creeps up in the contactList function in 
+    spam is corrected by applying a padding around the sample.
+
+    There is undersegmentation of the particle in the edges
+    I see some particles within particles.
 _________________________________________________
 OTC
   Starting Details:
