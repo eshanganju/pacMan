@@ -40,9 +40,13 @@ for edgeLength in range( edgeLengthMin , edgeLengthMin + 1 ):
     labMap = Segment.obtainLabelledMapUsingITKWS(gliMap)
     corLabMap = Segment.fixErrorsInSegmentation(labMap, pad = 2)
     neCorLabMap = Segment.removeEdgeLabels(corLabMap)
+    gsd1, gsd2, gsd3 = Measure.gsd(neCorLabMap)
 
     '''
-     
+    DO:
+        1. Get GSD for different size params
+        2. Get relative breakage for different size param
+        3. Get contact vectors, fabric tensor and plots for contact
     '''
 
     #print('\nLabelled map: ')

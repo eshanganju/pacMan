@@ -6,18 +6,26 @@ Measure class
 import numpy as np
 import math
 import statistics
-import pandas as pd
 import scipy
 import spam.label as slab
 
+def gsd(labelledMap):
+    gss = getParticleSize( labelledMap )
+    gsd1 = getGrainSizeDistribution( gss , sizeParam=1 )
+    gsd2 = getGrainSizeDistribution( gss , sizeParam=2 )
+    gsd3 = getGrainSizeDistribution( gss , sizeParam=3 )
+    return gsd1, gsd2, gsd3
 
-def measureParticleSize(labelledMapForParticleSizeAnalysis):
+def getParticleSize(labelledMapForParticleSizeAnalysis):
     numberOfParticles = int(labelledMapForParticleSizeAnalysis.max())
 
     # Particle size summary columns (0) Index, (1) Volume, (2) Eqsp, (3) Centroidal - max, (4) Centroidal - med, (5) Centroidal - min, (6) and (7) are open
     particleSizeDataSummary = np.zeros( ( numberOfParticles + 1 , 8 ) )
     print( "Starting measurement of particles..." )
 
+    '''
+    TODO: This can be parallelized
+    '''
     for particleNum in range( 1, numberOfParticles + 1 ):
         print( "Computing size of", particleNum, "/", numberOfParticles, "particle" )
         particleSizeDataSummary[particleNum, 0] = particleNum
@@ -48,7 +56,7 @@ def measureParticleSize(labelledMapForParticleSizeAnalysis):
         meanMatrix[ :, 1 ] = meanY
         meanMatrix[ :, 2 ] = meanX
 
-        centeredLocationData = pointCloud - meanMatrix 
+        centeredLocationData = pointCloud - meanMatrix
 
         rotationMatrix = np.zeros( ( 3, 3 ) )
 
@@ -58,47 +66,36 @@ def measureParticleSize(labelledMapForParticleSizeAnalysis):
 
         rotCentPointCloud = ( np.matmul( rotationMatrix, centeredLocationData.T ) ).T
 
-        feretDims = np.zeros( ( 3, 1 ) )
-        feretDims[ 0 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 0 ].min()
-        feretDims[ 1 ] = rotCentPointCloud[ :, 1 ].max() - rotCentPointCloud[ :, 1 ].min()
-        feretDims[ 2 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 2 ].min()
+        caDims = np.zeros( ( 3, 1 ) )
+        caDims[ 0 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 0 ].min()
+        caDims[ 1 ] = rotCentPointCloud[ :, 1 ].max() - rotCentPointCloud[ :, 1 ].min()
+        caDims[ 2 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 2 ].min()
 
-        feretMax = max( feretDims )[ 0 ]
-        feretMin = min( feretDims )[ 0 ]
-        feretMed = statistics.median( feretDims )[ 0 ]
+        caMax = max( feretDims )[ 0 ]
+        caMin = min( feretDims )[ 0 ]
+        caMed = statistics.median( feretDims )[ 0 ]
 
-        particleSizeDataSummary[particleNum, 3] = feretMax
-        particleSizeDataSummary[particleNum, 4] = feretMed
-        particleSizeDataSummary[particleNum, 5] = feretMin
+        particleSizeDataSummary[particleNum, 3] = caMax
+        particleSizeDataSummary[particleNum, 4] = caMed
+        particleSizeDataSummary[particleNum, 5] = caMin
 
     return particleSizeDataSummary
 
-def computeGrainSizeDistribution(particleSizeSummary):
-    outputDF = particleSizeSummary.copy()
-    totalVol = outputDF['vol'].sum()
-    outputDF['mass%'] = outputDF['vol']/totalVol*100
+def getGrainSizeDistribution(psSummary,sizeParam=1):
+    print('\nGetting GSD for size param #' + str( sizeParam ) )
+    label = psSummary[ : , 0 ].reshape( psSummary.shape[ 0 ] , 1 )
+    vol = psSummary[ : , 1 ].reshape( psSummary.shape[ 0 ] , 1 ) 
+    size = psSummary[: , sizeParam + 1 ].reshape( psSummary.shape[ 0 ] , 1 )
+    gss = np.append( label, vol , 1 ).reshape( psSummary.shape[ 0 ] , 2 )
+    gss = np.append( gss , size , 1 ).reshape( psSummary.shape[ 0 ] , 3 )
 
-    # EQSP
-    outputDF.sort_values('eqsp',inplace=True)
-    outputDF.reset_index(drop=True)
-    outputDF['eqspPP%'] = outputDF['mass%'].cumsum()
+    gss = gss[ gss[ : , 2 ].argsort() ]
+    totalVol = np.sum( gss[ : , 1 ] )
+    pp = ( np.cumsum( gss[ : , 1 ] ) / totalVol * 100 ).reshape( gss.shape[ 0 ] , 1 )
 
-    # caMax
-    outputDF.sort_values('caMax',inplace=True)
-    outputDF.reset_index(drop=True)
-    outputDF['caMaxPP%'] = outputDF['mass%'].cumsum()
-
-    # caMed
-    outputDF.sort_values('caMed',inplace=True)
-    outputDF.reset_index(drop=True)
-    outputDF['caMedPP%'] = outputDF['mass%'].cumsum()
-
-    # caMin
-    outputDF.sort_values('caMin',inplace=True)
-    outputDF.reset_index(drop=True)
-    outputDF['caMinPP%'] = outputDF['mass%'].cumsum()
-
-    return outputDF
+    gsdPP = np.append( gss , pp, 1 )
+    print('\tDone')
+    return gsdPP
 
 def computeVolumeOfLabel( labelledMap, label):
     labelOnlyMap = np.zeros_like(labelledMap)
@@ -114,27 +111,19 @@ def getZYXLocationOfLabel( labelledMap, label):
     zyxLocationData[:,2] = particleLocationArrays[2]
     return zyxLocationData
 
-# Morphology
-def measureMorphology(aggregate):
+def getMorphology(aggregate):
     print("Measuring particle morphology...")
     '''
     Compute some measure of roundness for a particle
     Sphericity - stick to probably ratio of "Feret sizes"
     '''
 
-# REV size analysis
-def revSizeAnalysis( aggregate ):
-    print('\nStarting REV size analysis')
-    '''
-    Check different rev sizes and get GSD and other stuff
-    '''
-
-# Contact Normals
 def measureContactNormalsSpam(aggregate):
     print("\nMeasuring contact normals using SPAM library\n")
     labelledData=aggregate.labelledMap
     binaryData=aggregate.binaryMap
     contactVolume, Z, contactsTable, contactingLabels = slab.labelledContacts(labelledData)
+
     print("\nMeasuring contact using randomwalker\n")
     ortTabSandRW = slab.contacts.contactOrientationsAssembly(labelledData, binaryData, contactingLabels, watershed="RW")
     tempOrtsRW = np.zeros_like(ortTabSandRW)
