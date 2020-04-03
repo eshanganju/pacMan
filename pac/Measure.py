@@ -24,17 +24,17 @@ def gsd( labelledMap , calib = 0.01193 ):
     gsd4[:,2] *= calib
 
     # Volume in mm3
-    gsd1[:,1] *= ( calib ** 3 )
-    gsd2[:,1] *= ( calib ** 3 )
-    gsd3[:,1] *= ( calib ** 3 )
-    gsd4[:,1] *= ( calib ** 3 )
+    #gsd1[:,1] *= ( calib ** 3 )
+    #gsd2[:,1] *= ( calib ** 3 )
+    #gsd3[:,1] *= ( calib ** 3 )
+    #gsd4[:,1] *= ( calib ** 3 )
 
     return gsd1[:,-2:], gsd2[:,-2:], gsd3[:,-2:], gsd4[:,-2:] # [ Size(mm), percent passing(%) ]
 
 def relativeBreakage(gsdCurrent,gsdOriginal,maxSize,fracDim):
     gsdOrig, gsdCur, gsdUlt = formatGradationsAndGetUltimate(gsdCurrent,gsdOriginal,maxSize,fracDim)
-    Bp = getAreaBetween( gsdUlt , gsdOrig )
-    B = getAreaBetween( gsdCur , gsdOrig )
+    Bp = getAreaBetweenGSDs( gsdUlt , gsdOrig )
+    B = getAreaBetweenGSDs( gsdCur , gsdOrig )
     Br = B/Bp
     return Br
 
@@ -178,7 +178,7 @@ def measureContactNormalsSpam(aggregate):
     aggregate.contactTableITK = tempOrtsITK[0:j,:]
     np.savetxt("ContactTableITK.csv", aggregate.contactTableITK, delimiter=",")
 
-def getAreaBetween(gsdUp,gsdDown,bins=1000):
+def getAreaBetweenGSDs(gsdUp,gsdDown,bins=1000):
     x1 = gsdUp[:,0]
     y1 = gsdUp[:,1]
     x2 = gsdDown[:,0]
@@ -209,13 +209,19 @@ def getAreaBetween(gsdUp,gsdDown,bins=1000):
     return totalArea
 
 def formatGradationsAndGetUltimate(gsdCurrent,gsdOriginal,maxSize,fracDim):
-    xmax = input('\nEnter maximum particle size (mm): ')
-    xmin = getStartOfUltimateGradation(xmax,fracDim)
-    ymax = 100
-    ymin = 0
+    xmax = float(maxSize)
+    xmin = float(getStartOfUltimateGradation(xmax,fracDim))
+    ymax = float(100)
+    ymin = float(0)
+
+    gsdCurrent = gsdCurrent.astype(float)
+    gsdOriginal = gsdOriginal.astype(float)
 
     top = np.array([xmin,ymin]).reshape(1,2)
     bottom = np.array([xmax,ymax]).reshape(1,2)
+
+    top = top.astype( float )
+    bottom = bottom.astype( float )
 
     corGsdCurr = np.append( np.append( top , gsdCurrent , axis = 0 ), bottom, axis=0)
     corGsdOrig = np.append( np.append( top , gsdOriginal, axis = 0 ), bottom, axis=0)
@@ -223,30 +229,26 @@ def formatGradationsAndGetUltimate(gsdCurrent,gsdOriginal,maxSize,fracDim):
 
     return corGsdOrig, corGsdCurr, corGSDUlt
 
-def getStartOfUltimateGradation(xmax,fracDim):
-    '''
-    Largest value for which ultimate gradation goes below some very smalll value (0.5%?)
-    '''
+def getStartOfUltimateGradation(dm,fracDim):
+    if VERBOSE: print('\nGetting minimum size of ultimate gradation.')
+    d = dm
+    small = False
+
+    while small != True:
+        pp = (d/dm)**(3-fracDim)
+        if VERBOSE: print('\tParticle size is: ' + str(np.round(pp,4)) + 'mm')
+        if VERBOSE: print('\tPercentage passing is: ' + str(np.round(pp*100,2)) + '%' )
+        if pp > (0.1/100): d*=0.5
+        else: small=True
+
     return xmin
 
-def getUltimateGradation(xmin,xmax,fracDim):
-    '''
-
-    '''
-    return ultimateGradation
-
-
-
-'''
-# Important to make the starting and ending points the same and x and log x before any changes
-x1 = np.arange(0.1,1001,100)
-y1 = x1**2
-
-x2 = np.arange(0.1,1001,100)
-y2 = np.array([0,0,0,0,0,0,0,y1.max()//4,y1.max()//2,y1.max()*3//4,y1.max()])
-
-# Area between formatted curves (gsd1,gsd2):
-'''
-
-
+def getUltimateGradation(xmax,xmin,fracDim):
+    incr = ( xmax - xmin ) / 100
+    x = np.arange(xmin,xmax + incr,incr)
+    y = ( ( x / xmax ) ** ( 3 - fracDim ) ) * 100
+    x = x.reshape(x.shape[ 0 ] , 1 )
+    y = y.rehsape(y.shape[ 0 ] , 1 )
+    ultimateGradation = np.append(x,y,axis=1)
+    return ultimateGradation.astype(float)
 
