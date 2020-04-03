@@ -9,6 +9,8 @@ import statistics
 import scipy
 import spam.label as slab
 
+VERBOSE = True
+
 def gsd( labelledMap , calib = 0.01193 ):
     gss = getParticleSize( labelledMap ) # [ Label, Volume(px3), Size1(px), Size2(px), Size3(px), Size4(px), Size5(ND), Size6(ND)]
 
@@ -31,11 +33,12 @@ def gsd( labelledMap , calib = 0.01193 ):
 
     return gsd1[:,-2:], gsd2[:,-2:], gsd3[:,-2:], gsd4[:,-2:] # [ Size(mm), percent passing(%) ]
 
-def relativeBreakage(gsdCurrent,gsdOriginal,maxSize,fracDim):
+def relativeBreakage( gsdCurrent , gsdOriginal , maxSize , fracDim ):
     gsdOrig, gsdCur, gsdUlt = formatGradationsAndGetUltimate(gsdCurrent,gsdOriginal,maxSize,fracDim)
     Bp = getAreaBetweenGSDs( gsdUlt , gsdOrig )
     B = getAreaBetweenGSDs( gsdCur , gsdOrig )
-    Br = B/Bp
+    Br = B/Bp * 100
+    if VERBOSE: print('Relative breakage is: ' + str(np.round(Br,2)) + '%')
     return Br
 
 def getParticleSize(labelledMapForParticleSizeAnalysis):
@@ -47,7 +50,7 @@ def getParticleSize(labelledMapForParticleSizeAnalysis):
     print( "Starting measurement of particles..." )
 
     '''
-    TODO: This can be parallelized
+    TODO: This can be parallelized !!!!!!
     '''
     for particleNum in range( 1, numberOfParticles + 1 ):
         print( "Computing size of", particleNum, "/", numberOfParticles, "particle" )
@@ -94,9 +97,9 @@ def getParticleSize(labelledMapForParticleSizeAnalysis):
         caDims[ 1 ] = rotCentPointCloud[ :, 1 ].max() - rotCentPointCloud[ :, 1 ].min()
         caDims[ 2 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 2 ].min()
 
-        caMax = max( feretDims )[ 0 ] # Param 2
-        caMin = min( feretDims )[ 0 ] # Param 3
-        caMed = statistics.median( feretDims )[ 0 ] # Param 4
+        caMax = max( caDims )[ 0 ] # Param 2
+        caMin = min( caDims )[ 0 ] # Param 3
+        caMed = statistics.median( caDims )[ 0 ] # Param 4
 
         particleSizeDataSummary[particleNum, 3] = caMax
         particleSizeDataSummary[particleNum, 4] = caMed
@@ -117,6 +120,7 @@ def getGrainSizeDistribution(psSummary,sizeParam=1):
     pp = ( np.cumsum( gss[ : , 1 ] ) / totalVol * 100 ).reshape( gss.shape[ 0 ] , 1 )
 
     gsdPP = np.append( gss , pp, 1 )
+    gsdPP = np.delete(gsdPP,0,0)
     print('\tDone')
     return gsdPP # [ Lable, Volume(px), Size(px), percent passing(%) ]
 
@@ -241,14 +245,14 @@ def getStartOfUltimateGradation(dm,fracDim):
         if pp > (0.1/100): d*=0.5
         else: small=True
 
-    return xmin
+    return d
 
 def getUltimateGradation(xmax,xmin,fracDim):
     incr = ( xmax - xmin ) / 100
     x = np.arange(xmin,xmax + incr,incr)
     y = ( ( x / xmax ) ** ( 3 - fracDim ) ) * 100
     x = x.reshape(x.shape[ 0 ] , 1 )
-    y = y.rehsape(y.shape[ 0 ] , 1 )
+    y = y.reshape(y.shape[ 0 ] , 1 )
     ultimateGradation = np.append(x,y,axis=1)
     return ultimateGradation.astype(float)
 

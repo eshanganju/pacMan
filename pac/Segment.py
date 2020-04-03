@@ -241,14 +241,14 @@ def removeSpecks( oldBinaryMapWithSpecks ):
 
 
     '''
-    newNoSpekBinaryMap = binary_opening( oldBinaryMapWithSpecks )   
+    newNoSpekBinaryMap = binary_opening( oldBinaryMapWithSpecks )
     return newNoSpekBinaryMap.astype(int)
 
 def obtainEuclidDistanceMap(binaryMapForEDM ):
     print('\nFinding Euclidian distance map (EDM)')
     print('------------------------------------*')
-    edMap = edt( binaryMapForEDM )             
-    print( "EDM Created" )        
+    edMap = edt( binaryMapForEDM )
+    print( "EDM Created" )
     return edMap
 
 def obtainLocalMaximaMarkers( edMapForPeaks ):
@@ -329,13 +329,10 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2):
             TODO:
                 Read only those labels that have area larger than the limit - speed up the process
                 When consolidating the edge lables, account for non-contact labels
+                    Put in another case where if the contact list is empty, we move to next label
             '''
 
             # Check if any contact is greater than threshold area
-            '''
-            Check if any contact area is larger than a limit
-            find the first contact that is larger and merge
-            '''
             for positionNumber in range(0, contactArea.shape[0]):
                 if contactArea[positionNumber] > areaLimit:
                     print('Area between label %d and %d is greater than limit' %(currentLabel, contactLabel[positionNumber]))
@@ -436,9 +433,9 @@ def removeEdgeLabels(labelledMapForEdgeLabelRemoval,pad=0):
     currentLabel = 1
     print('\n\nRemoving Edge Labels...')
     print('Starting total number of labels = ' + str(labMap.max()) + '\n')
-
+    startTime = time.time()
     while currentLabel <= numberOfLabels:
-        print('\nChecking label #' + str(currentLabel))
+        if VERBOSE: print('\nChecking label #' + str(currentLabel))
         edgeLabel = checkIfEdgeLabel(labMap,currentLabel,pad)
         if edgeLabel == True:
             if VERBOSE: print('\tLabel #' + str(currentLabel) + ' is an on the edge: REMOVING')
@@ -450,7 +447,11 @@ def removeEdgeLabels(labelledMapForEdgeLabelRemoval,pad=0):
             if VERBOSE: print('\tLabel #' + str(currentLabel) + ' is not on the edge: KEEP')
             currentLabel += 1
 
+    print( 'Removal of edge labels complete' )
     print( 'Total Number of labels remaining:' + str( numberOfLabels ) + '\n' )
+    endTime = time.time()
+    timeTaken = endTime - startTime
+    print( 'Total time taken: ' + str(np.round(timeTaken/60)) + ' mins' )
     return labMap
 
 def checkIfEdgeLabel(labelledMap, label, pad):
@@ -491,4 +492,7 @@ def countEdgeLabels(labelledMap):
     print('Edge labels: ' + str( countTrue ) )
     print('Non-edge labels: ' + str( countFalse ) )
 
-
+def removeLabelAndUpdate(labMap,label):
+    labMap[np.where(labMap == label)] = 0
+    updatedLabMap = moveLabelsUp(labMap,label)
+    return updatedLabMap

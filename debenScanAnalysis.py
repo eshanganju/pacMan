@@ -45,7 +45,6 @@ for edgeLength in range( edgeLengthMin , edgeLengthMin + 1 ):
     neCorLabMap = Segment.removeEdgeLabels(corLabMap)
     gsd1, gsd2, gsd3, gsd4 = Measure.gsd(neCorLabMap)
 
-
     '''
     DO:
         2. Get relative breakage for different size param
@@ -53,10 +52,10 @@ for edgeLength in range( edgeLengthMin , edgeLengthMin + 1 ):
     '''
 
     # Save files as csv
-    np.savetxt((outputFolderLocation+ str(edgeLength) +'D50-gsd1.csv'), gsd1, delimrter=',') # Eqsp
-    np.savetxt((outputFolderLocation+ str(edgeLength) +'D50-gsd2.csv'), gsd2, delimrter=',') # CA max
-    np.savetxt((outputFolderLocation+ str(edgeLength) +'D50-gsd3.csv'), gsd3, delimrter=',') # CA med
-    np.savetxt((outputFolderLocation+ str(edgeLength) +'D50-gsd4.csv'), gsd4, delimrter=',') # CA min
+    np.savetxt((outputFolderLocation+ str(edgeLength) +'D50-gsd1.csv'), gsd1, delimiter=',') # Eqsp
+    np.savetxt((outputFolderLocation+ str(edgeLength) +'D50-gsd2.csv'), gsd2, delimiter=',') # CA max
+    np.savetxt((outputFolderLocation+ str(edgeLength) +'D50-gsd3.csv'), gsd3, delimiter=',') # CA med
+    np.savetxt((outputFolderLocation+ str(edgeLength) +'D50-gsd4.csv'), gsd4, delimiter=',') # CA min
 
     # Save the 3D maps as tiff
     gliName = outputFolderLocation + 'gli.tiff'
@@ -67,7 +66,7 @@ for edgeLength in range( edgeLengthMin , edgeLengthMin + 1 ):
     tf.imsave(gliName,gliMap.astype('uint32'))
     tf.imsave(labName,labMap.astype('uint32'))
     tf.imsave(corLabName,corLabMap.astype('uint32'))
-    tf.imsave(neCorLabName,corLabMap.astype('uint32'))
+    tf.imsave(neCorLabName,neCorLabMap.astype('uint32'))
 
 
 '''
