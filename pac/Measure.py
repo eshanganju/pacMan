@@ -37,9 +37,11 @@ def relativeBreakage( gsdCurrent , gsdOriginal , maxSize , fracDim ):
     gsdOrig, gsdCur, gsdUlt = formatGradationsAndGetUltimate(gsdCurrent,gsdOriginal,maxSize,fracDim)
     Bp = getAreaBetweenGSDs( gsdUlt , gsdOrig )
     B = getAreaBetweenGSDs( gsdCur , gsdOrig )
+    print('Bp =' + str(Bp))
+    print('B = ' + str(B))
     Br = B/Bp * 100
-    if VERBOSE: print('Relative breakage is: ' + str(np.round(Br,2)) + '%')
-    return Br
+    if VERBOSE: print('Relative breakage (Br) is: ' + str(np.round(Br,2)) + '%')
+    return gsdOrig, gsdCur, gsdUlt, Br
 
 def getParticleSize(labelledMapForParticleSizeAnalysis):
     numberOfParticles = int(labelledMapForParticleSizeAnalysis.max())
