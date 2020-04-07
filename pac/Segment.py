@@ -79,7 +79,7 @@ def binarizeAccordingToOtsu( gliMapToBinarize ):
     print( 'Void ratio after filling holes = %f' % e2 )
     print( 'Void ratio after removing specks = %f' % e3 )
 
-    return binaryMap3
+    return binaryMap3, otsuThreshold
 
 def binarizeAccordingToUserThreshold( gliMapToBinarize, outputLocation = None, sampleName = None):
     userThreshold = int( input( 'Enter user threshold: ' ) )
@@ -96,7 +96,7 @@ def binarizeAccordingToUserThreshold( gliMapToBinarize, outputLocation = None, s
     binaryMap = removeSpecks( binaryMap )
     e3 = calcVoidRatio( binaryMap )
 
-    print( 'Global User threshold = %f' % userThreshold )
+    print( '\nGlobal User threshold = %f' % userThreshold )
     print( 'Void ratio after threshold = %f' % e1 )
     print( 'Void ratio after filling holes = %f' % e2 )
     print( 'Void ratio after removing specks = %f' % e3 )
@@ -115,14 +115,16 @@ def binarizeAccordingToUserThreshold( gliMapToBinarize, outputLocation = None, s
 
     return binaryMap, userThreshold
 
-def binarizeAccordingToDensity( gliMapToBinarize ):
+def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
+    print('\nRunning density-based threshold...')
+    print('Running Otsu first to get inital guess: ')
     otsuBinMap, otsuThreshold = binarizeAccordingToOtsu( gliMapToBinarize )
     currentThreshold = otsuThreshold
 
-    knownVoidRatio = int( input('Input the known void ratio: ') )
+    if measuredVoidRatio == None: measuredVoidRatio = int( input('Input the known void ratio: ') )
 
     currentVoidRatio = calcVoidRatio( otsuBinMap )
-    targetVoidRatio = knownVoidRatio
+    targetVoidRatio = measuredVoidRatio
     greyLvlMap = gliMapToBinarize
 
     tolerance = 0.0001
@@ -263,11 +265,10 @@ def obtainLocalMaximaMarkers( edMapForPeaks ):
     print('\nObtaining peaks of EDM...')
     print('------------------------------*')
     h = int( input( 'Enter the minimum height for a peak (px): ') )
+
     print( 'Finding local maxima in EDM' )
-
     edmPeakMarkers = hmax( edMapForPeaks, h ).astype(int)
-
-    print( 'Found local maximas in EDM (greater than %i px)' % h )
+    print( '\tFound local maximas' )
 
     print( 'Resetting count of peaks' )
     count=0
@@ -277,17 +278,17 @@ def obtainLocalMaximaMarkers( edMapForPeaks ):
                 if edmPeakMarkers[ frame ][ row ][ col ] == 1:
                     edmPeakMarkers[ frame ][ row ][ col ] = count + 1
                     count = count + 1
-        print( 'Processed ' + str(frame + 1) + ' out of ' + str(edmPeakMarkers.shape[ 0 ]) + ' slices' )
-
+        if VERBOSE: print( 'Processed ' + str(frame + 1) + ' out of ' + str(edmPeakMarkers.shape[ 0 ]) + ' slices' )
+    print('\tCounts reset')
     return edmPeakMarkers
 
-def obtainLabelledMapUsingITKWS( gliMap ):
+def obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio = None):
     print( '\nSegmenting particles by ITK topological watershed' )
 
     binMethod=input('Which binarization method to use (1) OTSU; (2) User; [3] Density?: ')
     if binMethod == '1': binMask = binarizeAccordingToOtsu( gliMap )
     elif binMethod == '2': binMask = binarizeAccordingToUserThreshold( gliMap  )
-    else : binMask = binarizeAccordingToDensity( gliMap  )
+    else : binMask = binarizeAccordingToDensity( gliMap , measuredVoidRatio )
 
     edMap = obtainEuclidDistanceMap( binMask )
     edPeaksMap = obtainLocalMaximaMarkers( edMap )
@@ -312,45 +313,47 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2):
 
     considerEdgeLabels = input("Consolidate edge labels also ([y]/n): ")
     if considerEdgeLabels == 'n':
-        print('\tOk, not consolidating edge labels')
+        print('\tOk, not consolidating edge labels\n')
         edgePad = pad
     else:
-        print('\tOk, consolidating edge labels')
+        print('\tOk, consolidating edge labels\n')
         edgePad = 0
 
+    print('Starting edge label consolidation - This takes 5-10 mins')
     # Loop through labels till all OS labels are merged
     while currentLabel <= lastLabel:
         isEdgeLabel = checkIfEdgeLabel( correctedLabelMap, currentLabel, edgePad )
 
         # If edge label, move to next label
         if isEdgeLabel == True:
-            print('Label %d is an edge label, moving to next label' % currentLabel)
+            if VERBOSE: print('Label %d is an edge label, moving to next label' % currentLabel)
             currentLabel += 1
 
         # If not edge label, check contacting labels
         else:
             contactLabel, contactArea = slab.contactingLabels(correctedLabelMap, currentLabel, areas=True)
-            print('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
-            print('\tWith areas: ' + str( contactArea ) )
+            if VERBOSE: print('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
+            if VERBOSE: print('\tWith areas: ' + str( contactArea ) )
 
             '''
             TODO:
                 Read only those labels that have area larger than the limit - speed up the process
                 When consolidating the edge lables, account for non-contact labels
                     Put in another case where if the contact list is empty, we move to next label
+                Start condolidation with smallest area above the threshold - prevents the particle in particle
             '''
 
             # Check if any contact is greater than threshold area
             for positionNumber in range(0, contactArea.shape[0]):
                 if contactArea[positionNumber] > areaLimit:
-                    print('Area between label %d and %d is greater than limit' %(currentLabel, contactLabel[positionNumber]))
+                    if VERBOSE: print('Area between label %d and %d is greater than limit' %(currentLabel, contactLabel[positionNumber]))
 
                     if currentLabel < contactLabel[positionNumber]:
                         correctedLabelMap[np.where(correctedLabelMap == contactLabel[positionNumber])] = int(currentLabel)
                         if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
                         correctedLabelMap = moveLabelsUp(correctedLabelMap,contactLabel[positionNumber])
                         lastLabel = correctedLabelMap.max()
-                        print( 'Checking from label %d again' % currentLabel )
+                        if VERBOSE: print( 'Checking from label %d again' % currentLabel )
                         break
 
                     else:
@@ -359,13 +362,13 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2):
                         correctedLabelMap = moveLabelsUp(correctedLabelMap,currentLabel)
                         lastLabel = correctedLabelMap.max()
                         currentLabel = contactLabel[positionNumber]
-                        print( 'Checking from label %d onwards now' % currentLabel )
+                        if VERBOSE: print( 'Checking from label %d onwards now' % currentLabel )
                         break
                 else:
-                    print('Area between label %d and %d is ok' % ( currentLabel, contactLabel[positionNumber]))
+                    if VERBOSE: print('Area between label %d and %d is ok' % ( currentLabel, contactLabel[positionNumber]))
                     if positionNumber == contactArea.shape[0]-1:
                         currentLabel = currentLabel + 1
-                        print( 'Moving to next label %d now' % currentLabel )
+                        if VERBOSE: print( 'Moving to next label %d now' % currentLabel )
 
     print('Label edition completed.')
 
@@ -379,19 +382,12 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2):
     return correctedLabelMap
 
 def applyPaddingToLabelledMap(labelledMap, pad):
-    '''
-    Some spam function have problems with edge labels
-    This function applys a padding of zeros (2px) to the edges 
-    '''
     paddedMap = labelledMap
     padLabMap = np.zeros( ( labelledMap.shape[0]+2*pad, labelledMap.shape[0]+2*pad, labelledMap.shape[0]+2*pad ) )
     padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ] = labelledMap
     return padLabMap.astype(int)
 
 def removePaddingFromLabelledMap(padLabMap, pad):
-    '''
-    This removes padding around the 
-    '''
     cleanLabMap = padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ].astype(int)
     return cleanLabMap
 

@@ -1,5 +1,5 @@
 '''
-Measure class
+Measure module
 
 '''
 
