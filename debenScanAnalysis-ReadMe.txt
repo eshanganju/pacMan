@@ -107,13 +107,13 @@ Code notes:
   2020-04-07
 
     #Fixes:
-      deben code asks for method to follow for binarization. void ratio is passed from start
+      Updated Segment code - now asks for method to follow for binarization. void ratio is passed from start, if not user is asked
+      Updated Segment to check for no particle contact when fixing oversegmentation
 
     #Priority:
       Gradation --> Relative Breakage --> Fabric
 
       - Gradation
-          *Implement no contact particle correction in code - prevent getting stuck in loop for particle touching nothing
           *Particle within particle - rectify by controlling the sequence in which particle are merged
           *Add original gradation as a check (line or spline curve?) - standard CSV file I think will work.
 

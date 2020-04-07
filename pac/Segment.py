@@ -335,40 +335,43 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2):
             if VERBOSE: print('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
             if VERBOSE: print('\tWith areas: ' + str( contactArea ) )
 
-            '''
-            TODO:
-                Read only those labels that have area larger than the limit - speed up the process
-                When consolidating the edge lables, account for non-contact labels
-                    Put in another case where if the contact list is empty, we move to next label
-                Start condolidation with smallest area above the threshold - prevents the particle in particle
-            '''
+            # If label is contacting any other label, check if any contacts are greater than limit
+            if len(contactLabel) != 0:
+                for positionNumber in range(0, contactArea.shape[0]):
 
-            # Check if any contact is greater than threshold area
-            for positionNumber in range(0, contactArea.shape[0]):
-                if contactArea[positionNumber] > areaLimit:
-                    if VERBOSE: print('Area between label %d and %d is greater than limit' %(currentLabel, contactLabel[positionNumber]))
+                    # if contact area > limit, merge to smaller label and update the labels
+                    if contactArea[positionNumber] > areaLimit:
+                        if VERBOSE: print('Area between label %d and %d is greater than limit' %(currentLabel, contactLabel[positionNumber]))
 
-                    if currentLabel < contactLabel[positionNumber]:
-                        correctedLabelMap[np.where(correctedLabelMap == contactLabel[positionNumber])] = int(currentLabel)
-                        if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
-                        correctedLabelMap = moveLabelsUp(correctedLabelMap,contactLabel[positionNumber])
-                        lastLabel = correctedLabelMap.max()
-                        if VERBOSE: print( 'Checking from label %d again' % currentLabel )
-                        break
+                        if currentLabel < contactLabel[positionNumber]:
+                            correctedLabelMap[np.where(correctedLabelMap == contactLabel[positionNumber])] = int(currentLabel)
+                            if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
+                            correctedLabelMap = moveLabelsUp(correctedLabelMap,contactLabel[positionNumber])
+                            lastLabel = correctedLabelMap.max()
+                            if VERBOSE: print( 'Checking from label %d again' % currentLabel )
+                            break
 
+                        else:
+                            correctedLabelMap[np.where(correctedLabelMap == currentLabel)] = int(contactLabel[positionNumber])
+                            if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
+                            correctedLabelMap = moveLabelsUp(correctedLabelMap,currentLabel)
+                            lastLabel = correctedLabelMap.max()
+                            currentLabel = contactLabel[positionNumber]
+                            if VERBOSE: print( 'Checking from label %d onwards now' % currentLabel )
+                            break
+
+                    # if contact area < limit, move to next label
                     else:
-                        correctedLabelMap[np.where(correctedLabelMap == currentLabel)] = int(contactLabel[positionNumber])
-                        if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
-                        correctedLabelMap = moveLabelsUp(correctedLabelMap,currentLabel)
-                        lastLabel = correctedLabelMap.max()
-                        currentLabel = contactLabel[positionNumber]
-                        if VERBOSE: print( 'Checking from label %d onwards now' % currentLabel )
-                        break
-                else:
-                    if VERBOSE: print('Area between label %d and %d is ok' % ( currentLabel, contactLabel[positionNumber]))
-                    if positionNumber == contactArea.shape[0]-1:
-                        currentLabel = currentLabel + 1
-                        if VERBOSE: print( 'Moving to next label %d now' % currentLabel )
+                        if VERBOSE: print('Area between label %d and %d is ok' % ( currentLabel, contactLabel[positionNumber]))
+                        if positionNumber == contactArea.shape[0]-1:
+                            currentLabel = currentLabel + 1
+                            if VERBOSE: print( 'Moving to next label %d now' % currentLabel )
+
+            # If label is contacting no other label, move to next label
+            else:
+                if VERBOSE: print('Label' + str(currentLabel) + ' is contacting no other label.')
+                currentLabel = currentLabel + 1
+                if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
 
     print('Label edition completed.')
 
