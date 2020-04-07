@@ -81,43 +81,46 @@ def binarizeAccordingToOtsu( gliMapToBinarize ):
 
     return binaryMap3
 
-def binarizeAccordingToUserThreshold( gliMapToBinarize, outputLocation, sampleName):
-    userThreshold = int( input( 'Enter user threshold: ' ) )        
-    binaryMap = np.zeros_like( gliMapToBinarize )        
+def binarizeAccordingToUserThreshold( gliMapToBinarize, outputLocation = None, sampleName = None):
+    userThreshold = int( input( 'Enter user threshold: ' ) )
+    binaryMap = np.zeros_like( gliMapToBinarize )
     binaryMap[ np.where( gliMapToBinarize > userThreshold ) ] = 1
     binaryMap = binaryMap.astype( int )
-    e1 = calcVoidRatio( binaryMap ) 
+    e1 = calcVoidRatio( binaryMap )
 
     # Filling Holes
-    binaryMap = fillHoles( binaryMap )      
-    e2 = calcVoidRatio( binaryMap )    
+    binaryMap = fillHoles( binaryMap )
+    e2 = calcVoidRatio( binaryMap )
 
     # Removing specks
     binaryMap = removeSpecks( binaryMap )
-    e3 = calcVoidRatio( binaryMap )     
+    e3 = calcVoidRatio( binaryMap )
 
     print( 'Global User threshold = %f' % userThreshold )
-    print( 'Void ratio after threshold = %f' % e1 )  
-    print( 'Void ratio after filling holes = %f' % e2 )   
-    print( 'Void ratio after removing specks = %f' % e3 )    
+    print( 'Void ratio after threshold = %f' % e1 )
+    print( 'Void ratio after filling holes = %f' % e2 )
+    print( 'Void ratio after removing specks = %f' % e3 )
 
     # Saving files
-    userThresholdFileName = outputLocation + sampleName + '-userThresholdDetails.txt'
-    f = open( userThresholdFileName, 'w+' )        
-    f.write( 'Global user threshold = %f' % userThreshold )
-    f.write( '\nVoid ratio after threshold = %f' % e1 )  
-    f.write( '\nVoid ratio after filling holes = %f' % e2 )   
-    f.write( '\nVoid ratio after removing specks = %f' % e3 )
-    f.close() 
+    #userThresholdFileName = outputLocation + sampleName + '-userThresholdDetails.txt'
+    #f = open( userThresholdFileName, 'w+' )
+    #f.write( 'Global user threshold = %f' % userThreshold )
+    #f.write( '\nVoid ratio after threshold = %f' % e1 )
+    #f.write( '\nVoid ratio after filling holes = %f' % e2 )
+    #f.write( '\nVoid ratio after removing specks = %f' % e3 )
+    #f.close() 
 
-    print('Output file saved as ' + userThresholdFileName)
-    print('---------------------*')
+    #print('Output file saved as ' + userThresholdFileName)
+    #print('---------------------*')
 
     return binaryMap, userThreshold
 
-def binarizeAccordingToDensity(gliMapToBinarize, knownVoidRatio, outputLocation, sampleName):
-    otsuBinMap, otsuThreshold = binarizeAccordingToOtsu(gliMapToBinarize, outputLocation, sampleName)
+def binarizeAccordingToDensity( gliMapToBinarize ):
+    otsuBinMap, otsuThreshold = binarizeAccordingToOtsu( gliMapToBinarize )
     currentThreshold = otsuThreshold
+
+    knownVoidRatio = int( input('Input the known void ratio: ') )
+
     currentVoidRatio = calcVoidRatio( otsuBinMap )
     targetVoidRatio = knownVoidRatio
     greyLvlMap = gliMapToBinarize
@@ -131,10 +134,10 @@ def binarizeAccordingToDensity(gliMapToBinarize, knownVoidRatio, outputLocation,
     iterationNum = 1
     maxIterations = 50
 
-    userThresholdStepsTextFileName = outputLocation +  sampleName + '-userThresholdDensitySteps.txt'
-    f = open( userThresholdStepsTextFileName, "w+")
-    f.write( "Steps of density based user threshold\n\n" )
-    f.close()
+    #userThresholdStepsTextFileName = outputLocation +  sampleName + '-userThresholdDensitySteps.txt'
+    #f = open( userThresholdStepsTextFileName, "w+")
+    #f.write( "Steps of density based user threshold\n\n" )
+    #f.close()
 
     while( abs( deltaVoidRatio ) > tolerance and iterationNum <= maxIterations ):
         incrementSign = deltaVoidRatio/abs(deltaVoidRatio)  
@@ -177,21 +180,21 @@ def binarizeAccordingToDensity(gliMapToBinarize, knownVoidRatio, outputLocation,
         print( 'Target void ratio: %0.5f' % round( targetVoidRatio,5 ) )
         print( 'Target - Current void ratio: %0.5f' % round( deltaVoidRatio, 5 ) )
 
-        f = open( userThresholdStepsTextFileName, 'a' )
-        f.write( "\nIteration %d:\n" % iterationNum)
-        f.write( "Current threshold: %d\n" % round( currentThreshold ) )
-        f.write( "Otsu Threshold: %d\n" %  round( otsuThreshold ) )
-        f.write( "Current void ratio:  %0.5f\n" % round( currentVoidRatio,5 ) )
-        f.write( "Target void ratio: %0.5f\n" % round( targetVoidRatio,5 ) )
-        f.write( "Target - Current void ratio: %0.5f\n" % round( deltaVoidRatio, 5 ) )
-        f.close()
+        #f = open( userThresholdStepsTextFileName, 'a' )
+        #f.write( "\nIteration %d:\n" % iterationNum)
+        #f.write( "Current threshold: %d\n" % round( currentThreshold ) )
+        #f.write( "Otsu Threshold: %d\n" %  round( otsuThreshold ) )
+        #f.write( "Current void ratio:  %0.5f\n" % round( currentVoidRatio,5 ) )
+        #f.write( "Target void ratio: %0.5f\n" % round( targetVoidRatio,5 ) )
+        #f.write( "Target - Current void ratio: %0.5f\n" % round( deltaVoidRatio, 5 ) )
+        #f.close()
 
         iterationNum = iterationNum + 1
 
-    densityBasedThresholdTextFileName = outputLocation +  sampleName + '-userThresholdDensityBased.txt'
-    f = open( densityBasedThresholdTextFileName, "w+" )               
-    f.write( "Global density based threshold = %f\n" % currentThreshold )
-    f.close()
+    #densityBasedThresholdTextFileName = outputLocation +  sampleName + '-userThresholdDensityBased.txt'
+    #f = open( densityBasedThresholdTextFileName, "w+" )
+    #f.write( "Global density based threshold = %f\n" % currentThreshold )
+    #f.close()
 
     return currentBinaryMap
 
@@ -280,9 +283,14 @@ def obtainLocalMaximaMarkers( edMapForPeaks ):
 
 def obtainLabelledMapUsingITKWS( gliMap ):
     print( '\nSegmenting particles by ITK topological watershed' )
-    binMask = binarizeAccordingToOtsu( gliMap )
+
+    binMethod=input('Which binarization method to use (1) OTSU; (2) User; [3] Density?: ')
+    if binMethod == '1': binMask = binarizeAccordingToOtsu( gliMap )
+    elif binMethod == '2': binMask = binarizeAccordingToUserThreshold( gliMap  )
+    else : binMask = binarizeAccordingToDensity( gliMap  )
+
     edMap = obtainEuclidDistanceMap( binMask )
-    edPeaksMap = obtainLocalMaximaMarkers(edMap)
+    edPeaksMap = obtainLocalMaximaMarkers( edMap )
     labelledMap = wsd( -edMap, markers = edPeaksMap, mask = binMask )
     print( 'Watershed segmentation complete' )
     return labelledMap
