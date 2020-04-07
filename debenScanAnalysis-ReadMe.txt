@@ -107,7 +107,7 @@ Code notes:
   2020-04-07
 
     #Fixes:
-      Otsu overestimates particle size needs density based thresholding in deben analysis - Done
+      deben code asks for method to follow for binarization. void ratio is passed from start
 
     #Priority:
       Gradation --> Relative Breakage --> Fabric
