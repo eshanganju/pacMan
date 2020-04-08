@@ -301,6 +301,7 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2):
     print('Entering label correction')
     print('---------------------------*')
 
+    # Area limit - will change with resolution
     areaLimit = int(input('Input area limit (px): '))
 
     if pad > 0: labelledMapForOSCorr = applyPaddingToLabelledMap(labelledMapForOSCorr, pad)
@@ -335,7 +336,44 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2):
             if VERBOSE: print('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
             if VERBOSE: print('\tWith areas: ' + str( contactArea ) )
 
-            # If label is contacting any other label, check if any contacts are greater than limit
+            largeAreaVal = [contactArea[idx] for idx, val in enumerate(contactArea) if val >= areaLimit]
+            largeAreaLabel = [contactLabel[idx] for idx, val in enumerate(contactArea) if val >= areaLimit]
+
+            # Method #1
+            if len(largeAreaVal) != 0:
+                if len(largeAreaVal) != 0:
+                    if VERBOSE: print('\tLabels with large area: ' + str( largeAreaLabel ) )
+                    if VERBOSE: print('\tArea for above labels: ' + str( largeAreaVal ) )
+                    labelToMerge = largeAreaLabel[ largeAreaVal.index( min( largeAreaVal ) ) ]
+
+                    if currentLabel < labelToMerge:
+                        correctedLabelMap[np.where(correctedLabelMap == labelToMerge)] = int(currentLabel)
+                        if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, labelToMerge))
+                        correctedLabelMap = moveLabelsUp( correctedLabelMap , labelToMerge )
+                        lastLabel = correctedLabelMap.max()
+                        if VERBOSE: print( 'Checking from label %d again' % currentLabel )
+
+                    else:
+                        correctedLabelMap[ np.where( correctedLabelMap == currentLabel ) ] = int( labelToMerge )
+                        if VERBOSE: print('\tMerging label %d and %d' %( currentLabel, labelToMerge ) )
+                        correctedLabelMap = moveLabelsUp( correctedLabelMap , currentLabel )
+                        lastLabel = correctedLabelMap.max()
+                        currentLabel = labelToMerge
+                        if VERBOSE: print( 'Checking from label %d onwards now' % currentLabel )
+
+                else:
+                    if VERBOSE: print('Label' + str(currentLabel) + ' is contacting no other label.')
+                    currentLabel = currentLabel + 1
+                    if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
+
+            else:
+                if VERBOSE: print('Label ' + str(currentLabel) + ' has no large contacts.')
+                currentLabel = currentLabel + 1
+                if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
+
+
+            # Method #2
+            '''
             if len(contactLabel) != 0:
                 for positionNumber in range(0, contactArea.shape[0]):
 
@@ -343,6 +381,7 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2):
                     if contactArea[positionNumber] > areaLimit:
                         if VERBOSE: print('Area between label %d and %d is greater than limit' %(currentLabel, contactLabel[positionNumber]))
 
+                        # Current label smaller than large-contact label
                         if currentLabel < contactLabel[positionNumber]:
                             correctedLabelMap[np.where(correctedLabelMap == contactLabel[positionNumber])] = int(currentLabel)
                             if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
@@ -351,6 +390,7 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2):
                             if VERBOSE: print( 'Checking from label %d again' % currentLabel )
                             break
 
+                        # Current label larger than large-contact label
                         else:
                             correctedLabelMap[np.where(correctedLabelMap == currentLabel)] = int(contactLabel[positionNumber])
                             if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
@@ -367,20 +407,20 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2):
                             currentLabel = currentLabel + 1
                             if VERBOSE: print( 'Moving to next label %d now' % currentLabel )
 
-            # If label is contacting no other label, move to next label
             else:
                 if VERBOSE: print('Label' + str(currentLabel) + ' is contacting no other label.')
                 currentLabel = currentLabel + 1
                 if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
+            '''
 
-    print('Label edition completed.')
+    print('\nHooray - Label edition completed.')
 
     if pad > 0: correctedLabelMap = removePaddingFromLabelledMap(correctedLabelMap, pad)
 
     timeEnd = time.time()
     timeTaken = (timeEnd - timeStart)//60
 
-    print( 'Time taken for correction loop: ' + str( timeTaken ) + ' mins' )
+    print( 'Time taken for correction loop: ' + str( np.round(timeTaken) ) + ' mins' )
 
     return correctedLabelMap
 
