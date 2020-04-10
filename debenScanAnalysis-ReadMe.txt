@@ -133,4 +133,40 @@ Code notes:
     #Add:
       - Void ratio values at different load levels for all sands
       - Calibration values for all sands
+
+  --------
+  2020-04-10
+
+    #Fixes:
+      Updated Segment now asks for method to follow for binarization. void ratio is passed from start, if not user is asked;
+      Updated Segment to check for no particle contact when fixing oversegmentation - if no contact - moves to next label;
+      Particle within particle - rectify by controlling the sequence in which particle are merged;
+
+    #Priority:
+      Gradation --> Relative Breakage --> Fabric
+
+      - Gradation
+          *Add original gradation as a check (line or spline curve?) - standard CSV file I think will work.
+          Label 1 to 2 and label 2 to 1 contact areas are diferent - slightly. This maybe an outcome of the dilation and particle surface
+
+      - Relative breakage
+          *Br is spitting out smaller area values - area calculation is a little lower for the code than for the manual method - need to check
+          *Which is incorrect? - Manual or Auto - Manual check uses lesser number of points gradation.
+          Check the CA particle size terms - are they giving right numbers? Check with a particle whose parameters are known
+            write down the method.
+
+      - Fabric
+          *Contact detemination --> Equal area projection / Rose diagram --> Fabric tensor
+          Is the correction for small contact implemented correctly in the measureContactNormalsSpamRW()
+          Which orientation do we need to correct for in the projections?
+          Rose diagrams instead of EA projections
+
+    #Secondary issues:
+      - Parallelize the particle size estimation - NOT URGENT
+      - Create log file in output folder
+      - Get rid og user inputs in final version
+
+    #Add:
+      - Void ratio values at different load levels for all sands
+      - Calibration values for all sands
 _________________________________________________

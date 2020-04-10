@@ -51,9 +51,6 @@ def getParticleSize(labelledMapForParticleSizeAnalysis):
     particleSizeDataSummary = np.zeros( ( numberOfParticles + 1 , 8 ) )
     print( "Starting measurement of particles..." )
 
-    '''
-    TODO: This can be parallelized !!!!!!
-    '''
     for particleNum in range( 1, numberOfParticles + 1 ):
         print( "Computing size of", particleNum, "/", numberOfParticles, "particle" )
         particleSizeDataSummary[particleNum, 0] = particleNum
@@ -140,121 +137,140 @@ def getZYXLocationOfLabel( labelledMap, label):
     zyxLocationData[:,2] = particleLocationArrays[2]
     return zyxLocationData
 
-def getMorphology(aggregate):
+def getAspectRatioSphericity( particleSizeSummary ):
     print("Measuring particle morphology...")
     '''
-    Compute some measure of roundness for a particle
-    Sphericity - stick to probably ratio of "Feret sizes"
+    Take the ratio of the long axis - could be the ratio of CA max and CA min
     '''
 
-def measureContactNormalsSpam(aggregate):
-    print("\nMeasuring contact normals using SPAM library\n")
-    labelledData=aggregate.labelledMap
-    binaryData=aggregate.binaryMap
-    contactVolume, Z, contactsTable, contactingLabels = slab.labelledContacts(labelledData)
+def measureContactNormalsSpamRW( labelledMap ):
+    print( "\nMeasuring contact normals using SPAM library\n" )
 
-    print("\nMeasuring contact using randomwalker\n")
-    ortTabSandRW = slab.contacts.contactOrientationsAssembly(labelledData, binaryData, contactingLabels, watershed="RW")
-    tempOrtsRW = np.zeros_like(ortTabSandRW)
-    ortOnlySandRW = ortTabSandRW[:,2:5]
-    j=0
-    for i in range(0,ortTabSandRW.shape[0]):
-        if (ortOnlySandRW[i,0]<0):
-            ortOnlySandRW[i]=-1*ortOnlySandRW[i]
-        if (ortOnlySandRW[i]**2).sum()<=0.999:
-            print("Contact deleted - small contact")
+    labelledData = labelledMap
+    binaryData = np.zeros_like( labelledData )
+    binaryData[ np.where( labelledData != 0 ) ] = int( 1 )
+
+    contactVolume, Z, contactsTable, contactingLabels = slab.labelledContacts( labelledData )
+
+    print("\nMeasuring contact using Random Walker\n")
+    ortTabSandRW = slab.contacts.contactOrientationsAssembly( labelledData , binaryData , contactingLabels , watershed = "RW" )
+    tempOrtsRW = np.zeros_like( ortTabSandRW )
+    ortOnlySandRW = ortTabSandRW[ : , 2 : 5 ]
+
+    j = 0
+    for i in range( 0 , ortTabSandRW.shape[ 0 ] ):
+
+        if ortOnlySandRW[ i , 0 ] < 0:
+            ortOnlySandRW[ i ] = -1 * ortOnlySandRW[ i ]
+
+        if ( ortOnlySandRW[ i ] ** 2 ).sum() <= 0.999:
+            if VERBOSE: print( "Contact deleted - small contact" )
+
         else:
-            tempOrtsRW[j] = ortTabSandRW[i]
-            j=j+1
-    aggregate.contactTableRW = tempOrtsRW[0:j,:]
-    np.savetxt("ContactTableRW.csv", aggregate.contactTableRW, delimiter=",")
-    print("\nMeasuring contact using watershed\n")
-    ortTabSandITK = slab.contacts.contactOrientationsAssembly(labelledData, binaryData, contactingLabels, watershed="ITK")
-    tempOrtsITK = np.zeros_like(ortTabSandITK)
-    ortOnlySandITK = ortTabSandITK[:,2:5]
-    j=0
-    for i in range(0,ortTabSandITK.shape[0]):
-        if (ortOnlySandITK[i,0]<0):
-            ortOnlySandITK[i]=-1*ortOnlySandRW[i]
-        elif (ortOnlySandITK[i]**2).sum()<=0.999:
-            print("Contact deleted - small contact")
+            tempOrtsRW[ j ] = ortTabSandRW[ i ]
+            j = j + 1
+
+    contactTableRW = tempOrtsRW[ 0 : j , : ]
+
+    #np.savetxt( "ContactTableRW.csv", aggregate.contactTableRW, delimiter=",")
+
+    print( "\nMeasuring contact using watershed\n" )
+    ortTabSandITK = slab.contacts.contactOrientationsAssembly( labelledData , binaryData , contactingLabels , watershed="ITK" )
+    tempOrtsITK = np.zeros_like( ortTabSandITK )
+    ortOnlySandITK = ortTabSandITK[ : , 2 : 5 ]
+
+    j = 0
+    for i in range( 0 , ortTabSandITK.shape[ 0 ] ):
+
+        if ortOnlySandITK[ i , 0 ] < 0:
+            ortOnlySandITK[ i ] = -1 * ortOnlySandRW[ i ]
+
+        if ( ortOnlySandITK[ i ] ** 2 ).sum() <= 0.999:
+            print( "Contact deleted - small contact" )
+
         else:
-            tempOrtsITK[j] = ortTabSandITK[i]
-            j=j+1
-    aggregate.contactTableITK = tempOrtsITK[0:j,:]
-    np.savetxt("ContactTableITK.csv", aggregate.contactTableITK, delimiter=",")
+            tempOrtsITK[ j ] = ortTabSandITK[ i ]
+            j = j + 1
+
+    contactTableITK = tempOrtsITK[ 0 : j , : ]
+
+    #np.savetxt("ContactTableITK.csv", aggregate.contactTableITK, delimiter=",")
+
+    return contactTableRW, contactTableITK
 
 def getAreaBetweenGSDs(gsdUp,gsdDown,bins=1000):
-    x1 = gsdUp[:,0]
-    y1 = gsdUp[:,1]
-    x2 = gsdDown[:,0]
-    y2 = gsdDown[:,1]
+    x1 = gsdUp[ : , 0 ]
+    y1 = gsdUp[ : , 1 ]
+    x2 = gsdDown[ : , 0 ]
+    y2 = gsdDown[ : , 1 ]
 
-    logX1 = np.log10(x1)
-    logX2 = np.log10(x2)
+    logX1 = np.log10( x1 )
+    logX2 = np.log10( x2 )
 
     incrLogX = ( logX1.max() - logX1.min() ) / bins
-    logXInterp = np.arange(logX1.min(),logX1.max(),incrLogX)
-    y1Interp = np.zeros_like(logXInterp)
-    y2Interp = np.zeros_like(logXInterp)
-    area = np.zeros_like(logXInterp)
+    logXInterp = np.arange( logX1.min() , logX1.max() , incrLogX )
+    y1Interp = np.zeros_like( logXInterp )
+    y2Interp = np.zeros_like( logXInterp )
+    area = np.zeros_like( logXInterp )
 
-    for i in range(0,bins):
-        y1Interp[i] = np.interp(logXInterp[i], logX1, y1 )
-        y2Interp[i] = np.interp(logXInterp[i], logX2, y2 )
+    for i in range( 0 , bins ):
+        y1Interp[ i ] = np.interp( logXInterp[ i ] , logX1 , y1 )
+        y2Interp[ i ] = np.interp( logXInterp[ i ] , logX2 , y2 )
 
         if i == 0:
             area[ i ] = ( y1Interp[ i ] - y2Interp[ i ] ) * incrLogX / 2
+
         elif i == bins - 1:
             area[ i ] = ( y1Interp[ i ] - y2Interp[ i ] ) * incrLogX / 2
+
         else:
             area[ i ] = ( y1Interp[ i ] - y2Interp[ i ] ) * incrLogX
 
-    totalArea = np.sum(area)
+    totalArea = np.sum( area )
 
     return totalArea
 
 def formatGradationsAndGetUltimate(gsdCurrent,gsdOriginal,maxSize,fracDim):
-    xmax = float(maxSize)
-    xmin = float(getStartOfUltimateGradation(xmax,fracDim))
-    ymax = float(100)
-    ymin = float(0)
+    xmax = float( maxSize )
+    xmin = float( getStartOfUltimateGradation( xmax , fracDim ) )
+    ymax = float( 100 )
+    ymin = float( 0 )
 
-    gsdCurrent = gsdCurrent.astype(float)
-    gsdOriginal = gsdOriginal.astype(float)
+    gsdCurrent = gsdCurrent.astype( float )
+    gsdOriginal = gsdOriginal.astype( float )
 
-    top = np.array([xmin,ymin]).reshape(1,2)
-    bottom = np.array([xmax,ymax]).reshape(1,2)
+    top = np.array( [ xmin , ymin ] ).reshape( 1 , 2 )
+    bottom = np.array( [ xmax , ymax ] ).reshape( 1 , 2 )
 
     top = top.astype( float )
     bottom = bottom.astype( float )
 
     corGsdCurr = np.append( np.append( top , gsdCurrent , axis = 0 ), bottom, axis=0)
     corGsdOrig = np.append( np.append( top , gsdOriginal, axis = 0 ), bottom, axis=0)
-    corGSDUlt = getUltimateGradation(xmax,xmin,fracDim)
+    corGSDUlt = getUltimateGradation( xmax , xmin , fracDim )
 
     return corGsdOrig, corGsdCurr, corGSDUlt
 
-def getStartOfUltimateGradation(dm,fracDim):
-    if VERBOSE: print('\nGetting minimum size of ultimate gradation.')
+def getStartOfUltimateGradation( dm , fracDim ):
+    if VERBOSE: print( '\nGetting minimum size of ultimate gradation.' )
     d = dm
     small = False
 
     while small != True:
-        pp = (d/dm)**(3-fracDim)
-        if VERBOSE: print('\tParticle size is: ' + str(np.round(pp,4)) + 'mm')
-        if VERBOSE: print('\tPercentage passing is: ' + str(np.round(pp*100,2)) + '%' )
-        if pp > (0.1/100): d*=0.5
-        else: small=True
+        pp = ( d / dm ) ** ( 3 - fracDim )
+        if VERBOSE: print( '\tParticle size is: ' + str( np.round( pp , 4 ) ) + 'mm')
+        if VERBOSE: print( '\tPercentage passing is: ' + str( np.round( pp * 100 , 2 ) ) + '%' )
+        if pp > ( 0.1 / 100 ) : d *= 0.5
+        else: small = True
 
     return d
 
-def getUltimateGradation(xmax,xmin,fracDim):
+def getUltimateGradation( xmax , xmin , fracDim ):
     incr = ( xmax - xmin ) / 100
-    x = np.arange(xmin,xmax + incr,incr)
+    x = np.arange( xmin , xmax + incr , incr )
     y = ( ( x / xmax ) ** ( 3 - fracDim ) ) * 100
-    x = x.reshape(x.shape[ 0 ] , 1 )
-    y = y.reshape(y.shape[ 0 ] , 1 )
-    ultimateGradation = np.append(x,y,axis=1)
-    return ultimateGradation.astype(float)
+    x = x.reshape( x.shape[ 0 ] , 1 )
+    y = y.reshape( y.shape[ 0 ] , 1 )
+    ultimateGradation = np.append( x , y , axis=1 )
+    return ultimateGradation.astype( float )
 
