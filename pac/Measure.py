@@ -33,8 +33,10 @@ def gsd( labelledMap , calib = 0.01193 ):
 
     return gsd1[:,-2:], gsd2[:,-2:], gsd3[:,-2:], gsd4[:,-2:] # [ Size(mm), percent passing(%) ]
 
-def relativeBreakage( gsdCurrent , gsdOriginal , maxSize , fracDim ):
-    gsdOrig, gsdCur, gsdUlt = formatGradationsAndGetUltimate(gsdCurrent,gsdOriginal,maxSize,fracDim)
+def relativeBreakage( gsdOriginal, gsdCurrent , maxSize=None , fracDim=None ):
+    if maxSize == None: maxSize = float(input('Enter max size of particles (mm): '))
+    if fracDim == None: fracDim = float(input('Enter fractal dimension to use: '))
+    gsdOrig, gsdCur, gsdUlt = formatGradationsAndGetUltimate(gsdOriginal,gsdCurrent,maxSize,fracDim)
     Bp = getAreaBetweenGSDs( gsdUlt , gsdOrig )
     B = getAreaBetweenGSDs( gsdCur , gsdOrig )
     print('Bp =' + str(Bp))
@@ -175,7 +177,7 @@ def getAreaBetweenGSDs(gsdUp,gsdDown,bins=1000):
 
     return totalArea
 
-def formatGradationsAndGetUltimate(gsdCurrent,gsdOriginal,maxSize,fracDim):
+def formatGradationsAndGetUltimate(gsdOriginal,gsdCurrent,maxSize,fracDim):
     xmax = float( maxSize )
     xmin = float( getStartOfUltimateGradation( xmax , fracDim ) )
     ymax = float( 100 )
@@ -203,16 +205,18 @@ def getStartOfUltimateGradation( dm , fracDim ):
 
     while small != True:
         pp = ( d / dm ) ** ( 3 - fracDim )
-        if VERBOSE: print( '\tParticle size is: ' + str( np.round( pp , 4 ) ) + 'mm')
-        if VERBOSE: print( '\tPercentage passing is: ' + str( np.round( pp * 100 , 2 ) ) + '%' )
+        if VERBOSE: print( '\tParticle size is: ' + str( np.round( d , 8 ) ) + 'mm')
+        if VERBOSE: print( '\tPercentage passing is: ' + str( np.round( pp * 100 , 2 ) ) + '%\n' )
         if pp > ( 0.1 / 100 ) : d *= 0.5
         else: small = True
 
     return d
 
 def getUltimateGradation( xmax , xmin , fracDim ):
-    incr = ( xmax - xmin ) / 100
-    x = np.arange( xmin , xmax + incr , incr )
+    logIncr = float(( np.log10( xmax ) - np.log10( xmin ) ) / 100)
+    logx = np.arange( np.log10( xmin ) , np.log10( xmax ) + logIncr , logIncr ).astype(float)
+    x = 10**logx
+    if x[-1]>xmax: x[-1]=xmax
     y = ( ( x / xmax ) ** ( 3 - fracDim ) ) * 100
     x = x.reshape( x.shape[ 0 ] , 1 )
     y = y.reshape( y.shape[ 0 ] , 1 )
