@@ -167,6 +167,7 @@ Code notes:
       - Void ratio values at different load levels for all sands
       - Calibration values for all sands
 
+
   --------
   2020-04-15
 
@@ -206,6 +207,41 @@ Code notes:
     #Add:
       - Void ratio values at different load levels for all sands
       - Calibration values for all sands
+
+
+  --------
+  2020-04-16
+
+    #Fixes:
+    Fixed relative breakage calculation to calculate correct ertive breakage - which agrees with origin code
+
+    #Priority:
+    Gradation --> Relative Breakage --> Fabric
+
+      - Gradation
+
+      - Relative breakage
+
+      - Fabric
+        Contact detemination --> Equal area projection / Rose diagram --> Fabric tensor
+          Add code for plotting
+            EAP plots
+            2D rose diagrams
+
+          Vectorize the checking for small contact areas
+          Rose diagrams instead of EA projections
+
+    #Secondary issues:
+      - Parallelize the particle size estimation - NOT URGENT
+      - Create log file in output folder
+      - Get rid og user inputs in final version
+      - Split getParticleSize into sub functions
+      - Check CA calculation steps + write down the steps
+
+    #Add:
+      * Void ratio values at different load levels for all sands
+      * Calibration values for all sands
+
 
   --------
   2020-04-16
