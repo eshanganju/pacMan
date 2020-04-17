@@ -12,12 +12,12 @@ import spam.label as slab
 VERBOSE = True
 
 def gsd( labelledMap , calib = 0.01193 ):
-    gss = getParticleSize( labelledMap ) # [ Label, Volume(px3), Size1(px), Size2(px), Size3(px), Size4(px), Size5(ND), Size6(ND)]
+    gss = getParticleSize( labelledMap ) # [ Label, Volume(vx), Size1(px), Size2(px), Size3(px), Size4(px), Size5(ND), Size6(ND)]
 
-    gsd1 = getGrainSizeDistribution( gss , sizeParam=1 ) # [ Lable, Volume(px3), Size(px), percent passing(%) ]
-    gsd2 = getGrainSizeDistribution( gss , sizeParam=2 ) # [ Lable, Volume(px3), Size(px), percent passing(%) ]
-    gsd3 = getGrainSizeDistribution( gss , sizeParam=3 ) # [ Lable, Volume(px3), Size(px), percent passing(%) ]
-    gsd4 = getGrainSizeDistribution( gss , sizeParam=4 ) # [ Lable, Volume(px3), Size(px), percent passing(%) ]
+    gsd1 = getGrainSizeDistribution( gss , sizeParam=1 ) # [ Lable, Volume(vx), Size(px), percent passing(%) ]
+    gsd2 = getGrainSizeDistribution( gss , sizeParam=2 ) # [ Lable, Volume(vx), Size(px), percent passing(%) ]
+    gsd3 = getGrainSizeDistribution( gss , sizeParam=3 ) # [ Lable, Volume(vx), Size(px), percent passing(%) ]
+    gsd4 = getGrainSizeDistribution( gss , sizeParam=4 ) # [ Lable, Volume(vx), Size(px), percent passing(%) ]
 
     # Size in mm
     gsd1[:,2] *= calib
@@ -33,20 +33,12 @@ def gsd( labelledMap , calib = 0.01193 ):
 
     return gsd1[:,-2:], gsd2[:,-2:], gsd3[:,-2:], gsd4[:,-2:] # [ Size(mm), percent passing(%) ]
 
-def relativeBreakage( gsdOriginal, gsdCurrent , maxSize=None , fracDim=None ):
-    if maxSize == None: maxSize = float(input('Enter max size of particles (mm): '))
-    if fracDim == None: fracDim = float(input('Enter fractal dimension to use: '))
-    gsdOrig, gsdCur, gsdUlt = formatGradationsAndGetUltimate(gsdOriginal,gsdCurrent,maxSize,fracDim)
-    Bp = getAreaBetweenGSDs( gsdUlt , gsdOrig )
-    B = getAreaBetweenGSDs( gsdCur , gsdOrig )
-    print('Bp =' + str(Bp))
-    print('B = ' + str(B))
-    Br = B/Bp * 100
-    if VERBOSE: print('Relative breakage (Br) is: ' + str(np.round(Br,2)) + '%')
-    return gsdOrig, gsdCur, gsdUlt, Br
+# TODO:Split getParticleSize in to smaller units
+#   One for equivlent sphere
+#   Three for centroidal axis dimensions
 
-def getParticleSize(labelledMapForParticleSizeAnalysis):
-    numberOfParticles = int(labelledMapForParticleSizeAnalysis.max())
+def getParticleSize( labelledMapForParticleSizeAnalysis ):
+    numberOfParticles = int( labelledMapForParticleSizeAnalysis.max() )
 
     # Particle size summary columns
     # [0] Index, [1] Volume, [2] Eqsp, [3] Centroidal - max, [4] Centroidal - med, [5] Centroidal - min, [6] and [7] are open
@@ -106,12 +98,12 @@ def getParticleSize(labelledMapForParticleSizeAnalysis):
         particleSizeDataSummary[particleNum, 4] = caMed
         particleSizeDataSummary[particleNum, 5] = caMin
 
-    return particleSizeDataSummary  # [ Label, Volume(px3), Size1(px), Size2(px), Size3(px), Size4(px), Size5(ND), Size6(ND)]
+    return particleSizeDataSummary  # [ Label, Volume(vx), Size1(px), Size2(px), Size3(px), Size4(px), Size5(ND), Size6(ND)]
 
 def getGrainSizeDistribution(psSummary,sizeParam=1):
     print('\nGetting GSD for size param #' + str( sizeParam ) )
     label = psSummary[ : , 0 ].reshape( psSummary.shape[ 0 ] , 1 )
-    vol = psSummary[ : , 1 ].reshape( psSummary.shape[ 0 ] , 1 ) 
+    vol = psSummary[ : , 1 ].reshape( psSummary.shape[ 0 ] , 1 )
     size = psSummary[: , sizeParam + 1 ].reshape( psSummary.shape[ 0 ] , 1 )
     gss = np.append( label, vol , 1 ).reshape( psSummary.shape[ 0 ] , 2 )
     gss = np.append( gss , size , 1 ).reshape( psSummary.shape[ 0 ] , 3 )
@@ -121,9 +113,9 @@ def getGrainSizeDistribution(psSummary,sizeParam=1):
     pp = ( np.cumsum( gss[ : , 1 ] ) / totalVol * 100 ).reshape( gss.shape[ 0 ] , 1 )
 
     gsdPP = np.append( gss , pp, 1 )
-    gsdPP = np.delete(gsdPP,0,0)
+    gsdPP = np.delete(gsdPP,0,0) # Removes the smallest particle (0) that comes from the getParticleSize code
     print('\tDone')
-    return gsdPP # [ Lable, Volume(px), Size(px), percent passing(%) ]
+    return gsdPP # [ Label, Volume(vx), Size(px), percent passing(%) ]
 
 def computeVolumeOfLabel( labelledMap, label):
     labelOnlyMap = np.zeros_like(labelledMap)
@@ -138,6 +130,18 @@ def getZYXLocationOfLabel( labelledMap, label):
     zyxLocationData[:,1] = particleLocationArrays[1]
     zyxLocationData[:,2] = particleLocationArrays[2]
     return zyxLocationData
+
+def relativeBreakage( gsdOriginal, gsdCurrent , maxSize=None , fracDim=None ):
+    if maxSize == None: maxSize = float(input('Enter max size of particles (mm): '))
+    if fracDim == None: fracDim = float(input('Enter fractal dimension to use: '))
+    gsdOrig, gsdCur, gsdUlt = formatGradationsAndGetUltimate(gsdOriginal,gsdCurrent,maxSize,fracDim)
+    Bp = getAreaBetweenGSDs( gsdUlt , gsdOrig )
+    B = getAreaBetweenGSDs( gsdCur , gsdOrig )
+    print('Bp =' + str(Bp))
+    print('B = ' + str(B))
+    Br = B/Bp * 100
+    if VERBOSE: print('Relative breakage (Br) is: ' + str(np.round(Br,2)) + '%')
+    return gsdOrig, gsdCur, gsdUlt, Br
 
 def getAspectRatioSphericity( particleSizeSummary ):
     print("Measuring particle morphology...")
@@ -223,7 +227,7 @@ def getUltimateGradation( xmax , xmin , fracDim ):
     ultimateGradation = np.append( x , y , axis=1 )
     return ultimateGradation.astype( float )
 
-def measureContactNormalsSpam( labelledMap ):
+def contactNormalsSpam( labelledMap ):
     print( "\nMeasuring contact normals using SPAM library\n" )
 
     labelledData = labelledMap

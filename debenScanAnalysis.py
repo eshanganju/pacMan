@@ -19,12 +19,17 @@ import matplotlib.pyplot as plt             # matplotlib
 import skimage.external.tifffile as tf      # scikit-image
 import numpy as np                          # numpy
 
+'''
+Binarization according to density measurement
+Segmentation according to ITK and auto correction
+Particle size values and gradation
+Relative breakage according to Einav
+Contact according to ITK and RW
+'''
+
 # Data location:
 inputFolderLocation = '/home/eg/codes/pacInput/OTC-0N/'
 outputFolderLocation = '/home/eg/codes/pacOutput/OTC-0N/'
-
-#print('Maithilee chutiya hai')
-#print('Haan Haan, barobar')
 
 # Data details:
 dataName = 'otc-0N'

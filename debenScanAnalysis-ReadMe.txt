@@ -171,6 +171,7 @@ Code notes:
   2020-04-15
 
     #Fixes:
+    Fixed relative breakage calculation to calculate correct ertive breakage - which agrees with origin code
 
     #Priority:
     Gradation --> Relative Breakage --> Fabric
@@ -180,8 +181,6 @@ Code notes:
           Label 1 to 2 and label 2 to 1 contact areas are diferent - slightly. This maybe an outcome of the dilation and particle surface
 
       - Relative breakage
-          *Br is spitting out smaller area values - area calculation is a little lower for the code than for the manual method - need to check
-          *Which is incorrect? - Manual or Auto - Manual check uses lesser number of points gradation.
           Check the CA particle size terms - are they giving right numbers? Check with a particle whose parameters are known
             write down the method.
 
@@ -193,7 +192,7 @@ Code notes:
             The x orientation is positive in the code. Z and Y orientations can be negative. This is true when looking at contact (weibicke's code)
             When plotting the orts, the Z direction is flipped.
             I am not sure why this is done, but it doesnt affect the results.
-            I need to make sure that we are plotting the same things as the ground reality.
+            All I need to make sure that we are plotting the same things as the ground reality.
 
           Vectorize the checking for small contact areas
           Rose diagrams instead of EA projections
@@ -202,8 +201,42 @@ Code notes:
       - Parallelize the particle size estimation - NOT URGENT
       - Create log file in output folder
       - Get rid og user inputs in final version
+      - Split getParticleSize into sub functions
 
     #Add:
       - Void ratio values at different load levels for all sands
       - Calibration values for all sands
+
+  --------
+  2020-04-16
+
+    #Fixes:
+    Fixed relative breakage calculation to calculate correct ertive breakage - which agrees with origin code
+
+    #Priority:
+    Gradation --> Relative Breakage --> Fabric
+
+      - Gradation
+
+      - Relative breakage
+
+      - Fabric
+        Contact detemination --> Equal area projection / Rose diagram --> Fabric tensor
+          Add code for plotting
+            EAP plots
+            2D rose diagrams
+
+          Vectorize the checking for small contact areas
+          Rose diagrams instead of EA projections
+
+    #Secondary issues:
+      - Parallelize the particle size estimation - NOT URGENT
+      - Create log file in output folder
+      - Get rid og user inputs in final version
+      - Split getParticleSize into sub functions
+      - Check CA calculation steps + write down the steps
+
+    #Add:
+      * Void ratio values at different load levels for all sands
+      * Calibration values for all sands
 _________________________________________________

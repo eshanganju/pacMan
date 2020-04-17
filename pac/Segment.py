@@ -81,7 +81,7 @@ def binarizeAccordingToOtsu( gliMapToBinarize ):
 
     return binaryMap3, otsuThreshold
 
-def binarizeAccordingToUserThreshold( gliMapToBinarize, outputLocation = None, sampleName = None):
+def binarizeAccordingToUserThreshold( gliMapToBinarize ):
     userThreshold = int( input( 'Enter user threshold: ' ) )
     binaryMap = np.zeros_like( gliMapToBinarize )
     binaryMap[ np.where( gliMapToBinarize > userThreshold ) ] = 1
@@ -100,18 +100,6 @@ def binarizeAccordingToUserThreshold( gliMapToBinarize, outputLocation = None, s
     print( 'Void ratio after threshold = %f' % e1 )
     print( 'Void ratio after filling holes = %f' % e2 )
     print( 'Void ratio after removing specks = %f' % e3 )
-
-    # Saving files
-    #userThresholdFileName = outputLocation + sampleName + '-userThresholdDetails.txt'
-    #f = open( userThresholdFileName, 'w+' )
-    #f.write( 'Global user threshold = %f' % userThreshold )
-    #f.write( '\nVoid ratio after threshold = %f' % e1 )
-    #f.write( '\nVoid ratio after filling holes = %f' % e2 )
-    #f.write( '\nVoid ratio after removing specks = %f' % e3 )
-    #f.close() 
-
-    #print('Output file saved as ' + userThresholdFileName)
-    #print('---------------------*')
 
     return binaryMap, userThreshold
 
@@ -467,41 +455,48 @@ def getContactAreaAndNormals(labelledMap, contactList):
             contactNormalXX
     '''
 
-def moveLabelsUp(labelMapToFix, labelStartingWhichMoveUp):
-    print('\tUpdating Labels after %d' % labelStartingWhichMoveUp)
-    deltaMatrix = np.zeros_like(labelMapToFix)
-    deltaMatrix[np.where(labelMapToFix > labelStartingWhichMoveUp)]=1
+def moveLabelsUp( labelMapToFix, labelStartingWhichMoveUp ):
+    print( '\tUpdating Labels after %d' % labelStartingWhichMoveUp )
+    deltaMatrix = np.zeros_like( labelMapToFix )
+    deltaMatrix[ np.where( labelMapToFix > labelStartingWhichMoveUp ) ] = 1
     fixedLabelMap = labelMapToFix - deltaMatrix
     return fixedLabelMap
 
-def removeEdgeLabels(labelledMapForEdgeLabelRemoval,pad=0):
+def removeEdgeLabels( labelledMapForEdgeLabelRemoval , pad=0 ):
     labMap = labelledMapForEdgeLabelRemoval
     numberOfLabels = labMap.max()
+    startingNumberOfLabels = numberOfLabels
     currentLabel = 1
-    print('\n\nRemoving Edge Labels...')
-    print('Starting total number of labels = ' + str(labMap.max()) + '\n')
+
+    print( '\n\nRemoving Edge Labels...' )
+    print( 'Starting total number of labels = ' + str( labMap.max() ) + '\n' )
+
     startTime = time.time()
     while currentLabel <= numberOfLabels:
-        if VERBOSE: print('\nChecking label #' + str(currentLabel))
-        edgeLabel = checkIfEdgeLabel(labMap,currentLabel,pad)
+
+        if VERBOSE: print( '\n\tChecking label #' + str( currentLabel ) )
+        edgeLabel = checkIfEdgeLabel( labMap,currentLabel , pad )
+
         if edgeLabel == True:
-            if VERBOSE: print('\tLabel #' + str(currentLabel) + ' is an on the edge: REMOVING')
-            labMap[np.where(labMap == currentLabel)] = int(0)
-            if VERBOSE: print('\tShifting labels up...')
-            labMap = moveLabelsUp(labMap,currentLabel)
+            if VERBOSE: print( '\tLabel #' + str( currentLabel ) + ' is an on the edge: REMOVING' )
+            labMap[ np.where( labMap == currentLabel ) ] = int( 0 )
+            if VERBOSE: print( '\tShifting labels up...' )
+            labMap = moveLabelsUp( labMap , currentLabel )
             numberOfLabels = labMap.max()
+
         else:
-            if VERBOSE: print('\tLabel #' + str(currentLabel) + ' is not on the edge: KEEP')
+            if VERBOSE: print( '\tLabel #' + str( currentLabel ) + ' is not on the edge: KEEPING' )
             currentLabel += 1
 
     print( 'Removal of edge labels complete' )
+    print( 'Total Number of labels at start:' + str( startingNumberOfLabels ) )
     print( 'Total Number of labels remaining:' + str( numberOfLabels ) + '\n' )
     endTime = time.time()
     timeTaken = endTime - startTime
-    print( 'Total time taken: ' + str(np.round(timeTaken/60)) + ' mins' )
+    print( 'Total time taken:~' + str( np.round( timeTaken // 60 ) ) + ' mins' )
     return labMap
 
-def checkIfEdgeLabel(labelledMap, label, pad):
+def checkIfEdgeLabel( labelledMap, label, pad ):
     pointCloudArray = np.where(labelledMap == label)
 
     z = pointCloudArray[0].reshape( 1 , pointCloudArray[ 0 ].shape[ 0 ] )
