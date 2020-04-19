@@ -114,7 +114,7 @@ def getGrainSizeDistribution(psSummary,sizeParam=1):
 
     gsdPP = np.append( gss , pp, 1 )
     gsdPP = np.delete(gsdPP,0,0) # Removes the smallest particle (0) that comes from the getParticleSize code
-    print('\tDone')
+    print('Done')
     return gsdPP # [ Label, Volume(vx), Size(px), percent passing(%) ]
 
 def computeVolumeOfLabel( labelledMap, label):

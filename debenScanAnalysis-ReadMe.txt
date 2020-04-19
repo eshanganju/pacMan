@@ -31,6 +31,7 @@ OTC
     Voxels: 1,034,240,000
     Size: 1973 Mb  Data type: USHORT
     Volume: 1,756,426,686,733.08 µm³
+    e_measured = 0.517 (2 significant figures + 1 extra)
 
   Load = 1500 N
     Width: 1,000 px (11,930.80 µm)
@@ -40,6 +41,7 @@ OTC
     Voxels: 1,034,240,000
     Size: 1973 Mb  Data type: USHORT
     Volume: 1,756,426,686,733.08 µm³
+    e_measured = 0.499 (2 significant figures + 1 extra)
 
   Load = 4500 N
     Width: 1,004 px (11,978.52 µm)
@@ -49,6 +51,7 @@ OTC
     Voxels: 1,038,376,960
     Size: 1981 Mb  Data type: USHORT
     Volume: 1,763,452,393,480.01 µm³
+    e_measured = 0.359 (2 significant figures + 1 extra)
 _________________________________________________
 OGF
 
@@ -250,11 +253,13 @@ Code notes:
     Fixed relative breakage calculation to calculate correct ertive breakage - which agrees with origin code
 
     #Priority:
-    Gradation --> Relative Breakage --> Fabric
+    Gradation --> Relative Breakage --> Fabric (plot + fabric tensor)
 
       - Gradation
+        Check gradation quality by the absolute area between sieve gsd and CT gsd.
 
       - Relative breakage
+        Add segmentation correction steps into log.
 
       - Fabric
         Contact detemination --> Equal area projection / Rose diagram --> Fabric tensor
@@ -275,4 +280,34 @@ Code notes:
     #Add:
       * Void ratio values at different load levels for all sands
       * Calibration values for all sands
+
+  --------
+  2020-04-18
+  Runnign analysis for all the laod levels for OTC sand
+  Void ratio values at different load levels for all sands
+  Calibration values for all sands
+
+    # Fixes:
+
+    # Priority:
+    Gradation --> Relative Breakage --> Fabric (plot + fabric tensor)
+
+      - Gradation
+
+      - Relative breakage
+
+      - Fabric
+        Contact detemination --> Equal area projection / Rose diagram --> Fabric tensor
+          Add code for plotting
+            EAP plots
+            2D rose diagrams
+
+    # Secondary issues:
+      - Parallelize the particle size estimation - NOT URGENT
+      - Create log file in output folder
+      - Get rid og user inputs in final version
+      - Split getParticleSize into sub functions
+      - Check CA calculation steps + write down the steps
+      - Add segmentation correction steps into log.
+        Implement the check for gradation quality by the absolute area between sieve gsd and CT gsd.
 _________________________________________________

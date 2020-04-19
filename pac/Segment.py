@@ -19,7 +19,6 @@ import time
 # This is to plot all the text in the methods
 VERBOSE = True
 
-
 def performEDTWS( filteredGLIMap, currentVoidRatio, outputFilesLocation, sampleName):
     print('Starting EDT-WS')
     print('----------------------*\n')
@@ -79,7 +78,7 @@ def binarizeAccordingToOtsu( gliMapToBinarize ):
     print( 'Void ratio after filling holes = %f' % e2 )
     print( 'Void ratio after removing specks = %f' % e3 )
 
-    return binaryMap3, otsuThreshold
+    return otsuThreshold, binaryMap3
 
 def binarizeAccordingToUserThreshold( gliMapToBinarize ):
     userThreshold = int( input( 'Enter user threshold: ' ) )
@@ -101,12 +100,12 @@ def binarizeAccordingToUserThreshold( gliMapToBinarize ):
     print( 'Void ratio after filling holes = %f' % e2 )
     print( 'Void ratio after removing specks = %f' % e3 )
 
-    return binaryMap, userThreshold
+    return userThreshold, binaryMap
 
 def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
     print('\nRunning density-based threshold...')
     print('Running Otsu first to get inital guess: ')
-    otsuBinMap, otsuThreshold = binarizeAccordingToOtsu( gliMapToBinarize )
+    otsuThreshold, otsuBinMap = binarizeAccordingToOtsu( gliMapToBinarize )
     currentThreshold = otsuThreshold
 
     if measuredVoidRatio == None: measuredVoidRatio = int( input('Input the known void ratio: ') )
@@ -128,6 +127,9 @@ def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
     #f = open( userThresholdStepsTextFileName, "w+")
     #f.write( "Steps of density based user threshold\n\n" )
     #f.close()
+
+    print('\nRunning iterations to compute threshold corresponding to target void ratio...')
+    print('Target void ratio = ' + str( targetVoidRatio ) )
 
     while( abs( deltaVoidRatio ) > tolerance and iterationNum <= maxIterations ):
         incrementSign = deltaVoidRatio/abs(deltaVoidRatio)  
@@ -186,7 +188,10 @@ def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
     #f.write( "Global density based threshold = %f\n" % currentThreshold )
     #f.close()
 
-    return currentBinaryMap
+    print('\nThreshold corresponding to measured density = ' + str( np.round( currentThreshold ) ) )
+    print('-------------------------------------------------------------*')
+
+    return currentThreshold, currentBinaryMap
 
 def calcVoidRatio(binaryMapforVoidRatioCalc):
     '''
@@ -270,23 +275,26 @@ def obtainLocalMaximaMarkers( edMapForPeaks ):
     print('\tCounts reset')
     return edmPeakMarkers
 
-def obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio = None):
+def obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio = None, outputLocation=None):
     print( '\nSegmenting particles by ITK topological watershed' )
 
     binMethod=input('Which binarization method to use (1) OTSU; (2) User; [3] Density?: ')
-    if binMethod == '1': binMask = binarizeAccordingToOtsu( gliMap )
-    elif binMethod == '2': binMask = binarizeAccordingToUserThreshold( gliMap  )
-    else : binMask = binarizeAccordingToDensity( gliMap , measuredVoidRatio )
+    if binMethod == '1': binThresh, binMask = binarizeAccordingToOtsu( gliMap )
+    elif binMethod == '2': binThresh, binMask = binarizeAccordingToUserThreshold( gliMap  )
+    else : binThresh, binMask = binarizeAccordingToDensity( gliMap , measuredVoidRatio )
 
     edMap = obtainEuclidDistanceMap( binMask )
     edPeaksMap = obtainLocalMaximaMarkers( edMap )
+    print('\nStarting ITK WS')
     labelledMap = wsd( -edMap, markers = edPeaksMap, mask = binMask )
     print( 'Watershed segmentation complete' )
+
+    if outputLocation != None: np.savetxt( outputLocation + 'binaryThreshold.txt', np.array([binThresh]) )
+
     return labelledMap
 
-def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2):
-    print('\n---------------------------*')
-    print('Entering label correction')
+def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=None):
+    print('\nEntering label correction')
     print('---------------------------*')
 
     # Area limit - will change with resolution
@@ -322,7 +330,7 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2):
         else:
             contactLabel, contactArea = slab.contactingLabels(correctedLabelMap, currentLabel, areas=True)
             if VERBOSE: print('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
-            if VERBOSE: print('\tWith areas: ' + str( contactArea ) )
+            if VERBOSE: print('With areas: ' + str( contactArea ) )
 
             largeAreaVal = [contactArea[idx] for idx, val in enumerate(contactArea) if val >= areaLimit]
             largeAreaLabel = [contactLabel[idx] for idx, val in enumerate(contactArea) if val >= areaLimit]
@@ -359,56 +367,12 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2):
                 currentLabel = currentLabel + 1
                 if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
 
-
-            # Method #2
-            '''
-            if len(contactLabel) != 0:
-                for positionNumber in range(0, contactArea.shape[0]):
-
-                    # if contact area > limit, merge to smaller label and update the labels
-                    if contactArea[positionNumber] > areaLimit:
-                        if VERBOSE: print('Area between label %d and %d is greater than limit' %(currentLabel, contactLabel[positionNumber]))
-
-                        # Current label smaller than large-contact label
-                        if currentLabel < contactLabel[positionNumber]:
-                            correctedLabelMap[np.where(correctedLabelMap == contactLabel[positionNumber])] = int(currentLabel)
-                            if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
-                            correctedLabelMap = moveLabelsUp(correctedLabelMap,contactLabel[positionNumber])
-                            lastLabel = correctedLabelMap.max()
-                            if VERBOSE: print( 'Checking from label %d again' % currentLabel )
-                            break
-
-                        # Current label larger than large-contact label
-                        else:
-                            correctedLabelMap[np.where(correctedLabelMap == currentLabel)] = int(contactLabel[positionNumber])
-                            if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, contactLabel[positionNumber]))
-                            correctedLabelMap = moveLabelsUp(correctedLabelMap,currentLabel)
-                            lastLabel = correctedLabelMap.max()
-                            currentLabel = contactLabel[positionNumber]
-                            if VERBOSE: print( 'Checking from label %d onwards now' % currentLabel )
-                            break
-
-                    # if contact area < limit, move to next label
-                    else:
-                        if VERBOSE: print('Area between label %d and %d is ok' % ( currentLabel, contactLabel[positionNumber]))
-                        if positionNumber == contactArea.shape[0]-1:
-                            currentLabel = currentLabel + 1
-                            if VERBOSE: print( 'Moving to next label %d now' % currentLabel )
-
-            else:
-                if VERBOSE: print('Label' + str(currentLabel) + ' is contacting no other label.')
-                currentLabel = currentLabel + 1
-                if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
-            '''
-
-    print('\nHooray - Label edition completed.')
-
     if pad > 0: correctedLabelMap = removePaddingFromLabelledMap(correctedLabelMap, pad)
 
     timeEnd = time.time()
     timeTaken = (timeEnd - timeStart)//60
 
-    print( 'Time taken for correction loop: ' + str( np.round(timeTaken) ) + ' mins' )
+    print( '\nTime taken for correction loop: ' + str( np.round(timeTaken) ) + ' mins' )
 
     return correctedLabelMap
 
@@ -421,39 +385,6 @@ def applyPaddingToLabelledMap(labelledMap, pad):
 def removePaddingFromLabelledMap(padLabMap, pad):
     cleanLabMap = padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ].astype(int)
     return cleanLabMap
-
-def getTableOfContactAndArea(labelledMapForContactAndArea):
-    '''
-    RETURN:
-        np array of shape: Number of contacts X 7
-            contactingLabel1
-            contactingLabel2
-            contactArea
-            normalZZ
-            normalYY
-            normalXX
-            note
-    '''
-
-def getTableOfContactingLabels(labelledMapForContactDetection):
-    '''
-    RETURN:
-        np Array of shape: Number of contacts X 2
-            contactingLabel1
-            contactingLabel2
-    '''
-
-def getContactAreaAndNormals(labelledMap, contactList):
-    '''
-    RETURN:
-        np Array of shape Number of contact X 3
-            contactingLabel1
-            contactingLabel2
-            contactArea
-            contactNormalZZ
-            contactNormalYY
-            contactNormalXX
-    '''
 
 def moveLabelsUp( labelMapToFix, labelStartingWhichMoveUp ):
     print( '\tUpdating Labels after %d' % labelStartingWhichMoveUp )
