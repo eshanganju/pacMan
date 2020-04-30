@@ -67,18 +67,18 @@ def binarizeAccordingToOtsu( gliMapToBinarize ):
     binaryMap = binaryMap.astype( int )
     e1 = calcVoidRatio( binaryMap )
 
-    binaryMap2 = fillHoles( binaryMap )
-    e2 = calcVoidRatio( binaryMap2 )
+    binaryMap = fillHoles( binaryMap )
+    e2 = calcVoidRatio( binaryMap )
 
-    binaryMap3 = removeSpecks( binaryMap )
-    e3 = calcVoidRatio( binaryMap3 )
+    binaryMap = removeSpecks( binaryMap )
+    e3 = calcVoidRatio( binaryMap )
 
     print( 'Global Otsu threshold = %f' % otsuThreshold )
     print( 'Void ratio after threshold = %f' % e1 )
     print( 'Void ratio after filling holes = %f' % e2 )
     print( 'Void ratio after removing specks = %f' % e3 )
 
-    return otsuThreshold, binaryMap3
+    return otsuThreshold, binaryMap
 
 def binarizeAccordingToUserThreshold( gliMapToBinarize ):
     userThreshold = int( input( 'Enter user threshold: ' ) )
@@ -122,11 +122,6 @@ def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
 
     iterationNum = 1
     maxIterations = 50
-
-    #userThresholdStepsTextFileName = outputLocation +  sampleName + '-userThresholdDensitySteps.txt'
-    #f = open( userThresholdStepsTextFileName, "w+")
-    #f.write( "Steps of density based user threshold\n\n" )
-    #f.close()
 
     print('\nRunning iterations to compute threshold corresponding to target void ratio...')
     print('Target void ratio = ' + str( targetVoidRatio ) )
@@ -212,34 +207,21 @@ def calcVoidRatio(binaryMapforVoidRatioCalc):
     return currentVoidRatio
 
 def fillHoles( oldBinaryMapWithHoles ):
-    '''
-    Parameters
-    ----------
-    oldBinaryMap : Numpy array of binary data
-        obtained from binarization
-
-    Returns
-    -------
-    newBinaryMap holes in the map is filled
-
-    '''
-    newNoHoleBinaryMap = binary_fill_holes( oldBinaryMapWithHoles )
-    return newNoHoleBinaryMap.astype(int) 
+    allOk = False
+    newNoHoleBinaryMap=oldBinaryMapWithHoles
+    newNoHoleBinaryMap = binary_fill_holes( newNoHoleBinaryMap )
+    return newNoHoleBinaryMap.astype(int)
 
 def removeSpecks( oldBinaryMapWithSpecks ):
-    '''
-    Parameters
-    ----------
-    oldBinaryMap : Numpy array of binary data
-        obtained from binarization
+    print('Speck removal...')
+    plt.imshow(oldBinaryMapWithSpecks[oldBinaryMapWithSpecks.shape[0]//2],cmap='gray')
+    plt.show()
 
-    Returns
-    -------
-    newBinaryMap with white specks in the map removed
+    remSpecksCheck = input('Remove specks? Note it is not a good idea if there is crushed material y/[n]: ')
 
+    if remSpecksCheck == 'y':newNoSpekBinaryMap = binary_opening( oldBinaryMapWithSpecks )
+    else: newNoSpekBinaryMap = oldBinaryMapWithSpecks
 
-    '''
-    newNoSpekBinaryMap = binary_opening( oldBinaryMapWithSpecks )
     return newNoSpekBinaryMap.astype(int)
 
 def obtainEuclidDistanceMap(binaryMapForEDM ):
@@ -283,17 +265,23 @@ def obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio = None, outputLocati
     elif binMethod == '2': binThresh, binMask = binarizeAccordingToUserThreshold( gliMap  )
     else : binThresh, binMask = binarizeAccordingToDensity( gliMap , measuredVoidRatio )
 
+    voidRatio = calcVoidRatio( binMask )
+
+    if outputLocation != None:
+        threshFile = open(outputLocation + 'binaryThreshold.txt',"a+")
+        threshFile.write( "Bin Threshold = " + str( binThresh ) )
+        threshFile.write( "\nVoid ratio = " + str( voidRatio ) + '\n\n')
+        threshFile.close()
+
     edMap = obtainEuclidDistanceMap( binMask )
     edPeaksMap = obtainLocalMaximaMarkers( edMap )
     print('\nStarting ITK WS')
     labelledMap = wsd( -edMap, markers = edPeaksMap, mask = binMask )
     print( 'Watershed segmentation complete' )
 
-    if outputLocation != None: np.savetxt( outputLocation + 'binaryThreshold.txt', np.array([binThresh]) )
-
     return labelledMap
 
-def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=None):
+def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=""):
     print('\nEntering label correction')
     print('---------------------------*')
 
@@ -316,7 +304,12 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=None):
         print('\tOk, consolidating edge labels\n')
         edgePad = 0
 
-    print('Starting edge label consolidation - This takes 5-10 mins')
+    if outputLocation != "" : correctionLog = open(outputLocation+"correctionLog.Txt","a+")
+    else: correctionLog = open("lableCorrectionLog.txt","a+")
+
+    print('Starting edge label consolidation - This may take 10-20 mins')
+    correctionLog.write('\nStarting edge label consolidation - This may take 10-20 mins')
+
     # Loop through labels till all OS labels are merged
     while currentLabel <= lastLabel:
         isEdgeLabel = checkIfEdgeLabel( correctedLabelMap, currentLabel, edgePad )
@@ -324,6 +317,7 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=None):
         # If edge label, move to next label
         if isEdgeLabel == True:
             if VERBOSE: print('Label %d is an edge label, moving to next label' % currentLabel)
+            correctionLog.write('\nLabel ' + str(currentLabel) + ' is an edge label, moving to next label')
             currentLabel += 1
 
         # If not edge label, check contacting labels
@@ -331,6 +325,9 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=None):
             contactLabel, contactArea = slab.contactingLabels(correctedLabelMap, currentLabel, areas=True)
             if VERBOSE: print('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
             if VERBOSE: print('With areas: ' + str( contactArea ) )
+
+            correctionLog.write('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
+            correctionLog.write('\nWith areas: ' + str( contactArea ) )
 
             largeAreaVal = [contactArea[idx] for idx, val in enumerate(contactArea) if val >= areaLimit]
             largeAreaLabel = [contactLabel[idx] for idx, val in enumerate(contactArea) if val >= areaLimit]
@@ -340,32 +337,45 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=None):
                 if len(largeAreaVal) != 0:
                     if VERBOSE: print('\tLabels with large area: ' + str( largeAreaLabel ) )
                     if VERBOSE: print('\tArea for above labels: ' + str( largeAreaVal ) )
+
+                    correctionLog.write('\n\tLabels with large area: ' + str( largeAreaLabel ) )
+                    correctionLog.write('\n\tArea for above labels: ' + str( largeAreaVal ) )
+
                     labelToMerge = largeAreaLabel[ largeAreaVal.index( min( largeAreaVal ) ) ]
 
                     if currentLabel < labelToMerge:
                         correctedLabelMap[np.where(correctedLabelMap == labelToMerge)] = int(currentLabel)
                         if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, labelToMerge))
+                        correctionLog.write('\n\tMerging labels ' + str(currentLabel) + ' and ' + str(labelToMerge))
                         correctedLabelMap = moveLabelsUp( correctedLabelMap , labelToMerge )
                         lastLabel = correctedLabelMap.max()
-                        if VERBOSE: print( 'Checking from label %d again' % currentLabel )
+                        if VERBOSE: print( 'Checking from label %d again.' % currentLabel )
+                        correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' again.')
+
 
                     else:
                         correctedLabelMap[ np.where( correctedLabelMap == currentLabel ) ] = int( labelToMerge )
                         if VERBOSE: print('\tMerging label %d and %d' %( currentLabel, labelToMerge ) )
+                        correctionLog.write('\n\tMerging labels ' + str(currentLabel) + ' and ' + str(labelToMerge))
                         correctedLabelMap = moveLabelsUp( correctedLabelMap , currentLabel )
                         lastLabel = correctedLabelMap.max()
                         currentLabel = labelToMerge
                         if VERBOSE: print( 'Checking from label %d onwards now' % currentLabel )
+                        correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' onwards now.')
 
                 else:
                     if VERBOSE: print('Label' + str(currentLabel) + ' is contacting no other label.')
+                    correctionLog.write('\nLabel' + str(currentLabel) + ' is contacting no other label.')
                     currentLabel = currentLabel + 1
-                    if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
+                    if VERBOSE: print('Moving to next label ' + str(currentLabel) +  ' now.')
+                    correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
 
             else:
                 if VERBOSE: print('Label ' + str(currentLabel) + ' has no large contacts.')
+                correctionLog.write('\nLabel ' + str(currentLabel) + ' has no large contacts.')
                 currentLabel = currentLabel + 1
                 if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
+                correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
 
     if pad > 0: correctedLabelMap = removePaddingFromLabelledMap(correctedLabelMap, pad)
 
@@ -373,6 +383,9 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=None):
     timeTaken = (timeEnd - timeStart)//60
 
     print( '\nTime taken for correction loop: ' + str( np.round(timeTaken) ) + ' mins' )
+    correctionLog.write('\nTime taken for correction loop: ' + str( np.round(timeTaken) ) + ' mins\n\n')
+
+    correctionLog.close()
 
     return correctedLabelMap
 

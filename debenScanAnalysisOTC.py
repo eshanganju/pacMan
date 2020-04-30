@@ -29,7 +29,9 @@ Contact according to ITK and RW
 Plotting orientations in rose and EAP diagrams
 '''
 # 0, 500, 1500, 4500
-data = 500
+data = int(input('Enter data to analyze(0, 500, 1500, 4500): '))
+maxPtclSize = 1       # mm
+fracDimension = 2.6   # Fractal dimension
 
 if data == 0 :
     inputFolderLocation = '/home/eg/codes/pacInput/OTC-0N/'
@@ -38,7 +40,7 @@ if data == 0 :
 
     # Data details 0N:
     dataName = 'otc-0N'
-    measuredVoidRatio = 0.541                                           # Void ratio measured from 1D compression experiment
+    measuredVoidRatioSample = 0.541                                           # Void ratio measured from 1D compression experiment
     d50 = 0.72                                                          # D50 in mm - original gradation
     cal = 0.01193                                                       # calibration from CT mm/voxel
     zCenter = 513                                                       # Voxel units - center of slice
@@ -53,7 +55,7 @@ elif data == 500 :
 
     # Data details:
     dataName = 'otc-500N'
-    measuredVoidRatio = 0.517                                           # Void ratio measured from 1D compression experiment
+    measuredVoidRatioSample = 0.517                                           # Void ratio measured from 1D compression experiment
 
     d50 = 0.72                                                          # D50 in mm - original gradation
     cal = 0.01193                                                       # calibration from CT mm/voxel
@@ -69,7 +71,7 @@ elif data == 1500 :
 
     # Data details:
     dataName = 'otc-1500N'
-    measuredVoidRatio = 0.499                                           # Void ratio measured from 1D compression experiment
+    measuredVoidRatioSample = 0.499                                           # Void ratio measured from 1D compression experiment
 
     d50 = 0.72                                                          # D50 in mm - original gradation
     cal = 0.01193                                                       # calibration from CT mm/voxel
@@ -85,7 +87,7 @@ elif data == 4500 :
 
     # Data details:
     dataName = 'otc-4500N'
-    measuredVoidRatio = 0.359                                           # Void ratio measured from 1D compression experiment
+    measuredVoidRatioSample = 0.359                                           # Void ratio measured from 1D compression experiment
 
     d50 = 0.72                                                          # D50 in mm - original gradation
     cal = 0.01193                                                       # calibration from CT mm/voxel
@@ -105,13 +107,23 @@ for edgeLength in range( edgeLengthMin , edgeLengthMax ):
     gsdOK = False
 
     while gsdOK == False:
-        labMap = Segment.obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio , outputLocation=outputFolderLocation )
+        labMap = Segment.obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio=measuredVoidRatioSample , outputLocation=outputFolderLocation )
 
         correctedLabMap = Segment.fixErrorsInSegmentation( labMap , pad=2)
 
         noEdgeCorrectedLabMap = Segment.removeEdgeLabels( correctedLabMap )
 
         gsd1, gsd2, gsd3, gsd4 = Measure.gsd( noEdgeCorrectedLabMap , calib=cal )
+
+        junk, junk, junk, Br1 = Measure.relativeBreakage(originalGSD,gsd1, maxSize=maxPtclSize, fracDim=fracDimension)
+        junk, junk, junk, Br2 = Measure.relativeBreakage(originalGSD,gsd2, maxSize=maxPtclSize, fracDim=fracDimension)
+        junk, junk, junk, Br3 = Measure.relativeBreakage(originalGSD,gsd3, maxSize=maxPtclSize, fracDim=fracDimension)
+        junk, junk, junk, Br4 = Measure.relativeBreakage(originalGSD,gsd4, maxSize=maxPtclSize, fracDim=fracDimension)
+
+        print('Br1 = ' + str(Br1))
+        print('Br2 = ' + str(Br2))
+        print('Br3 = ' + str(Br3))
+        print('Br4 = ' + str(Br4))
 
         Plot.grainSizeDistribution(originalGSD,gsd1,gsd2,gsd3,gsd4)
 

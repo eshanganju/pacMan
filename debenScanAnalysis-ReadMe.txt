@@ -310,4 +310,42 @@ Code notes:
       - Check CA calculation steps + write down the steps
       - Add segmentation correction steps into log.
         Implement the check for gradation quality by the absolute area between sieve gsd and CT gsd.
+
+  --------
+  2020-04-20
+  Runnign analysis for all the laod levels for OTC sand
+  Void ratio values at different load levels for all sands
+  Calibration values for all sands
+
+    # Fixes:
+
+    # Priority:
+    Gradation --> Relative Breakage --> Fabric (plot + fabric tensor)
+
+      - Gradation
+        Need to check if remove specks is a good idea in the case of crushed material.
+        Check original gradation of OTC - The largest particle may ne higher than we anticipate
+        On idea would be to remove the edge labels in the crushed sands and then carry out correction.
+        Crushed material makes the particles larger - might drive up the particle size.
+          Fix that by increasing marker size? Manual segmentation?
+        An idea - quantify the error in the gsd - base on the particles that cannot be quantified
+        At the end of the day - may need to get it from manual edition.
+
+      - Relative breakage
+
+      - Fabric
+        Contact detemination --> Equal area projection / Rose diagram --> Fabric tensor
+          Add code for plotting
+            EAP plots
+            2D rose diagrams
+
+    # Secondary issues:
+      - Parallelize the particle size estimation - NOT URGENT
+      - Create log file in output folder
+      - Get rid og user inputs in final version
+      - Split getParticleSize into sub functions
+      - Check CA calculation steps + write down the steps
+      - Add segmentation correction steps into log.
+        Implement the check for gradation quality by the absolute area between sieve gsd and CT gsd.
+_________________________________________________
 _________________________________________________

@@ -49,8 +49,10 @@ def blobPlot():
     '''
     '''
 
-def equalAreaProjection( contactSummaryTable ):
+def equalAreaProjection( contactSummaryTable , yVertical = True, nr=3):
     print('\nPlotting the equal area projection of the contact normals')
+    if yVertical == True: contactSummaryTable[:,[2,3]] = contactSummaryTable[:,[3,2]]
+
     orientations = contactSummaryTable[ : , 2 : 5 ]
 
     projectionOption = input('Which projection to follow: (1) Equidistant  or [2] Equal Area?:')
@@ -62,6 +64,26 @@ def equalAreaProjection( contactSummaryTable ):
     elif plotToPresentOption == '2': plotToPresentUser = "bin"
     else : plotToPresentUser = "both"
 
+    maxBinVal = int(input('Enter max bin val: '))
+    minBinVal = int(input('Enter min bin val: '))
+
+    #normalize = input('Normalize bin([y]/n)?')
+    normalize ='n'
+    if normalize == 'n': normBinning = False
+    else: normBinning = True
+
     print('Plotting results...')
-    splt.plotOrientations(orientations,projection=projectionUser, plot=plotToPresentUser, cmap=plt.cm.Greys)
+    splt.plotOrientations( orientations_zyx = orientations,
+                           projection = projectionUser,
+                           plot = plotToPresentUser,
+                           binValueMin = minBinVal,
+                           binValueMax = maxBinVal,
+                           binNormalisation = False,
+                           numberOfRings = nr,
+                           pointMarkerSize = 8,
+                           cmap = plt.cm.gist_yarg,
+                           title = "",
+                           subtitle = {"points":"","bins":""},
+                           saveFigPath = None )
+
 
