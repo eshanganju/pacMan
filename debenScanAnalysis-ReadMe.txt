@@ -8,7 +8,6 @@ OTC
     Gs = 2.65
     max D50 = 7.80 D50s (We carry out all analysis till 7D50 for REV)
     max cube = 5.65 mm
-    Images are vertically flipped
     vertical useable lentha at Z = 513 = 7.5 mm
     Center voxel Y = 457 px
     Center voxel X = 507 px
@@ -53,14 +52,77 @@ OTC
     Volume: 1,763,452,393,480.01 µm³
     e_measured = 0.359 (2 significant figures + 1 extra)
 _________________________________________________
-OGF
+OGF - Scan details need to be updated. 
 
+  Starting Details:
+    D50 = 
+    emin = 
+    emax = 
+    Gs = 2.65
+    max D50 = 
+    max cube = 5.65 mm
+    Center voxel Z = 513 px 
+    Center voxel Y = 437 px
+    Center voxel X = 486 px
 
+  Load = 0N
+    
+    e_measured = 0.635
 
+  Load = 100N
+
+    e_measured = 0.625
+
+  Load = 500N
+
+    e_measured = 0.615
+
+  Load = 1500N
+
+    e_measured = 0.565
+
+  Load = 4500N
+
+    e_measured = 0.365
 _________________________________________________
-2QR
+2QR - Scan details needs to be updated
 
+  Starting Details:
+    D50 = 
+    emin = 
+    emax = 
+    Gs = 
+    max D50 = 2.65
+    max cube = 5.65 mm
+    Center voxel Z = px 
+    Center voxel Y = px
+    Center voxel X = px
+
+  Load = 0N
+
+    e_measured = 0.734
+
+  Load = 50N
+
+    e_measured = 0.724
+
+  Load = 100N
+
+    e_measured = 0.714
+
+  Load = 500N
+
+    e_measured = 0.594
+
+  Load = 1500N
+
+    e_measured = 0.594
+
+  Load = 4500N
+
+    e_measured = 0.344
 _________________________________________________
+
 Misc notes
   1. We choose a smaller cube to prevent effects of edge
   2. Cube should be big enough to accomodate the REV
@@ -170,7 +232,6 @@ Code notes:
       - Void ratio values at different load levels for all sands
       - Calibration values for all sands
 
-
   --------
   2020-04-15
 
@@ -211,7 +272,6 @@ Code notes:
       - Void ratio values at different load levels for all sands
       - Calibration values for all sands
 
-
   --------
   2020-04-16
 
@@ -244,7 +304,6 @@ Code notes:
     #Add:
       * Void ratio values at different load levels for all sands
       * Calibration values for all sands
-
 
   --------
   2020-04-16
@@ -283,9 +342,9 @@ Code notes:
 
   --------
   2020-04-18
-  Runnign analysis for all the laod levels for OTC sand
-  Void ratio values at different load levels for all sands
-  Calibration values for all sands
+    Runnign analysis for all the laod levels for OTC sand
+    Void ratio values at different load levels for all sands
+    Calibration values for all sands
 
     # Fixes:
 
@@ -313,9 +372,9 @@ Code notes:
 
   --------
   2020-04-20
-  Runnign analysis for all the laod levels for OTC sand
-  Void ratio values at different load levels for all sands
-  Calibration values for all sands
+    Runnign analysis for all the load levels for OTC sand
+    Void ratio values at different load levels for all sands
+    Calibration values for all sands
 
     # Fixes:
 
@@ -347,5 +406,51 @@ Code notes:
       - Check CA calculation steps + write down the steps
       - Add segmentation correction steps into log.
         Implement the check for gradation quality by the absolute area between sieve gsd and CT gsd.
-_________________________________________________
+
+  --------
+  2020-05-03
+    Just did a pre-edit commit to the rep.
+
+    Bit depth rescale needed?
+      check the thesis of Karatza and see if any improvements are needed in the images. 
+
+    The aim is to analyze the data from the 2QR and OGF sands
+      Get the grain size distribution - CA minor, major and median
+      Get the fabric - need to add new plotting figures (Rose and blob)
+
+    Add codes for the particle measures in the latest papers by Viggiani
+    There are a buch of options for the particle size, binarization method
+      Add these to the particle size analysis code and maybe restructure the code to give outputs separately
+      There can be a code that runs the particle size analysis code spearately - that way we can check which gradation matches the sieve most closely
+
+    # Fixes:
+
+    # Priority:
+    Gradation --> Relative Breakage --> Fabric (plot + fabric tensor)
+
+      - Gradation
+        Need to check if remove specks is a good idea in the case of crushed material.
+        Check original gradation of OTC - The largest particle may ne higher than we anticipate
+        On idea would be to remove the edge labels in the crushed sands and then carry out correction.
+        Crushed material makes the particles larger - might drive up the particle size.
+          Fix that by increasing marker size? Manual segmentation?
+        An idea - quantify the error in the gsd - base on the particles that cannot be quantified
+        At the end of the day - may need to get it from manual edition.
+
+      - Relative breakage
+
+      - Fabric
+        Contact detemination --> Equal area projection / Rose diagram --> Fabric tensor
+          Add code for plotting
+            EAP plots
+            2D rose diagrams
+
+    # Secondary issues:
+      - Parallelize the particle size estimation - NOT URGENT
+      - Create log file in output folder
+      - Get rid og user inputs in final version
+      - Split getParticleSize into sub functions
+      - Check CA calculation steps + write down the steps
+      - Add segmentation correction steps into log.
+        Implement the check for gradation quality by the absolute area between sieve gsd and CT gsd.
 _________________________________________________

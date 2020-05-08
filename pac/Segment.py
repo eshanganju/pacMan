@@ -114,7 +114,7 @@ def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
     targetVoidRatio = measuredVoidRatio
     greyLvlMap = gliMapToBinarize
 
-    tolerance = 0.0001
+    tolerance = 0.001
     deltaVoidRatio = targetVoidRatio - currentVoidRatio
 
     absDeltaThreshold = 0
@@ -130,22 +130,22 @@ def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
         incrementSign = deltaVoidRatio/abs(deltaVoidRatio)  
 
         if abs( deltaVoidRatio ) > 0.100:
-            absDeltaThreshold = 500
+            absDeltaThreshold = 300
 
         elif abs( deltaVoidRatio ) > 0.05:
-            absDeltaThreshold = 250
+            absDeltaThreshold = 150
 
         elif abs( deltaVoidRatio ) > 0.01:
-            absDeltaThreshold = 100
-
-        elif abs( deltaVoidRatio ) > 0.005:
             absDeltaThreshold = 50
 
-        elif abs( deltaVoidRatio ) > 0.001:
+        elif abs( deltaVoidRatio ) > 0.005:
             absDeltaThreshold = 25
 
-        elif abs( deltaVoidRatio ) > 0.0005:
+        elif abs( deltaVoidRatio ) > 0.001:
             absDeltaThreshold = 10
+
+        elif abs( deltaVoidRatio ) > 0.0005:
+            absDeltaThreshold = 5
 
         else:
             absDeltaThreshold = 1
@@ -213,11 +213,7 @@ def fillHoles( oldBinaryMapWithHoles ):
     return newNoHoleBinaryMap.astype(int)
 
 def removeSpecks( oldBinaryMapWithSpecks ):
-    print('Speck removal...')
-    plt.imshow(oldBinaryMapWithSpecks[oldBinaryMapWithSpecks.shape[0]//2],cmap='gray')
-    plt.show()
-
-    remSpecksCheck = input('Remove specks? Note it is not a good idea if there is crushed material y/[n]: ')
+    remSpecksCheck = 'y'
 
     if remSpecksCheck == 'y':newNoSpekBinaryMap = binary_opening( oldBinaryMapWithSpecks )
     else: newNoSpekBinaryMap = oldBinaryMapWithSpecks
@@ -239,13 +235,14 @@ def obtainLocalMaximaMarkers( edMapForPeaks ):
     '''
     print('\nObtaining peaks of EDM...')
     print('------------------------------*')
-    h = int( input( 'Enter the minimum height for a peak (px): ') )
+    # h = int( input( 'Enter the minimum height for a peak (px): ') )
+    h = 5
 
     print( 'Finding local maxima in EDM' )
     edmPeakMarkers = hmax( edMapForPeaks, h ).astype(int)
     print( '\tFound local maximas' )
 
-    print( 'Resetting count of peaks' )
+    print( '\nResetting count of peaks' )
     count=0
     for frame in range( 0, edmPeakMarkers.shape[ 0 ] ):
         for row in range( 0, edmPeakMarkers.shape[ 1 ] ):
@@ -275,7 +272,8 @@ def obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio = None, outputLocati
 
     edMap = obtainEuclidDistanceMap( binMask )
     edPeaksMap = obtainLocalMaximaMarkers( edMap )
-    print('\nStarting ITK WS')
+    print('\n\nStarting ITK WS')
+    print( '--------------------------*' )
     labelledMap = wsd( -edMap, markers = edPeaksMap, mask = binMask )
     print( 'Watershed segmentation complete' )
 
@@ -286,7 +284,8 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=""):
     print('---------------------------*')
 
     # Area limit - will change with resolution
-    areaLimit = int(input('Input area limit (px): '))
+    # areaLimit = int(input('Input area limit (px): '))
+    areaLimit = 550
 
     if pad > 0: labelledMapForOSCorr = applyPaddingToLabelledMap(labelledMapForOSCorr, pad)
     lastLabel = labelledMapForOSCorr.max()
