@@ -88,39 +88,39 @@ _________________________________________________
 2QR - Scan details needs to be updated
 
   Starting Details:
-    D50 = 
+    D50 = 0.73
     emin = 
     emax = 
     Gs = 
     max D50 = 2.65
     max cube = 5.65 mm
-    Center voxel Z = px 
+    Center voxel Z = px
     Center voxel Y = px
     Center voxel X = px
 
   Load = 0N
-    calib = 
+    calib = 0.011932
     e_measured = 0.734
 
   Load = 50N
-    calib = 
-    e_measured = 0.724
+    calib = 0.011932
+    e_measured = 0.726
 
   Load = 100N
-    calib = 
-    e_measured = 0.714
+    calib = 0.011931
+    e_measured = 0.722
 
   Load = 500N
-    calib = 
-    e_measured = 0.594
+    calib = 0.011931
+    e_measured = 0.698
 
   Load = 1500N
-    calib = 
-    e_measured = 0.594
+    calib = 0.011931
+    e_measured = 0.591
 
   Load = 4500N
-    calib = 
-    e_measured = 0.344
+    calib = 0.011931
+    e_measured = 0.345
 _________________________________________________
 
 Misc notes
