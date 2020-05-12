@@ -66,23 +66,23 @@ OGF - Scan details need to be updated.
     Center voxel X = 486 px
 
   Load = 0N
-    
+    calib = 
     e_measured = 0.635
 
   Load = 100N
-
+    calib = 
     e_measured = 0.625
 
   Load = 500N
-
+    calib = 
     e_measured = 0.615
 
   Load = 1500N
-
+    calib = 
     e_measured = 0.565
 
   Load = 4500N
-
+    calib = 
     e_measured = 0.365
 _________________________________________________
 2QR - Scan details needs to be updated
@@ -99,27 +99,27 @@ _________________________________________________
     Center voxel X = px
 
   Load = 0N
-
+    calib = 
     e_measured = 0.734
 
   Load = 50N
-
+    calib = 
     e_measured = 0.724
 
   Load = 100N
-
+    calib = 
     e_measured = 0.714
 
   Load = 500N
-
+    calib = 
     e_measured = 0.594
 
   Load = 1500N
-
+    calib = 
     e_measured = 0.594
 
   Load = 4500N
-
+    calib = 
     e_measured = 0.344
 _________________________________________________
 
@@ -422,6 +422,19 @@ Code notes:
     There are a buch of options for the particle size, binarization method
       Add these to the particle size analysis code and maybe restructure the code to give outputs separately
       There can be a code that runs the particle size analysis code spearately - that way we can check which gradation matches the sieve most closely
+
+    How to assess breaking? - is a particle breaking a crack?
+      Particle modification may/not lead to force chain redistribution
+        Particle developes a hairline fracture
+        Particle chips
+        Particle splits into two - with/out some shattertring along the split
+        Particle shatters
+
+    Note on time:
+      Each complete single analysis - segmentation, correction, contact detection and fabric takes 130-150 mins
+        Segmentation takes 5 mins
+        Label correction takes 13-15 mins
+        Fabric analysis takes 110 mins or so
 
     # Fixes:
 
