@@ -278,3 +278,7 @@ def contactNormalsSpam( labelledMap ):
 
     return contactTableRW, contactTableITK
 
+def fabricVariables( contactTable ):
+    orts = contactTable[ :, 2:5]
+    F1, F2, F3 = slab.fabricTensor( orts )
+    return F1, F2, F3

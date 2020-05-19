@@ -34,7 +34,7 @@ Plotting orientations in rose and EAP diagrams
 
 totalTimeStart=time.time()
 
-data = 1500
+data = 500
 maxPtclSize = 1       # mm
 fracDimension = 2.6   # Fractal dimension
 
@@ -166,8 +166,8 @@ for edgeLength in range( edgeLengthMin , edgeLengthMax ):
 
     contactTableRW, contactTableITK = Measure.contactNormalsSpam(noEdgeCorrectedLabMap)
 
-    Plot.equalAreaProjection(contactTableRW)
-    Plot.equalAreaProjection(contactTableITK)
+    Plot.equalAreaProjection(contactTableRW,nr=9)
+    Plot.equalAreaProjection(contactTableITK,nr=9)
 
     # Save files as csv
     np.savetxt((outputFolderLocation+ str(edgeLength) +'D50-gsd1.csv'), gsd1, delimiter=',')                        # Eqsp

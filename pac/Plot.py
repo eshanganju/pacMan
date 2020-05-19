@@ -49,9 +49,9 @@ def blobPlot():
     '''
     '''
 
-def equalAreaProjection( contactSummaryTable , yVertical = True, nr=3):
+def equalAreaProjection( contactSummaryTable , makeYVertical = True, nr=9):
     print('\nPlotting the equal area projection of the contact normals')
-    if yVertical == True: contactSummaryTable[:,[2,3]] = contactSummaryTable[:,[3,2]]
+    if makeYVertical == True: contactSummaryTable[:,[2,3]] = contactSummaryTable[:,[3,2]]
 
     orientations = contactSummaryTable[ : , 2 : 5 ]
 
@@ -85,5 +85,6 @@ def equalAreaProjection( contactSummaryTable , yVertical = True, nr=3):
                            title = "",
                            subtitle = {"points":"","bins":""},
                            saveFigPath = None )
+    plt.show()
 
 
