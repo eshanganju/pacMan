@@ -80,8 +80,10 @@ def binarizeAccordingToOtsu( gliMapToBinarize ):
 
     return otsuThreshold, binaryMap
 
-def binarizeAccordingToUserThreshold( gliMapToBinarize ):
-    userThreshold = int( input( 'Enter user threshold: ' ) )
+def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold = None ):
+    if userThreshold == None: 
+        userThreshold = int( input( 'Enter user threshold: ' ) )
+    
     binaryMap = np.zeros_like( gliMapToBinarize )
     binaryMap[ np.where( gliMapToBinarize > userThreshold ) ] = 1
     binaryMap = binaryMap.astype( int )
@@ -220,7 +222,7 @@ def removeSpecks( oldBinaryMapWithSpecks ):
 
     return newNoSpekBinaryMap.astype(int)
 
-def obtainEuclidDistanceMap(binaryMapForEDM ):
+def obtainEuclidDistanceMap(binaryMapForEDM):
     print('\nFinding Euclidian distance map (EDM)')
     print('------------------------------------*')
     edMap = edt( binaryMapForEDM )
@@ -235,7 +237,7 @@ def obtainLocalMaximaMarkers( edMapForPeaks ):
     '''
     print('\nObtaining peaks of EDM...')
     print('------------------------------*')
-    # h = int( input( 'Enter the minimum height for a peak (px): ') )
+    #h = int( input( 'Enter the minimum height for a peak (px): ') )
     h = 5
 
     print( 'Finding local maxima in EDM' )
@@ -254,13 +256,17 @@ def obtainLocalMaximaMarkers( edMapForPeaks ):
     print('\tCounts reset')
     return edmPeakMarkers
 
-def obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio = None, outputLocation=None):
+def obtainLabelledMapUsingITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, outputLocation=None):
     print( '\nSegmenting particles by ITK topological watershed' )
 
-    binMethod=input('Which binarization method to use (1) OTSU; (2) User; [3] Density?: ')
-    if binMethod == '1': binThresh, binMask = binarizeAccordingToOtsu( gliMap )
-    elif binMethod == '2': binThresh, binMask = binarizeAccordingToUserThreshold( gliMap  )
-    else : binThresh, binMask = binarizeAccordingToDensity( gliMap , measuredVoidRatio )
+    if knownThreshold == None:
+        binMethod=input('Which binarization method to use (1) OTSU; (2) User; [3] Density?: ')
+        if binMethod == '1': binThresh, binMask = binarizeAccordingToOtsu( gliMap )
+        elif binMethod == '2': binThresh, binMask = binarizeAccordingToUserThreshold( gliMap  )
+        else : binThresh, binMask = binarizeAccordingToDensity( gliMap , measuredVoidRatio )
+    else : 
+        print('User threshold with :' + str(round(knownThreshold)))
+        binThresh, binMask = binarizeAccordingToUserThreshold( gliMap, knownThreshold )
 
     voidRatio = calcVoidRatio( binMask )
 
@@ -270,21 +276,29 @@ def obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio = None, outputLocati
         threshFile.write( "\nVoid ratio = " + str( voidRatio ) + '\n\n')
         threshFile.close()
 
+    # Simple Euclidean distance
     edMap = obtainEuclidDistanceMap( binMask )
+    
+    # Peaks in EDM
     edPeaksMap = obtainLocalMaximaMarkers( edMap )
+    
     print('\n\nStarting ITK WS')
     print( '--------------------------*' )
     labelledMap = wsd( -edMap, markers = edPeaksMap, mask = binMask )
     print( 'Watershed segmentation complete' )
 
-    return labelledMap
+    return binMask, edMap, edPeaksMap, labelledMap
 
 def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=""):
     print('\nEntering label correction')
     print('---------------------------*')
 
-    # Area limit - will change with resolution
-    # areaLimit = int(input('Input area limit (px): '))
+    '''
+    Area limit depends on D50
+        Currently choosing based on trial and error
+        This can be some factor of the size of the particle and will depend on the resolution
+    '''
+    #areaLimit = int(input('Input area limit (px): '))
     areaLimit = 550
 
     if pad > 0: labelledMapForOSCorr = applyPaddingToLabelledMap(labelledMapForOSCorr, pad)
@@ -295,7 +309,8 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=""):
 
     print('Currently padding is ' + str(pad) + ' px')
 
-    considerEdgeLabels = input("Consolidate edge labels also ([y]/n): ")
+    #considerEdgeLabels = input("Consolidate edge labels also ([y]/n): ")
+    considerEdgeLabels = 'y'
     if considerEdgeLabels == 'n':
         print('\tOk, not consolidating edge labels\n')
         edgePad = pad

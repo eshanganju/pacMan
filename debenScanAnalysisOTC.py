@@ -16,6 +16,7 @@ from pac import Filter                      # Filters files using NLM filter
 from pac import Segment                     # Binarizatio and WS
 from pac import Measure                     # Calculates particle size, mprphology, contact, breakage
 from pac import Plot                        # Plotting functions
+import time                                 # The fourth dimension
 import matplotlib.pyplot as plt             # matplotlib
 import skimage.external.tifffile as tf      # scikit-image
 import numpy as np                          # numpy
@@ -28,8 +29,10 @@ Relative breakage according to Einav
 Contact according to ITK and RW
 Plotting orientations in rose and EAP diagrams
 '''
-# 0, 500, 1500, 4500
+
+# 0 (0 MPa), 500 (10 MPa), 1500 (30 MPa), 4500 (15 MPa)
 data = int(input('Enter data to analyze(0, 500, 1500, 4500): '))
+
 maxPtclSize = 1       # mm
 fracDimension = 2.6   # Fractal dimension
 

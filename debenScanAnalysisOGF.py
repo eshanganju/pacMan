@@ -29,9 +29,7 @@ Relative breakage according to Einav
 Contact according to ITK and RW
 Plotting orientations in rose and EAP diagrams
 '''
-# 0, 100, 500, 1500, 4500 N
-# 0, 2, 10, 30, 90 MPa
-
+# 0 (0 MPa), 100 (2 MPa), 500 (10 MPa), 1500 (30 MPa), 4500 (90 MPa)
 totalTimeStart=time.time()
 
 data = 1500
@@ -42,7 +40,6 @@ if data == 0 :
     inputFolderLocation = '/home/eg/codes/pacInput/OGF-0N/'
     outputFolderLocation = '/home/eg/codes/pacOutput/OGF-0N/'
     originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv' # Original GSD location
-
 
     # Data details 0N:
     dataName = 'ogf-0N'
@@ -89,7 +86,7 @@ if data == 500 :
 if data == 1500 :
     inputFolderLocation = '/home/eg/codes/pacInput/OGF-1500N/'
     outputFolderLocation = '/home/eg/codes/pacOutput/OGF-1500N/'
-    originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv' # Original GSD location
+    originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogf30MPa.csv' # Original GSD location
 
 
     # Data details 0N:
@@ -97,9 +94,9 @@ if data == 1500 :
     measuredVoidRatioSample = 0.565                                     # Void ratio measured from 1D compression experiment
     d50 = 0.62                                                          # D50 in mm - original gradation
     cal = 0.01193                                                       # calibration from CT mm/voxel
-    zCenter = 513                                                       # Voxel units - center of slice
-    yCenter = 458                                                       # Voxel units - vertical center
-    xCenter = 492                                                       # Voxel units - horizontal center
+    zCenter = 508                                                       # Voxel units - center of slice
+    yCenter = 437                                                       # Voxel units - vertical center
+    xCenter = 490                                                        # Voxel units - horizontal center
     originalGSD = np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
 
 edgeLengthMin = 5                                                       # Min edge length in D50s
@@ -111,6 +108,13 @@ for edgeLength in range( edgeLengthMin , edgeLengthMax ):
 
     gliMap = Reader.readTiffFileSequence( inputFolderLocation, zCenter, yCenter, xCenter, edgeLength, cal, invertImageData=False)
     gsdOK = False
+
+    # Save the 3D maps as tiff
+    gliName = outputFolderLocation + 'gliMap.tiff'
+    labName = outputFolderLocation + 'labMap.tiff'
+    correctedLabName = outputFolderLocation + 'corLabMap.tiff'
+    noEdgeCorrectedLabName = outputFolderLocation + 'noEdgeCorLabMap.tiff'
+
 
     while gsdOK == False:
         labMap = Segment.obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio=measuredVoidRatioSample , outputLocation=outputFolderLocation )
@@ -132,6 +136,11 @@ for edgeLength in range( edgeLengthMin , edgeLengthMax ):
         print('Br4 = ' + str(Br4))
 
         Plot.grainSizeDistribution(originalGSD,gsd1,gsd2,gsd3,gsd4)
+
+        tf.imsave(gliName,gliMap.astype('uint32'))
+        tf.imsave(labName,labMap.astype('uint32'))
+        tf.imsave(correctedLabName , correctedLabMap.astype('uint32'))
+        tf.imsave(noEdgeCorrectedLabName , noEdgeCorrectedLabMap.astype('uint32'))
 
         exitLoop = input('\nIs any gsd ok(y/[n])?')
 
@@ -164,17 +173,6 @@ for edgeLength in range( edgeLengthMin , edgeLengthMax ):
     L = 'Br = ' + str(Br) + '%'
     brFile.write(L)
     brFile.close()
-
-    # Save the 3D maps as tiff
-    gliName = outputFolderLocation + 'gliMap.tiff'
-    labName = outputFolderLocation + 'labMap.tiff'
-    correctedLabName = outputFolderLocation + 'corLabMap.tiff'
-    noEdgeCorrectedLabName = outputFolderLocation + 'noEdgeCorLabMap.tiff'
-
-    tf.imsave(gliName,gliMap.astype('uint32'))
-    tf.imsave(labName,labMap.astype('uint32'))
-    tf.imsave(correctedLabName , correctedLabMap.astype('uint32'))
-    tf.imsave(noEdgeCorrectedLabName , noEdgeCorrectedLabMap.astype('uint32'))
 
 totalTimeEnd = time.time()
 totalTimeTaken = totalTimeEnd - totalTimeStart
