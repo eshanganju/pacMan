@@ -57,7 +57,7 @@ if analyzeRevSizes == True :
 		gliMap = tf.imread(gliName).astype('uint32')
 		
 		
-	sizeRange = np.arange(7, 1, -1)
+	sizeRange = np.arange(1, 8, 1)
 	zCenterSu = binMap.shape[0]//2
 	yCenterSu = binMap.shape[1]//2
 	xCenterSu = binMap.shape[2]//2
@@ -86,10 +86,13 @@ if analyzeRevSizes == True :
 		subRegionGliMap = gliMap[lowSlice:upSlice,lowRow:upRow,lowCol:upCol]
 		binMask, edMap, edPeaksMap, subRegionLabMap = Segment.obtainLabelledMapUsingITKWS( subRegionGliMap, knownThreshold = 19884,outputLocation=outputFolderLocation )
 		subRegionCorrectedLabMap = Segment.fixErrorsInSegmentation( subRegionLabMap , pad=2)
-		subRegionNoEdgeCorrectedLabMap = Segment.removeEdgeLabels( subRegionCorrectedLabMap )
-		xx, xx, xx, gsd = Measure.gsd( subRegionNoEdgeCorrectedLabMap , calib=cal )
-		np.savetxt((outputFolderLocation+ str(np.round(i)) +'D50-gsdPCAmin.csv'), gsd, delimiter=',')
+		#subRegionNoEdgeCorrectedLabMap = Segment.removeEdgeLabels( subRegionCorrectedLabMap )
+		#xx, xx, xx, gsd = Measure.gsd( subRegionNoEdgeCorrectedLabMap , calib=cal )
+		#np.savetxt((outputFolderLocation+ str(np.round(i)) +'D50-gsdPCAmin.csv'), gsd, delimiter=',')
 
+		contactTableRW, contactTableITK = Measure.contactNormalsSpam(subRegionCorrectedLabMap)
+		np.savetxt((outputFolderLocation+ str(np.round(i)) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
+		np.savetxt((outputFolderLocation+ str(np.round(i)) +'D50-contactTableITK.csv'), contactTableITK, delimiter=',')  # Contact table ITK
 
 	#plt.plot(sizeList,voidRatioList)
 	#plt.ylim([0,2])

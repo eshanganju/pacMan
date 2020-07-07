@@ -52,7 +52,7 @@ def readTiffFileSequence( folderLocation, cntrZ, cntrY, cntrX, lngt, calib, inve
 
     print('Number of files in the folder %d' % numTiffFilesInFolder)
     print('Number of files to read %d' % numTiffFilesToRead)
-    print(str(upperSlice) + '-' + str(lowerSlice))
+    print(str(lowerSlice) + '-' + str(upperSlice))
 
     tempFile = tiffy.imread( str( fileList[ 0 ] ) )
     rows = tempFile.shape[ 0 ]
