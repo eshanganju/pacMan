@@ -102,7 +102,6 @@ if data == 1500 :
 edgeLengthMin = 5                                                       # Min edge length in D50s
 edgeLengthMax = 6                                                       # Max edge length in D50s
 
-
 # Reading and cropping the data file
 for edgeLength in range( edgeLengthMin , edgeLengthMax ):
 

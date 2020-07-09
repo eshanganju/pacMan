@@ -81,9 +81,9 @@ def binarizeAccordingToOtsu( gliMapToBinarize ):
     return otsuThreshold, binaryMap
 
 def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold = None ):
-    if userThreshold == None: 
+    if userThreshold == None:
         userThreshold = int( input( 'Enter user threshold: ' ) )
-    
+
     binaryMap = np.zeros_like( gliMapToBinarize )
     binaryMap[ np.where( gliMapToBinarize > userThreshold ) ] = 1
     binaryMap = binaryMap.astype( int )
@@ -264,7 +264,7 @@ def obtainLabelledMapUsingITKWS( gliMap , knownThreshold = None, measuredVoidRat
         if binMethod == '1': binThresh, binMask = binarizeAccordingToOtsu( gliMap )
         elif binMethod == '2': binThresh, binMask = binarizeAccordingToUserThreshold( gliMap  )
         else : binThresh, binMask = binarizeAccordingToDensity( gliMap , measuredVoidRatio )
-    else : 
+    else :
         print('User threshold with :' + str(round(knownThreshold)))
         binThresh, binMask = binarizeAccordingToUserThreshold( gliMap, knownThreshold )
 
@@ -278,10 +278,10 @@ def obtainLabelledMapUsingITKWS( gliMap , knownThreshold = None, measuredVoidRat
 
     # Simple Euclidean distance
     edMap = obtainEuclidDistanceMap( binMask )
-    
+
     # Peaks in EDM
     edPeaksMap = obtainLocalMaximaMarkers( edMap )
-    
+
     print('\n\nStarting ITK WS')
     print( '--------------------------*' )
     labelledMap = wsd( -edMap, markers = edPeaksMap, mask = binMask )
