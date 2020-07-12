@@ -27,74 +27,71 @@ analyzeTotalVol = False
 analyzeRevSizes = True
 
 if analyzeTotalVol == True :
-	edgeLength = 7.6*d50 # Max edge length in D50s
+    edgeLength = 7.6*d50 # Max edge length in D50s
+    gliMap = Reader.readTiffFileSequence( inputFolderLocation, zCenter, yCenter, xCenter, edgeLength, cal, invertImageData=False)
+    binMap, edMap, edPeakMap, labMap = Segment.obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio=measuredVoidRatioSample , outputLocation=outputFolderLocation )
+    correctedLabMap = Segment.fixErrorsInSegmentation( labMap , pad=2)
+    noEdgeCorrectedLabMap = Segment.removeEdgeLabels( correctedLabMap )
 
-	gliMap = Reader.readTiffFileSequence( inputFolderLocation, zCenter, yCenter, xCenter, edgeLength, cal, invertImageData=False)
-	binMap, edMap, edPeakMap, labMap = Segment.obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio=measuredVoidRatioSample , outputLocation=outputFolderLocation )
-	correctedLabMap = Segment.fixErrorsInSegmentation( labMap , pad=2)
-	noEdgeCorrectedLabMap = Segment.removeEdgeLabels( correctedLabMap )
+    # Save files:
+    gliName = outputFolderLocation + 'gliMap.tiff'
+    binName = outputFolderLocation + 'binMap.tiff'
+    labName = outputFolderLocation + 'labMap.tiff'
+    correctedLabName = outputFolderLocation + 'corLabMap.tiff'
+    noEdgeCorrectedLabName = outputFolderLocation + 'noEdgeCorLabMap.tiff'
 
-	# Save files:
-	gliName = outputFolderLocation + 'gliMap.tiff'
-	binName = outputFolderLocation + 'binMap.tiff'
-	labName = outputFolderLocation + 'labMap.tiff'
-	correctedLabName = outputFolderLocation + 'corLabMap.tiff'
-	noEdgeCorrectedLabName = outputFolderLocation + 'noEdgeCorLabMap.tiff'
-
-	tf.imsave(gliName,gliMap.astype('uint32'))
-	tf.imsave(binName,binMap.astype('uint32'))
-	tf.imsave(labName,labMap.astype('uint32'))
-	tf.imsave(correctedLabName , correctedLabMap.astype('uint32'))
-	tf.imsave(noEdgeCorrectedLabName , noEdgeCorrectedLabMap.astype('uint32'))
+    tf.imsave(gliName,gliMap.astype('uint32'))
+    tf.imsave(binName,binMap.astype('uint32'))
+    tf.imsave(labName,labMap.astype('uint32'))
+    tf.imsave(correctedLabName , correctedLabMap.astype('uint32'))
+    tf.imsave(noEdgeCorrectedLabName , noEdgeCorrectedLabMap.astype('uint32'))
 
 if analyzeRevSizes == True :
-	if analyzeTotalVol == False:
-		
-		binName = outputFolderLocation + 'binMap.tiff'
-		binMap = tf.imread(binName).astype('uint32')
+    if analyzeTotalVol == False:
+        binName = outputFolderLocation + 'binMap.tiff'
+        binMap = tf.imread(binName).astype('uint32')
 
-		gliName = outputFolderLocation + 'gliMap.tiff'
-		gliMap = tf.imread(gliName).astype('uint32')
-		
-		
-	sizeRange = np.arange(1, 8, 1)
-	zCenterSu = binMap.shape[0]//2
-	yCenterSu = binMap.shape[1]//2
-	xCenterSu = binMap.shape[2]//2
-	
-	sizeList = []
-	voidRatioList = []
-	gsdList = []
+        gliName = outputFolderLocation + 'gliMap.tiff'
+        gliMap = tf.imread(gliName).astype('uint32')
 
-	for i in sizeRange:
-		length = i*d50
-		sizeList.append(i)
+    sizeRange = np.arange(1, 8, 1)
+    zCenterSu = binMap.shape[0]//2
+    yCenterSu = binMap.shape[1]//2
+    xCenterSu = binMap.shape[2]//2
 
-		print('\nAnalyzing subregion of size : ' + str(i) + 'd50')
+    sizeList = []
+    voidRatioList = []
+    gsdList = []
 
-		upSlice = int(zCenterSu + round( ( length / 2 ) / cal ))
-		lowSlice = int(zCenterSu - round( ( length / 2 ) / cal ))
-		upRow = int(yCenterSu + round( ( length / 2 ) / cal ))
-		lowRow = int(yCenterSu - round( ( length / 2 ) / cal ))
-		upCol = int(xCenterSu + round( ( length / 2 ) / cal ))
-		lowCol = int(xCenterSu - round( ( length / 2 ) / cal ))
-		
-		subRegionBinMap = binMap[lowSlice:upSlice,lowRow:upRow,lowCol:upCol]
-		subVoidRatio = Segment.calcVoidRatio(subRegionBinMap)
-		voidRatioList.append(subVoidRatio)
+    for i in sizeRange:
+        length = i*d50
+        sizeList.append(i)
 
-		subRegionGliMap = gliMap[lowSlice:upSlice,lowRow:upRow,lowCol:upCol]
-		binMask, edMap, edPeaksMap, subRegionLabMap = Segment.obtainLabelledMapUsingITKWS( subRegionGliMap, knownThreshold = 9458,outputLocation=outputFolderLocation )
-		subRegionCorrectedLabMap = Segment.fixErrorsInSegmentation( subRegionLabMap , pad=2)
-		#subRegionNoEdgeCorrectedLabMap = Segment.removeEdgeLabels( subRegionCorrectedLabMap )
-		#xx, xx, xx, gsd = Measure.gsd( subRegionNoEdgeCorrectedLabMap , calib=cal )
-		#np.savetxt((outputFolderLocation+ str(np.round(i)) +'D50-gsdPCAmin.csv'), gsd, delimiter=',')
+        print('\nAnalyzing subregion of size : ' + str(i) + 'd50')
 
-		contactTableRW, contactTableITK = Measure.contactNormalsSpam(subRegionCorrectedLabMap)
-		np.savetxt((outputFolderLocation+ str(np.round(i)) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
-		np.savetxt((outputFolderLocation+ str(np.round(i)) +'D50-contactTableITK.csv'), contactTableITK, delimiter=',')  # Contact table ITK
+        upSlice = int(zCenterSu + round( ( length / 2 ) / cal ))
+        lowSlice = int(zCenterSu - round( ( length / 2 ) / cal ))
+        upRow = int(yCenterSu + round( ( length / 2 ) / cal ))
+        lowRow = int(yCenterSu - round( ( length / 2 ) / cal ))
+        upCol = int(xCenterSu + round( ( length / 2 ) / cal ))
+        lowCol = int(xCenterSu - round( ( length / 2 ) / cal ))
 
-	#plt.plot(sizeList,voidRatioList)
-	#plt.ylim([0,2])
-	#plt.xlim([0,10])
-	#plt.show()
+        subRegionBinMap = binMap[lowSlice:upSlice,lowRow:upRow,lowCol:upCol]
+        subVoidRatio = Segment.calcVoidRatio(subRegionBinMap)
+        voidRatioList.append(subVoidRatio)
+
+        subRegionGliMap = gliMap[lowSlice:upSlice,lowRow:upRow,lowCol:upCol]
+        binMask, edMap, edPeaksMap, subRegionLabMap = Segment.obtainLabelledMapUsingITKWS( subRegionGliMap, knownThreshold = 9458,outputLocation=outputFolderLocation )
+        subRegionCorrectedLabMap = Segment.fixErrorsInSegmentation( subRegionLabMap , pad=2)
+        #subRegionNoEdgeCorrectedLabMap = Segment.removeEdgeLabels( subRegionCorrectedLabMap )
+        #xx, xx, xx, gsd = Measure.gsd( subRegionNoEdgeCorrectedLabMap , calib=cal )
+        #np.savetxt((outputFolderLocation+ str(np.round(i)) +'D50-gsdPCAmin.csv'), gsd, delimiter=',')
+
+        contactTableRW, contactTableITK = Measure.contactNormalsSpam(subRegionCorrectedLabMap)
+        np.savetxt((outputFolderLocation+ str(np.round(i)) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
+        np.savetxt((outputFolderLocation+ str(np.round(i)) +'D50-contactTableITK.csv'), contactTableITK, delimiter=',')  # Contact table ITK
+
+    #plt.plot(sizeList,voidRatioList)
+    #plt.ylim([0,2])
+    #plt.xlim([0,10])
+    #plt.show()

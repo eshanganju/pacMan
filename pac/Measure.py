@@ -227,7 +227,7 @@ def getUltimateGradation( xmax , xmin , fracDim ):
     ultimateGradation = np.append( x , y , axis=1 )
     return ultimateGradation.astype( float )
 
-def contactNormalsSpam( labelledMap ):
+def contactNormalsSpam( labelledMap, method=None):
     print( "\nMeasuring contact normals using SPAM library\n" )
 
     labelledData = labelledMap
@@ -236,47 +236,55 @@ def contactNormalsSpam( labelledMap ):
 
     contactVolume, Z, contactsTable, contactingLabels = slab.labelledContacts( labelledData )
 
-    print("\tMeasuring contact using Random Walker\n")
-    ortTabSandRW = slab.contacts.contactOrientationsAssembly( labelledData , binaryData , contactingLabels , watershed = "RW" )
-    tempOrtsRW = np.zeros_like( ortTabSandRW )
-    ortOnlySandRW = ortTabSandRW[ : , 2 : 5 ]
+    if method == None:
+        method = input('Enter the method to use (itk or rw): ')
 
-    j = 0
-    for i in range( 0 , ortTabSandRW.shape[ 0 ] ):
+    if method == 'rw':
+        print("\tMeasuring contact using Random Walker\n")
+        ortTabSandRW = slab.contacts.contactOrientationsAssembly( labelledData , binaryData , contactingLabels , watershed = "RW" )
+        tempOrtsRW = np.zeros_like( ortTabSandRW )
+        ortOnlySandRW = ortTabSandRW[ : , 2 : 5 ]
 
-        if ortOnlySandRW[ i , 0 ] < 0:
-            ortOnlySandRW[ i ] *= -1
+        j = 0
+        for i in range( 0 , ortTabSandRW.shape[ 0 ] ):
 
-        if ( ortOnlySandRW[ i ] ** 2 ).sum() <= 0.999:
-            if VERBOSE: print( "Contact deleted - small contact" )
+            if ortOnlySandRW[ i , 0 ] < 0:
+                ortOnlySandRW[ i ] *= -1
 
-        else:
-            tempOrtsRW[ j ] = ortTabSandRW[ i ]
-            j = j + 1
+            if ( ortOnlySandRW[ i ] ** 2 ).sum() <= 0.999:
+                if VERBOSE: print( "Contact deleted - small contact" )
 
-    contactTableRW = tempOrtsRW[ 0 : j , : ]
+            else:
+                tempOrtsRW[ j ] = ortTabSandRW[ i ]
+                j = j + 1
 
-    print( "\tMeasuring contact using ITK watershed\n" )
-    ortTabSandITK = slab.contacts.contactOrientationsAssembly( labelledData , binaryData , contactingLabels , watershed="ITK" )
-    tempOrtsITK = np.zeros_like( ortTabSandITK )
-    ortOnlySandITK = ortTabSandITK[ : , 2 : 5 ]
+        contactTableRW = tempOrtsRW[ 0 : j , : ]
 
-    j = 0
-    for i in range( 0 , ortTabSandITK.shape[ 0 ] ):
+    else :
+        print( "\tMeasuring contact using ITK watershed\n" )
+        ortTabSandITK = slab.contacts.contactOrientationsAssembly( labelledData , binaryData , contactingLabels , watershed="ITK" )
+        tempOrtsITK = np.zeros_like( ortTabSandITK )
+        ortOnlySandITK = ortTabSandITK[ : , 2 : 5 ]
 
-        if ortOnlySandITK[ i , 0 ] < 0:
-            ortOnlySandITK[ i ] *= -1
+        j = 0
+        for i in range( 0 , ortTabSandITK.shape[ 0 ] ):
 
-        if ( ortOnlySandITK[ i ] ** 2 ).sum() <= 0.999:
-            print( "Contact deleted - small contact" )
+            if ortOnlySandITK[ i , 0 ] < 0:
+                ortOnlySandITK[ i ] *= -1
 
-        else:
-            tempOrtsITK[ j ] = ortTabSandITK[ i ]
-            j = j + 1
+            if ( ortOnlySandITK[ i ] ** 2 ).sum() <= 0.999:
+                print( "Contact deleted - small contact" )
 
-    contactTableITK = tempOrtsITK[ 0 : j , : ]
+            else:
+                tempOrtsITK[ j ] = ortTabSandITK[ i ]
+                j = j + 1
 
-    return contactTableRW, contactTableITK
+        contactTableITK = tempOrtsITK[ 0 : j , : ]
+
+    if method == 'rw' : contTable = contactTableRW
+    elif method == 'itk' : contTable = contactTableITK
+
+    return contTable
 
 def fabricVariables( contactTable ):
     orts = contactTable[ :, 2:5]

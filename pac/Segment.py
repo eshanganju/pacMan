@@ -222,14 +222,15 @@ def removeSpecks( oldBinaryMapWithSpecks ):
 
     return newNoSpekBinaryMap.astype(int)
 
-def obtainEuclidDistanceMap(binaryMapForEDM):
+def obtainEuclidDistanceMap(binaryMapForEDM, scaleUp = int(5)):
     print('\nFinding Euclidian distance map (EDM)')
     print('------------------------------------*')
     edMap = edt( binaryMapForEDM )
+    if scaleUp!=0 : edMap =  edMap * scaleUp
     print( "EDM Created" )
     return edMap
 
-def obtainLocalMaximaMarkers( edMapForPeaks ):
+def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=9):
     '''
     Fix this to be better at obtaining markers
     Expected number of particles?
@@ -237,11 +238,14 @@ def obtainLocalMaximaMarkers( edMapForPeaks ):
     '''
     print('\nObtaining peaks of EDM...')
     print('------------------------------*')
-    #h = int( input( 'Enter the minimum height for a peak (px): ') )
-    h = 5
 
     print( 'Finding local maxima in EDM' )
-    edmPeakMarkers = hmax( edMapForPeaks, h ).astype(int)
+    if method == 'hlocal' :
+        if h == None: h = int( input( 'Enter the minimum height for a peak (px): ') )
+        edmPeakMarkers = hmax( edMapForPeaks, h ).astype(int)
+
+    elif method == 'local' : edmPeakMarkers = localMaxima( edMapForPeaks ).astype(int)
+
     print( '\tFound local maximas' )
 
     print( '\nResetting count of peaks' )
@@ -253,7 +257,9 @@ def obtainLocalMaximaMarkers( edMapForPeaks ):
                     edmPeakMarkers[ frame ][ row ][ col ] = count + 1
                     count = count + 1
         if VERBOSE: print( 'Processed ' + str(frame + 1) + ' out of ' + str(edmPeakMarkers.shape[ 0 ]) + ' slices' )
+
     print('\tCounts reset')
+    print('\tNumber of peaks: ' + str(round(edmPeakMarkers.max())))
     return edmPeakMarkers
 
 def obtainLabelledMapUsingITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, outputLocation=None):
@@ -297,9 +303,20 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=""):
     Area limit depends on D50
         Currently choosing based on trial and error
         This can be some factor of the size of the particle and will depend on the resolution
+        The diameters are 0.62, 0.72, 0.73 mm
+        Average is 0.67mm
+        That translates to 57 pixels
+        Asuming a contact of half a particle i.e. 28 pixels, we get an area
+        of 784 (square with edge 28 px)
+        of 615 (circle with diameter 28 px)
+        Average is around 700
+
+        The area to be used should be a function of the sizes of the particles touching
+        i.e. the contact between larger particles will be large and so for smaller
+        This is especially true for crushed particles.
     '''
     #areaLimit = int(input('Input area limit (px): '))
-    areaLimit = 550
+    areaLimit = 700
 
     if pad > 0: labelledMapForOSCorr = applyPaddingToLabelledMap(labelledMapForOSCorr, pad)
     lastLabel = labelledMapForOSCorr.max()
