@@ -2,9 +2,9 @@ import numpy as np
 from uncertainties import unumpy as unp
 from uncertainties import ufloat
 from uncertainties.umath import *
- 
-fileName = '/home/eg/codes/pacOutput/REV/OTC-0N/1D50-contactTableRW.csv'
- 
+
+fileName = '/home/eg/codes/pacOutput/OGF-1500N-8/6.0D50-contactTableRW.csv'
+
 data = np.loadtxt(fileName, delimiter=',')
 
 vectors = data[:,2:5]
@@ -23,15 +23,15 @@ N32 = ufloat(0,0)
 N33 = ufloat(0,0)
 
 for i in range(0,uncertVectorArray.shape[0]):
-	N11 = N11 + (uncertVectorArray[i,0])*(uncertVectorArray[i,0])
-	N12 = N12 + (uncertVectorArray[i,0])*(uncertVectorArray[i,1])
-	N13 = N13 + (uncertVectorArray[i,0])*(uncertVectorArray[i,2])
-	N21 = N21 + (uncertVectorArray[i,1])*(uncertVectorArray[i,0])
-	N22 = N22 + (uncertVectorArray[i,1])*(uncertVectorArray[i,1])
-	N23 = N23 + (uncertVectorArray[i,1])*(uncertVectorArray[i,2])
-	N31 = N31 + (uncertVectorArray[i,2])*(uncertVectorArray[i,0])
-	N32 = N32 + (uncertVectorArray[i,2])*(uncertVectorArray[i,1])
-	N33 = N33 + (uncertVectorArray[i,2])*(uncertVectorArray[i,2])
+    N11 = N11 + (uncertVectorArray[i,0])*(uncertVectorArray[i,0])
+    N12 = N12 + (uncertVectorArray[i,0])*(uncertVectorArray[i,1])
+    N13 = N13 + (uncertVectorArray[i,0])*(uncertVectorArray[i,2])
+    N21 = N21 + (uncertVectorArray[i,1])*(uncertVectorArray[i,0])
+    N22 = N22 + (uncertVectorArray[i,1])*(uncertVectorArray[i,1])
+    N23 = N23 + (uncertVectorArray[i,1])*(uncertVectorArray[i,2])
+    N31 = N31 + (uncertVectorArray[i,2])*(uncertVectorArray[i,0])
+    N32 = N32 + (uncertVectorArray[i,2])*(uncertVectorArray[i,1])
+    N33 = N33 + (uncertVectorArray[i,2])*(uncertVectorArray[i,2])
 
 N11 = N11 / uncertVectorArray.shape[0]
 N12 = N12 / uncertVectorArray.shape[0]

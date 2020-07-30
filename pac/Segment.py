@@ -230,7 +230,7 @@ def obtainEuclidDistanceMap(binaryMapForEDM, scaleUp = int(5)):
     print( "EDM Created" )
     return edMap
 
-def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=9):
+def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=3):
     '''
     Fix this to be better at obtaining markers
     Expected number of particles?
@@ -295,28 +295,12 @@ def obtainLabelledMapUsingITKWS( gliMap , knownThreshold = None, measuredVoidRat
 
     return binMask, edMap, edPeaksMap, labelledMap
 
-def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=""):
+def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation="" , areaLimit = None, checkForSmallParticles = True):
     print('\nEntering label correction')
     print('---------------------------*')
+    if areaLimit != None : print('Area limit is : ' + str( np.round( areaLimit) ) )
 
-    '''
-    Area limit depends on D50
-        Currently choosing based on trial and error
-        This can be some factor of the size of the particle and will depend on the resolution
-        The diameters are 0.62, 0.72, 0.73 mm
-        Average is 0.67mm
-        That translates to 57 pixels
-        Asuming a contact of half a particle i.e. 28 pixels, we get an area
-        of 784 (square with edge 28 px)
-        of 615 (circle with diameter 28 px)
-        Average is around 700
-
-        The area to be used should be a function of the sizes of the particles touching
-        i.e. the contact between larger particles will be large and so for smaller
-        This is especially true for crushed particles.
-    '''
-    #areaLimit = int(input('Input area limit (px): '))
-    areaLimit = 700
+    if areaLimit == None: areaLimit = int(input('Input area limit (px): '))
 
     if pad > 0: labelledMapForOSCorr = applyPaddingToLabelledMap(labelledMapForOSCorr, pad)
     lastLabel = labelledMapForOSCorr.max()
@@ -339,7 +323,11 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=""):
     else: correctionLog = open("lableCorrectionLog.txt","a+")
 
     print('Starting edge label consolidation - This may take 10-20 mins')
-    correctionLog.write('\nStarting edge label consolidation - This may take 10-20 mins')
+
+    correctionLog.write('\n-------------------------------------------------------')
+    correctionLog.write('\nStarting edge label consolidation')
+    correctionLog.write('\nArea limit: ' + str( np.round( areaLimit ) ) + '\n\n')
+
 
     # Loop through labels till all OS labels are merged
     while currentLabel <= lastLabel:
@@ -354,6 +342,7 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=""):
         # If not edge label, check contacting labels
         else:
             contactLabel, contactArea = slab.contactingLabels(correctedLabelMap, currentLabel, areas=True)
+            print('\n')
             if VERBOSE: print('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
             if VERBOSE: print('With areas: ' + str( contactArea ) )
 
@@ -363,7 +352,6 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=""):
             largeAreaVal = [contactArea[idx] for idx, val in enumerate(contactArea) if val >= areaLimit]
             largeAreaLabel = [contactLabel[idx] for idx, val in enumerate(contactArea) if val >= areaLimit]
 
-            # Method #1
             if len(largeAreaVal) != 0:
                 if len(largeAreaVal) != 0:
                     if VERBOSE: print('\tLabels with large area: ' + str( largeAreaLabel ) )
@@ -418,7 +406,11 @@ def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation=""):
 
     correctionLog.close()
 
-    return correctedLabelMap
+    if checkForSmallParticles == True:
+        correctedCleanedLabelMap = removeSmallParticles( correctedLabelMap )
+    else : correctedCleanedLabelMap = correctedLabelMap
+
+    return correctedCleanedLabelMap
 
 def applyPaddingToLabelledMap(labelledMap, pad):
     paddedMap = labelledMap
@@ -429,6 +421,34 @@ def applyPaddingToLabelledMap(labelledMap, pad):
 def removePaddingFromLabelledMap(padLabMap, pad):
     cleanLabMap = padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ].astype(int)
     return cleanLabMap
+
+def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 10 ):
+    print('\nRemoving small particles with voxel count smaller than ' + str( np.round( voxelCountThreshold ) ) + ' voxels' )
+
+    ptclNo = 1
+    ptclCount = int( labMapWithSmallPtcl.max() )
+    labMapUpdated = labMapWithSmallPtcl
+
+    while ptclNo <= ptclCount :
+        print('\nChecking ptcl no. ' + str( np.round( ptclNo ) ) )
+
+        isolate = np.zeros_like( labMapUpdated )
+        isolate[ np.where( labMapUpdated == ptclNo ) ] = 1
+        voxelCount = isolate.sum()
+
+        if voxelCount >= voxelCountThreshold :
+            print('\tIts OK')
+            ptclNo = ptclNo + 1
+
+        else:
+            print('\tIts smaller than threshold, removing and updating particle counts')
+            labMapUpdated[ np.where( labMapUpdated  == ptclNo ) ] = int( 0 )
+            labMapUpdated = moveLabelsUp( labMapUpdated , ptclNo )
+            ptclCount = ptclCount - 1
+
+    print('-------------')
+    print('Complete')
+    return labMapUpdated
 
 def moveLabelsUp( labelMapToFix, labelStartingWhichMoveUp ):
     print( '\tUpdating Labels after %d' % labelStartingWhichMoveUp )

@@ -86,13 +86,13 @@ if data == 500 :
 
 if data == 1500 :
     inputFolderLocation = '/home/eg/codes/pacInput/OGF-1500N/'
-    outputFolderLocation = '/home/eg/codes/pacOutput/OGF-1500N-3/'
+    outputFolderLocation = '/home/eg/codes/pacOutput/OGF-1500N-9/'
     originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogf30MPa.csv' # Original GSD location
 
 
     # Data details 0N:
     dataName = 'ogf-1500N'
-    measuredVoidRatioSample = 0.57  #0.565                              # Void ratio measured from 1D compression experiment
+    measuredVoidRatioSample = 0.571  #0.565                             # Void ratio measured from 1D compression experiment
     d50 = 0.62                                                          # D50 in mm - original gradation
     cal = 0.01193                                                       # calibration from CT mm/voxel
     zCenter = 508                                                       # Voxel units - center of slice
@@ -117,7 +117,23 @@ noEdgeCorrectedLabName = outputFolderLocation + 'noEdgeCorLabMap.tiff'
 while gsdOK == False:
     binMap, edMap, edPeakMap, labMap = Segment.obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio=measuredVoidRatioSample , outputLocation=outputFolderLocation )
 
-    correctedLabMap = Segment.fixErrorsInSegmentation( labMap , pad=2)
+    correctedLabMap = Segment.fixErrorsInSegmentation( labMap , pad=2, outputLocation=outputFolderLocation , areaLimit = 650)
+    '''
+        Currently choosing areaLimit based on trial and error
+
+        This can be some factor of the size of the particle and will depend on the resolution
+        The diameters are 0.62, 0.72, 0.73 mm
+        Average is 0.67mm
+        That translates to 57 pixels
+        Asuming a contact of half a particle i.e. 28 pixels, we get an area
+        of 784 (square with edge 28 px)
+        of 615 (circle with diameter 28 px)
+        Average is around 700
+
+        The area to be used should be a function of the sizes of the particles touching
+        i.e. the contact between larger particles will be large and so for smaller
+        This is especially true for crushed particles.
+    '''
     #correctedLabMap = labMap
 
     noEdgeCorrectedLabMap = Segment.removeEdgeLabels( correctedLabMap )
@@ -166,7 +182,7 @@ while gsdOK == False:
 #np.savetxt((outputFolderLocation+ str(edgeLength/d50) +'D50-gsd2.csv'), gsd2, delimiter=',')                        # CA max
 #np.savetxt((outputFolderLocation+ str(edgeLength/d50) +'D50-gsd3.csv'), gsd3, delimiter=',')                        # CA med
 np.savetxt((outputFolderLocation+ str(edgeLength/d50) +'D50-gsd4.csv'), gsd4, delimiter=',')                        # CA min
-#np.savetxt((outputFolderLocation+ str(edgeLength/d50) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
+np.savetxt((outputFolderLocation+ str(edgeLength/d50) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
 
 #brFile = open(outputFolderLocation+ str(edgeLength) +'D50-Br.txt',"w")
 #L = 'Br = ' + str(Br) + '%'
