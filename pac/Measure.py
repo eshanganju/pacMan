@@ -8,6 +8,9 @@ import math
 import statistics
 import scipy
 import spam.label as slab
+from uncertainties import unumpy as unp
+from uncertainties import ufloat
+from uncertainties.umath import *
 
 VERBOSE = True
 
@@ -131,7 +134,7 @@ def getZYXLocationOfLabel( labelledMap, label):
     zyxLocationData[:,2] = particleLocationArrays[2]
     return zyxLocationData
 
-def relativeBreakage( gsdOriginal, gsdCurrent , maxSize=None , fracDim=None ):
+def relBreak( gsdOriginal, gsdCurrent , maxSize=None , fracDim=None ):
     if maxSize == None: maxSize = float(input('Enter max size of particles (mm): '))
     if fracDim == None: fracDim = float(input('Enter fractal dimension to use: '))
     gsdOrig, gsdCur, gsdUlt = formatGradationsAndGetUltimate(gsdOriginal,gsdCurrent,maxSize,fracDim)
@@ -290,3 +293,47 @@ def fabricVariables( contactTable ):
     orts = contactTable[ :, 2:5]
     F1, F2, F3 = slab.fabricTensor( orts )
     return F1, F2, F3
+
+def fabricVariablesWithUncertainity( contactTable, vectUncert = 0.26 ):
+    vectors = contactTable[ :, 2:5]
+    uncertVectors = vectUncert*(np.ones_like(vectors))
+
+    uncertVectorArray = unp.uarray(vectors,uncertVectors)
+
+    N = np.zeros((3,3))
+    F = np.zeros((3,3))
+    Fq = 0.0
+
+    uN = unp.uarray(N,N)
+    uF = unp.uarray(F,F)
+    uFq = ufloat(Fq,Fq)
+
+    for i in range(0,uncertVectorArray.shape[0]):
+        uN[0,0] = uN[0,0] + (uncertVectorArray[i,0])*(uncertVectorArray[i,0])
+        uN[0,1] = uN[0,1] + (uncertVectorArray[i,0])*(uncertVectorArray[i,1])
+        uN[0,2] = uN[0,2] + (uncertVectorArray[i,0])*(uncertVectorArray[i,2])
+        uN[1,0] = uN[1,0] + (uncertVectorArray[i,1])*(uncertVectorArray[i,0])
+        uN[1,1] = uN[1,1] + (uncertVectorArray[i,1])*(uncertVectorArray[i,1])
+        uN[1,2] = uN[1,2] + (uncertVectorArray[i,1])*(uncertVectorArray[i,2])
+        uN[2,0] = uN[2,0] + (uncertVectorArray[i,2])*(uncertVectorArray[i,0])
+        uN[2,1] = uN[2,1] + (uncertVectorArray[i,2])*(uncertVectorArray[i,1])
+        uN[2,2] = uN[2,2] + (uncertVectorArray[i,2])*(uncertVectorArray[i,2])
+
+    uN = uN / uncertVectorArray.shape[0]
+
+    utraceF = N[0,0] + N[1,1] + N[2,2]
+
+
+    uF[0,0] = 15/2 * ( uN[0,0] - (1/3)*utraceF )
+    uF[0,1] = 15/2 * ( uN[0,1] )
+    uF[0,2] = 15/2 * ( uN[0,2] )
+    uF[1,0] = 15/2 * ( uN[1,0] )
+    uF[1,1] = 15/2 * ( uN[1,1] - (1/3)*utraceF )
+    uF[1,2] = 15/2 * ( uN[1,2] )
+    uF[2,0] = 15/2 * ( uN[2,0] )
+    uF[2,1] = 15/2 * ( uN[2,1] )
+    uF[2,2] = 15/2 * ( uN[2,2] - (1/3)*utraceF )
+
+    uFq = ((3/2)*( F[0,0]*F[0,0] + F[0,1]*F[0,1] + F[0,2]*F[0,2] + F[1,0]*F[1,0] + F[1,1]*F[1,1] + F[1,2]*F[1,2] + F[2,0]*F[2,0] + F[2,1]*F[2,1] + F[2,2]*F[2,2])) ** 0.5
+
+    return uN, uF, uFq

@@ -21,6 +21,9 @@ import time                                 # The fourth dimension
 import matplotlib.pyplot as plt             # matplotlib
 import skimage.external.tifffile as tf      # scikit-image
 import numpy as np                          # numpy
+from uncertainties import unumpy as unp
+from uncertainties import ufloat
+from uncertainties.umath import *
 
 '''
 Binarization according to density measurement
@@ -35,11 +38,11 @@ totalTimeStart=time.time()
 # 0 (0 MPa), 100 (2 MPa), 500 (10 MPa), 1500 (30 MPa), 4500 (90 MPa)
 data = 1500
 maxPtclSize = 1         # mm
-fracDimension = 2.6     # Fractal dimension
+fracDim = 2.6     # Fractal dimension
 
 if data == 0 :
     inputFolderLocation = '/home/eg/codes/pacInput/OGF-0N/'
-    outputFolderLocation = '/home/eg/codes/pacOutput/OGF-0N/'
+    ofl = '/home/eg/codes/pacOutput/OGF-0N/' # output folder location ofl
     originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv' # Original GSD location
 
     # Data details 0N:
@@ -50,11 +53,11 @@ if data == 0 :
     zCenter = 508                                                       # Voxel units - center of slice
     yCenter = 437                                                       # Voxel units - vertical center
     xCenter = 490                                                       # Voxel units - horizontal center
-    originalGSD = np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
+    origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
 
 if data == 100 :
     inputFolderLocation = '/home/eg/codes/pacInput/OGF-100N/'
-    outputFolderLocation = '/home/eg/codes/pacOutput/OGF-100N/'
+    ofl = '/home/eg/codes/pacOutput/OGF-100N/'
     originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv' # Original GSD location
 
 
@@ -66,11 +69,11 @@ if data == 100 :
     zCenter = 508                                                       # Voxel units - center of slice
     yCenter = 447                                                       # Voxel units - vertical center
     xCenter = 490                                                       # Voxel units - horizontal center
-    originalGSD = np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
+    origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
 
 if data == 500 :
     inputFolderLocation = '/home/eg/codes/pacInput/OGF-500N/'
-    outputFolderLocation = '/home/eg/codes/pacOutput/OGF-500N/'
+    ofl = '/home/eg/codes/pacOutput/OGF-500N/'
     originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv' # Original GSD location
 
 
@@ -82,11 +85,11 @@ if data == 500 :
     zCenter = 508                                                       # Voxel units - center of slice
     yCenter = 458                                                       # Voxel units - vertical center
     xCenter = 490                                                       # Voxel units - horizontal center
-    originalGSD = np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
+    origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
 
 if data == 1500 :
     inputFolderLocation = '/home/eg/codes/pacInput/OGF-1500N/'
-    outputFolderLocation = '/home/eg/codes/pacOutput/OGF-1500N-9/'
+    ofl = '/home/eg/codes/pacOutput/OGF-1500N-9/'
     originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogf30MPa.csv' # Original GSD location
 
 
@@ -98,26 +101,26 @@ if data == 1500 :
     zCenter = 508                                                       # Voxel units - center of slice
     yCenter = 437                                                       # Voxel units - vertical center
     xCenter = 490                                                       # Voxel units - horizontal center
-    originalGSD = np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
+    origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
 
-edgeLength = 6*d50          # Edge length in mm
+eLen = 6*d50          # Edge length in mm
 
 # Reading and cropping the data file
-gliMap = Reader.readTiffFileSequence( inputFolderLocation, zCenter, yCenter, xCenter, edgeLength, cal, invertImageData=False)
+gliMap = Reader.readTiffFileSequence( inputFolderLocation, zCenter, yCenter, xCenter, eLen, cal, invertImageData=False)
 gsdOK = False
 
 # Save the 3D maps as tiff
-gliName = outputFolderLocation + 'gliMap.tiff'
-binName = outputFolderLocation + 'binMap.tiff'
-edName = outputFolderLocation + 'edMap.tiff'
-labName = outputFolderLocation + 'labMap.tiff'
-correctedLabName = outputFolderLocation + 'corLabMap.tiff'
-noEdgeCorrectedLabName = outputFolderLocation + 'noEdgeCorLabMap.tiff'
+gliName = ofl + 'gliMap.tiff'
+binName = ofl + 'binMap.tiff'
+edName = ofl + 'edMap.tiff'
+labName = ofl + 'labMap.tiff'
+correctedLabName = ofl + 'corLabMap.tiff'
+noEdgeCorrectedLabName = ofl + 'noEdgeCorLabMap.tiff'
 
 while gsdOK == False:
-    binMap, edMap, edPeakMap, labMap = Segment.obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio=measuredVoidRatioSample , outputLocation=outputFolderLocation )
+    binMap, edMap, edPeakMap, labMap = Segment.obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio=measuredVoidRatioSample , outputLocation=ofl )
 
-    correctedLabMap = Segment.fixErrorsInSegmentation( labMap , pad=2, outputLocation=outputFolderLocation , areaLimit = 650)
+    correctedLabMap = Segment.fixErrorsInSegmentation( labMap , pad=2, outputLocation=ofl , areaLimit = 650)
     '''
         Currently choosing areaLimit based on trial and error
 
@@ -140,17 +143,17 @@ while gsdOK == False:
 
     gsd1, gsd2, gsd3, gsd4 = Measure.gsd( noEdgeCorrectedLabMap , calib=cal )
 
-    #junk, junk, junk, Br1 = Measure.relativeBreakage(originalGSD,gsd1, maxSize=maxPtclSize, fracDim=fracDimension)
-    #junk, junk, junk, Br2 = Measure.relativeBreakage(originalGSD,gsd2, maxSize=maxPtclSize, fracDim=fracDimension)
-    #junk, junk, junk, Br3 = Measure.relativeBreakage(originalGSD,gsd3, maxSize=maxPtclSize, fracDim=fracDimension)
-    #junk, junk, junk, Br4 = Measure.relativeBreakage(originalGSD,gsd4, maxSize=maxPtclSize, fracDim=fracDimension)
+    #junk,junk,junk,Br1 = Measure.relBreak(origGSD,gsd1, maxSize=maxPtclSize, fracDim=fracDim)
+    #junk,junk,junk,Br2 = Measure.relBreak(origGSD,gsd2, maxSize=maxPtclSize, fracDim=fracDim)
+    #junk,junk,junk,Br3 = Measure.relBreak(origGSD,gsd3, maxSize=maxPtclSize, fracDim=fracDim)
+    #junk,junk,junk,Br4 = Measure.relBreak(origGSD,gsd4, maxSize=maxPtclSize, fracDim=fracDim)
 
     #print('Br1 = ' + str(Br1))
     #print('Br2 = ' + str(Br2))
     #print('Br3 = ' + str(Br3))
     #print('Br4 = ' + str(Br4))
 
-    Plot.grainSizeDistribution(originalGSD,gsd1,gsd2,gsd3,gsd4)
+    Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4)
 
     tf.imsave( gliName, gliMap.astype( 'uint32' ) )
     tf.imsave( binName, binMap.astype( 'uint32' ) )
@@ -173,21 +176,26 @@ while gsdOK == False:
 
     else: print('\nUse user threshold to update binary map - check the binaryThreshold file in output folder for latest threshold')
 
-#formatGsdOrig, formatGsdCurr, formatGsdUlt, Br = Measure.relativeBreakage(originalGSD,gsdForBr)
-#contactTableRW = Measure.contactNormalsSpam(noEdgeCorrectedLabMap, method = 'rw')
-#Plot.equalAreaProjection(contactTableRW)
+formatGsdOrig, formatGsdCurr, formatGsdUlt, Br = Measure.relBreak(origGSD,gsdForBr)
+
+contactTableRW = Measure.contactNormalsSpam(noEdgeCorrectedLabMap, method = 'rw')
+N, F, Fq = Measure.fabricVariablesWithUncertainity( contactTableRW, vectUncert = 0.26 )
+Plot.equalAreaProjection(contactTableRW)
 
 # Save files as csv
-#np.savetxt((outputFolderLocation+ str(edgeLength/d50) +'D50-gsd1.csv'), gsd1, delimiter=',')                        # Eqsp
-#np.savetxt((outputFolderLocation+ str(edgeLength/d50) +'D50-gsd2.csv'), gsd2, delimiter=',')                        # CA max
-#np.savetxt((outputFolderLocation+ str(edgeLength/d50) +'D50-gsd3.csv'), gsd3, delimiter=',')                        # CA med
-np.savetxt((outputFolderLocation+ str(edgeLength/d50) +'D50-gsd4.csv'), gsd4, delimiter=',')                        # CA min
-np.savetxt((outputFolderLocation+ str(edgeLength/d50) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
+np.savetxt((ofl+ str(eLen/d50) +'D50-gsd1.csv'), gsd1, delimiter=',')                        # Eqsp
+np.savetxt((ofl+ str(eLen/d50) +'D50-gsd2.csv'), gsd2, delimiter=',')                        # CA max
+np.savetxt((ofl+ str(eLen/d50) +'D50-gsd3.csv'), gsd3, delimiter=',')                        # CA med
+np.savetxt((ofl+ str(eLen/d50) +'D50-gsd4.csv'), gsd4, delimiter=',')                        # CA min
+np.savetxt((ofl+ str(eLen/d50) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
+np.savetxt((ofl+ str(eLen/d50) +'N.txt'), N, fmt='%r')    # Contact table RW
+np.savetxt((ofl+ str(eLen/d50) +'F.txt'), F, fmt='%r')    # Contact table RW
+np.savetxt((ofl+ str(eLen/d50) +'Fq.txt'), Fq, fmt='%r')    # Contact table RW
 
-#brFile = open(outputFolderLocation+ str(edgeLength) +'D50-Br.txt',"w")
-#L = 'Br = ' + str(Br) + '%'
-#brFile.write(L)
-#brFile.close()
+brFile = open(ofl+ str(eLen) +'D50-Br.txt',"w")
+L = 'Br = ' + str(Br) + '%'
+brFile.write(L)
+brFile.close()
 
 totalTimeEnd = time.time()
 totalTimeTaken = totalTimeEnd - totalTimeStart
