@@ -222,7 +222,7 @@ def removeSpecks( oldBinaryMapWithSpecks ):
 
     return newNoSpekBinaryMap.astype(int)
 
-def obtainEuclidDistanceMap(binaryMapForEDM, scaleUp = int(5)):
+def obtainEuclidDistanceMap(binaryMapForEDM, scaleUp = int(1)):
     print('\nFinding Euclidian distance map (EDM)')
     print('------------------------------------*')
     edMap = edt( binaryMapForEDM )
@@ -230,7 +230,7 @@ def obtainEuclidDistanceMap(binaryMapForEDM, scaleUp = int(5)):
     print( "EDM Created" )
     return edMap
 
-def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=3):
+def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5):
     '''
     Fix this to be better at obtaining markers
     Expected number of particles?
@@ -262,7 +262,7 @@ def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=3):
     print('\tNumber of peaks: ' + str(round(edmPeakMarkers.max())))
     return edmPeakMarkers
 
-def obtainLabelledMapUsingITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, outputLocation=None):
+def obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, outputLocation=None):
     print( '\nSegmenting particles by ITK topological watershed' )
 
     if knownThreshold == None:
@@ -295,7 +295,7 @@ def obtainLabelledMapUsingITKWS( gliMap , knownThreshold = None, measuredVoidRat
 
     return binMask, edMap, edPeaksMap, labelledMap
 
-def fixErrorsInSegmentation(labelledMapForOSCorr, pad=2, outputLocation="" , areaLimit = None, checkForSmallParticles = True):
+def fixErrSeg(labelledMapForOSCorr, pad=2, outputLocation="" , areaLimit = None, checkForSmallParticles = True):
     print('\nEntering label correction')
     print('---------------------------*')
     if areaLimit != None : print('Area limit is : ' + str( np.round( areaLimit) ) )

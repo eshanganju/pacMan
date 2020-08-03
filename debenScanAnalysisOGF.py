@@ -36,7 +36,7 @@ Plotting orientations in rose and EAP diagrams
 totalTimeStart=time.time()
 
 # 0 (0 MPa), 100 (2 MPa), 500 (10 MPa), 1500 (30 MPa), 4500 (90 MPa)
-data = 1500
+data = 500
 maxPtclSize = 1         # mm
 fracDim = 2.6     # Fractal dimension
 
@@ -106,7 +106,13 @@ if data == 1500 :
 eLen = 6*d50          # Edge length in mm
 
 # Reading and cropping the data file
-gliMap = Reader.readTiffFileSequence( inputFolderLocation, zCenter, yCenter, xCenter, eLen, cal, invertImageData=False)
+gliMap = Reader.readTiffFileSequence( inputFolderLocation,
+                                      zCenter,
+                                      yCenter,
+                                      xCenter,
+                                      eLen,
+                                      cal,
+                                      invImg=False)
 gsdOK = False
 
 # Save the 3D maps as tiff
@@ -114,13 +120,16 @@ gliName = ofl + 'gliMap.tiff'
 binName = ofl + 'binMap.tiff'
 edName = ofl + 'edMap.tiff'
 labName = ofl + 'labMap.tiff'
-correctedLabName = ofl + 'corLabMap.tiff'
-noEdgeCorrectedLabName = ofl + 'noEdgeCorLabMap.tiff'
+corLabName = ofl + 'corLabMap.tiff'
+noEdgeCorLabName = ofl + 'noEdgeCorLabMap.tiff'
 
 while gsdOK == False:
-    binMap, edMap, edPeakMap, labMap = Segment.obtainLabelledMapUsingITKWS( gliMap , measuredVoidRatio=measuredVoidRatioSample , outputLocation=ofl )
+    binMap, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
+                                                               measuredVoidRatio=measuredVoidRatioSample ,
+                                                               outputLocation=ofl )
 
-    correctedLabMap = Segment.fixErrorsInSegmentation( labMap , pad=2, outputLocation=ofl , areaLimit = 650)
+    corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , areaLimit = 700)
+
     '''
         Currently choosing areaLimit based on trial and error
 
@@ -137,11 +146,9 @@ while gsdOK == False:
         i.e. the contact between larger particles will be large and so for smaller
         This is especially true for crushed particles.
     '''
-    #correctedLabMap = labMap
 
-    noEdgeCorrectedLabMap = Segment.removeEdgeLabels( correctedLabMap )
-
-    gsd1, gsd2, gsd3, gsd4 = Measure.gsd( noEdgeCorrectedLabMap , calib=cal )
+    noEdgeCorLabMap = Segment.removeEdgeLabels( corLabMap )
+    gsd1, gsd2, gsd3, gsd4 = Measure.gsd( noEdgeCorLabMap , calib=cal )
 
     #junk,junk,junk,Br1 = Measure.relBreak(origGSD,gsd1, maxSize=maxPtclSize, fracDim=fracDim)
     #junk,junk,junk,Br2 = Measure.relBreak(origGSD,gsd2, maxSize=maxPtclSize, fracDim=fracDim)
@@ -153,16 +160,17 @@ while gsdOK == False:
     #print('Br3 = ' + str(Br3))
     #print('Br4 = ' + str(Br4))
 
-    Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4)
+    #Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4)
 
     tf.imsave( gliName, gliMap.astype( 'uint32' ) )
     tf.imsave( binName, binMap.astype( 'uint32' ) )
     tf.imsave( edName, edMap.astype( 'uint32' ) )
     tf.imsave( labName, labMap.astype( 'uint32' ) )
-    tf.imsave( correctedLabName , correctedLabMap.astype( 'uint32'))
-    tf.imsave( noEdgeCorrectedLabName , noEdgeCorrectedLabMap.astype('uint32'))
+    tf.imsave( corLabName , corLabMap.astype( 'uint32'))
+    tf.imsave( noEdgeCorLabName , noEdgeCorLabMap.astype('uint32'))
 
-    exitLoop = input('\nIs any gsd ok(y/[n])?')
+    #exitLoop = input('\nIs any gsd ok(y/[n])?')
+    exitLoop = 'y'
 
     if exitLoop == 'y':
         gsdOK=True
@@ -176,11 +184,11 @@ while gsdOK == False:
 
     else: print('\nUse user threshold to update binary map - check the binaryThreshold file in output folder for latest threshold')
 
-formatGsdOrig, formatGsdCurr, formatGsdUlt, Br = Measure.relBreak(origGSD,gsdForBr)
+#formatGsdOrig, formatGsdCurr, formatGsdUlt, Br = Measure.relBreak(origGSD,gsdForBr)
 
-contactTableRW = Measure.contactNormalsSpam(noEdgeCorrectedLabMap, method = 'rw')
+contactTableRW = Measure.contactNormalsSpam(corLabMap, method = 'rw')
 N, F, Fq = Measure.fabricVariablesWithUncertainity( contactTableRW, vectUncert = 0.26 )
-Plot.equalAreaProjection(contactTableRW)
+#Plot.equalAreaProjection(contactTableRW)
 
 # Save files as csv
 np.savetxt((ofl+ str(eLen/d50) +'D50-gsd1.csv'), gsd1, delimiter=',')                        # Eqsp
@@ -188,14 +196,14 @@ np.savetxt((ofl+ str(eLen/d50) +'D50-gsd2.csv'), gsd2, delimiter=',')           
 np.savetxt((ofl+ str(eLen/d50) +'D50-gsd3.csv'), gsd3, delimiter=',')                        # CA med
 np.savetxt((ofl+ str(eLen/d50) +'D50-gsd4.csv'), gsd4, delimiter=',')                        # CA min
 np.savetxt((ofl+ str(eLen/d50) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
-np.savetxt((ofl+ str(eLen/d50) +'N.txt'), N, fmt='%r')    # Contact table RW
-np.savetxt((ofl+ str(eLen/d50) +'F.txt'), F, fmt='%r')    # Contact table RW
-np.savetxt((ofl+ str(eLen/d50) +'Fq.txt'), Fq, fmt='%r')    # Contact table RW
+np.savetxt((ofl+ str(eLen/d50) +'N.txt'), N, fmt='%r')    # Fabric tensor
+np.savetxt((ofl+ str(eLen/d50) +'F.txt'), F, fmt='%r')    # Deviatoric fabric tensor
+np.savetxt((ofl+ str(eLen/d50) +'Fq.txt'), Fq, fmt='%r')  # Ansiotropy factor
 
-brFile = open(ofl+ str(eLen) +'D50-Br.txt',"w")
-L = 'Br = ' + str(Br) + '%'
-brFile.write(L)
-brFile.close()
+#brFile = open(ofl+ str(eLen) +'D50-Br.txt',"w")
+#L = 'Br = ' + str(Br) + '%'
+#brFile.write(L)
+#brFile.close()
 
 totalTimeEnd = time.time()
 totalTimeTaken = totalTimeEnd - totalTimeStart

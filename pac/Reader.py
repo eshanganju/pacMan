@@ -23,7 +23,7 @@ def readTiffStack( folderAndFileLocation, cntrZ, cntrY, cntrX, lngt, calib ):
     data = dataBig[ lowerSlice:upperSlice, lowerRow : upperRow, lowerCol : upperCol ]
     return data
 
-def readTiffFileSequence( folderLocation, cntrZ, cntrY, cntrX, lngt, calib, invertImageData=True):
+def readTiffFileSequence( folderLocation, cntrZ, cntrY, cntrX, lngt, calib, invImg=True):
     print( 'Reading tiff files from: ' + folderLocation )
 
     upperSlice = cntrZ + round( ( lngt / 2 ) / calib )
@@ -66,7 +66,7 @@ def readTiffFileSequence( folderLocation, cntrZ, cntrY, cntrX, lngt, calib, inve
         gliMap[ i - lowerSlice ] = tiffy.imread ( fileList [ i ] )
         print('Read ' + str( i - lowerSlice + 1 ) + '/' + str( numTiffFilesToRead ) + ' files...')
 
-    if invertImageData == True: gliMap = invertImage(gliMap)
+    if invImg == True: gliMap = invertImage(gliMap)
     print( '\nFinished reading files...' )
     croppedGLIMap = gliMap[ :, lowerRow : upperRow, lowerCol : upperCol ]
     return croppedGLIMap

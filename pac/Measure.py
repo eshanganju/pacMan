@@ -36,10 +36,6 @@ def gsd( labelledMap , calib = 0.01193 ):
 
     return gsd1[:,-2:], gsd2[:,-2:], gsd3[:,-2:], gsd4[:,-2:] # [ Size(mm), percent passing(%) ]
 
-# TODO:Split getParticleSize in to smaller units
-#   One for equivlent sphere
-#   Three for centroidal axis dimensions
-
 def getParticleSize( labelledMapForParticleSizeAnalysis ):
     numberOfParticles = int( labelledMapForParticleSizeAnalysis.max() )
 
@@ -302,11 +298,11 @@ def fabricVariablesWithUncertainity( contactTable, vectUncert = 0.26 ):
 
     N = np.zeros((3,3))
     F = np.zeros((3,3))
-    Fq = 0.0
+    Fq = np.zeros((1,1))
 
     uN = unp.uarray(N,N)
     uF = unp.uarray(F,F)
-    uFq = ufloat(Fq,Fq)
+    uFq = unp.uarray(Fq,Fq)
 
     for i in range(0,uncertVectorArray.shape[0]):
         uN[0,0] = uN[0,0] + (uncertVectorArray[i,0])*(uncertVectorArray[i,0])
@@ -321,8 +317,7 @@ def fabricVariablesWithUncertainity( contactTable, vectUncert = 0.26 ):
 
     uN = uN / uncertVectorArray.shape[0]
 
-    utraceF = N[0,0] + N[1,1] + N[2,2]
-
+    utraceF = uN[0,0] + uN[1,1] + uN[2,2]
 
     uF[0,0] = 15/2 * ( uN[0,0] - (1/3)*utraceF )
     uF[0,1] = 15/2 * ( uN[0,1] )
@@ -334,6 +329,6 @@ def fabricVariablesWithUncertainity( contactTable, vectUncert = 0.26 ):
     uF[2,1] = 15/2 * ( uN[2,1] )
     uF[2,2] = 15/2 * ( uN[2,2] - (1/3)*utraceF )
 
-    uFq = ((3/2)*( F[0,0]*F[0,0] + F[0,1]*F[0,1] + F[0,2]*F[0,2] + F[1,0]*F[1,0] + F[1,1]*F[1,1] + F[1,2]*F[1,2] + F[2,0]*F[2,0] + F[2,1]*F[2,1] + F[2,2]*F[2,2])) ** 0.5
+    uFq[0,0] = ((3/2)*( uF[0,0]*uF[0,0] + uF[0,1]*uF[0,1] + uF[0,2]*uF[0,2] + uF[1,0]*uF[1,0] + uF[1,1]*uF[1,1] + uF[1,2]*uF[1,2] + uF[2,0]*uF[2,0] + uF[2,1]*uF[2,1] + uF[2,2]*uF[2,2])) ** 0.5
 
     return uN, uF, uFq
