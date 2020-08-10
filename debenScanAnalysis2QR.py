@@ -37,7 +37,7 @@ Plotting orientations in rose and EAP diagrams
 
 totalTimeStart=time.time()
 
-data = 100
+data = 50
 maxPtclSize = 1       # mm
 fracDimension = 2.6   # Fractal dimension
 
