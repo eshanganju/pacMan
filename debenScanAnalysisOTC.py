@@ -36,7 +36,7 @@ Plotting orientations in rose and EAP diagrams
 totalTimeStart=time.time()
 
 # 0 (0 MPa), 500 (10 MPa), 1500 (30 MPa), 4500 (15 MPa)
-data = np.array([0,500,1500])
+data = np.array([500,1500])
 
 for i in data:
     if i == 0 :
@@ -132,7 +132,7 @@ for i in data:
         tf.imsave( edName, edMap.astype( 'uint32' ) )
         tf.imsave( labName, labMap.astype( 'uint32' ) )
 
-        corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , areaLimit = 700)
+        corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , areaLimit = 800)
         tf.imsave( corLabName , corLabMap.astype( 'uint32'))
 
         '''
