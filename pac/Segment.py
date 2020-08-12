@@ -1,5 +1,8 @@
 '''
-Segment
+Segment module of PAC.
+
+Written by eg.
+
 '''
 
 # Importing libraries
@@ -18,44 +21,6 @@ import time
 
 # This is to plot all the text in the methods
 VERBOSE = True
-
-def performEDTWS( filteredGLIMap, currentVoidRatio, outputFilesLocation, sampleName):
-    print('Starting EDT-WS')
-    print('----------------------*\n')
-
-    # Binarize
-    print('Which binarization method to follow?')
-    binarizationMethodToFollow = input('(1) Otsu threshold, (2) User input based threshold, ([3]) Density based threshold: ')
-
-    # Otsu threshold
-    if binarizationMethodToFollow == '1':
-        binMap, gliThreshold = binarizeAccordingToOtsu( filteredGLIMap, outputFilesLocation, sampleName)
-        voidRatioCT = calcVoidRatio( binMap )
-
-    # User input based threshold
-    elif binarizationMethodToFollow == '2':
-        binMap, gliThreshold = binarizeAccordingToUserThreshold( filteredGLIMap, outputFilesLocation, sampleName )
-        voidRatioCT = calcVoidRatio( binMap )
-
-    # Density based threshold
-    else:
-        binMap, gliThreshold = binarizeAccordingToDensity(filteredGLIMap, currentVoidRatio, outputFilesLocation, sampleName )
-        voidRatioCT = calcVoidRatio( binMap )
-
-    # EDM
-    edMap = obtainEuclidDistanceMap( binMap )
-
-    # Markers
-    edPeakMrkrMap = obtainLocalMaximaMarkers( edMap )
-
-    # Labelled Map
-    labelledMap = obtainLabelledMapUsingWaterShedAlgorithm( binMap, edMap, edPeakMrkrMap, outputFilesLocation )
-
-    # Correction of labelled map
-    lblCorrectionMethod, correctedLabelledMap = fixErrorsInSegmentation( labelledMap )
-
-    # Returns
-    return gliThreshold, binMap, voidRatioCT, edMap, edPeakMrkrMap, lblCorrectionMethod, correctedLabelledMap
 
 def binarizeAccordingToOtsu( gliMapToBinarize ):
     print('\nRunning Otsu Binarization')
@@ -266,7 +231,10 @@ def obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, ou
     print( '\nSegmenting particles by ITK topological watershed' )
 
     if knownThreshold == None:
-        binMethod=input('Which binarization method to use (1) OTSU; (2) User; [3] Density?: ')
+        if measuredVoidRatio == None:
+            binMethod=input('Which binarization method to use (1) OTSU; (2) User; [3] Density?: ')
+        else:
+            binMethod = '3'
         if binMethod == '1': binThresh, binMask = binarizeAccordingToOtsu( gliMap )
         elif binMethod == '2': binThresh, binMask = binarizeAccordingToUserThreshold( gliMap  )
         else : binThresh, binMask = binarizeAccordingToDensity( gliMap , measuredVoidRatio )

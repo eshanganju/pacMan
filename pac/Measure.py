@@ -1,4 +1,5 @@
 '''
+
 Measure module
 
 '''
@@ -14,29 +15,27 @@ from uncertainties.umath import *
 
 VERBOSE = True
 
-def gsd( labelledMap , calib = 0.01193 ):
+def gsdAll( labelledMap , calib = 0.01193 ):
     gss = getParticleSize( labelledMap ) # [ Label, Volume(vx), Size1(px), Size2(px), Size3(px), Size4(px), Size5(ND), Size6(ND)]
 
     gsd1 = getGrainSizeDistribution( gss , sizeParam=1 ) # [ Lable, Volume(vx), Size(px), percent passing(%) ]
     gsd2 = getGrainSizeDistribution( gss , sizeParam=2 ) # [ Lable, Volume(vx), Size(px), percent passing(%) ]
     gsd3 = getGrainSizeDistribution( gss , sizeParam=3 ) # [ Lable, Volume(vx), Size(px), percent passing(%) ]
     gsd4 = getGrainSizeDistribution( gss , sizeParam=4 ) # [ Lable, Volume(vx), Size(px), percent passing(%) ]
+    gsd5 = getGrainSizeDistribution( gss , sizeParam=5 ) # [ Lable, Volume(vx), Size(px), percent passing(%) ]
+    gsd6 = getGrainSizeDistribution( gss , sizeParam=6 ) # [ Lable, Volume(vx), Size(px), percent passing(%) ]
 
     # Size in mm
     gsd1[:,2] *= calib
     gsd2[:,2] *= calib
     gsd3[:,2] *= calib
     gsd4[:,2] *= calib
+    gsd5[:,2] *= calib
+    gsd6[:,2] *= calib
 
-    # Volume in mm3
-    #gsd1[:,1] *= ( calib ** 3 )
-    #gsd2[:,1] *= ( calib ** 3 )
-    #gsd3[:,1] *= ( calib ** 3 )
-    #gsd4[:,1] *= ( calib ** 3 )
+    return gsd1[:,-2:], gsd2[:,-2:], gsd3[:,-2:], gsd4[:,-2:], gsd5[:,-2:], gsd6[:,-2:]# [ Size(mm), percent passing(%) ]
 
-    return gsd1[:,-2:], gsd2[:,-2:], gsd3[:,-2:], gsd4[:,-2:] # [ Size(mm), percent passing(%) ]
-
-def getParticleSize( labelledMapForParticleSizeAnalysis ):
+def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor = 1):
     numberOfParticles = int( labelledMapForParticleSizeAnalysis.max() )
 
     # Particle size summary columns
@@ -54,7 +53,7 @@ def getParticleSize( labelledMapForParticleSizeAnalysis ):
         sphDia = 2 * ( ( ( 3 * vol ) / ( 4 * math.pi ) ) ** ( 1 / 3 ) )
         particleSizeDataSummary[particleNum, 2] = sphDia
 
-        # Feret diameters
+        # Centroidal axes lengths
         # Get z, y, x locations of particle
         pointCloud = getZYXLocationOfLabel(labelledMapForParticleSizeAnalysis,particleNum)
 
@@ -93,11 +92,25 @@ def getParticleSize( labelledMapForParticleSizeAnalysis ):
         caMin = min( caDims )[ 0 ] # Param 3
         caMed = statistics.median( caDims )[ 0 ] # Param 4
 
-        particleSizeDataSummary[particleNum, 3] = caMax
-        particleSizeDataSummary[particleNum, 4] = caMed
-        particleSizeDataSummary[particleNum, 5] = caMin
+        # Feret diameters - SPAM
+        feretMax, feretMin = getMinMaxFeretDia( labelledMapForParticleSizeAnalysis, particleNum )
 
-    return particleSizeDataSummary  # [ Label, Volume(vx), Size1(px), Size2(px), Size3(px), Size4(px), Size5(ND), Size6(ND)]
+        particleSizeDataSummary[particleNum, 3] = caMax * calibrationFactor
+        particleSizeDataSummary[particleNum, 4] = caMed * calibrationFactor
+        particleSizeDataSummary[particleNum, 5] = caMin * calibrationFactor
+        particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
+        particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
+
+    return particleSizeDataSummary  # [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
+
+def getMinMaxFeretDia(labelledMap, label, numOrts=100):
+    labOneOnly = np.zeros_like( labelledMap )
+    labOneOnly[ np.where( labelledMap == label ) ] = 1
+    feretDims, feretOrts = slab.feretDiameters( labOneOnly, numberOfOrientations=numOrts )
+
+    feretMax = feretDims[1,0] # Indexing start at 1 cuz spam.feret measures the 0 index - void space
+    feretMin = feretDims[1,1] # Look up ^^
+    return feretMax, feretMin
 
 def getGrainSizeDistribution(psSummary,sizeParam=1):
     print('\nGetting GSD for size param #' + str( sizeParam ) )
