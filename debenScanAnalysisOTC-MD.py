@@ -35,12 +35,12 @@ Plotting orientations in rose and EAP diagrams
 
 totalTimeStart=time.time()
 
-# 0 (0 MPa), 500 (10 MPa), 1500 (30 MPa), 4500 (15 MPa)
+# 0 (0 MPa), 50 (1 MPa), 500 (10 MPa), 1500 (30 MPa)
 data = np.array([1500])
 
 for i in data:
     if i == 0 :
-        inputFolderLocation = '/home/eg/codes/pacInput/OTC-0N/'
+        inputFolderLocation = '/home/eg/codes/pacInput/OTC-0N-MD/'
         ofl = '/home/eg/codes/pacOutput/OTC-0N/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
 
