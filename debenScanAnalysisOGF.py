@@ -36,7 +36,7 @@ Plotting orientations in rose and EAP diagrams
 totalTimeStart=time.time()
 
 # 0 (0 MPa), 100 (2 MPa), 500 (10 MPa), 1500 (30 MPa), 4500 (90 MPa)
-data = np.array([100, 500])
+data = np.array([1500])
 
 for i in data:
     if i == 0 :
@@ -86,7 +86,7 @@ for i in data:
 
     if i == 1500 :
         inputFolderLocation = '/home/eg/codes/pacInput/OGF-1500N/'
-        ofl = '/home/eg/codes/pacOutput/OGF-1500N-9/'
+        ofl = '/home/eg/codes/pacOutput/OGF-1500N/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogf30MPa.csv' # Original GSD location
 
         # Data details 0N:
@@ -120,9 +120,14 @@ for i in data:
     noEdgeCorLabName = ofl + 'noEdgeCorLabMap.tiff'
 
     while gsdOK == False:
+        edmScaleUpFactor = int(input('Enter scaling for EDM: '))
+        thresholdEdForPeak = int(input('Enter threshold of ED for peaks: '))
+
         binMap, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
                                                                    measuredVoidRatio=measuredVoidRatioSample ,
-                                                                   outputLocation=ofl )
+                                                                   outputLocation=ofl,
+                                                                   edmScaleUp = edmScaleUpFactor,           # this represents how much the EDMs must be scaled up
+                                                                   peakEdLimit = thresholdEdForPeak)        # this represents what euclid distance should be considered for a peak
 
         corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , areaLimit = 700)
 
@@ -146,7 +151,7 @@ for i in data:
         noEdgeCorLabMap = Segment.removeEdgeLabels( corLabMap )
         gsd1, gsd2, gsd3, gsd4, gsd5, gsd6= Measure.gsdAll( noEdgeCorLabMap , calib=cal )
 
-        #Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4,gsd5,gsd6)
+        Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4,gsd5,gsd6)
 
         tf.imsave( gliName, gliMap.astype( 'uint32' ) )
         tf.imsave( binName, binMap.astype( 'uint32' ) )
@@ -155,20 +160,11 @@ for i in data:
         tf.imsave( corLabName , corLabMap.astype( 'uint32'))
         tf.imsave( noEdgeCorLabName , noEdgeCorLabMap.astype('uint32'))
 
-        # exitLoop = input('\nIs any gsd ok(y/[n])?')
-        exitLoop = 'y'
+        exitLoop = input('\nIs any gsd ok(y/[n])?')
+        #exitLoop = 'y'
 
-        if exitLoop == 'y':
-            gsdOK=True
-            #gsdNum = int(input('Which gsd is best for Br calcs(1,2,3,4)?:'))
-            gsdNum = 4
-
-            if gsdNum == 1 : gsdForBr = gsd1
-            elif gsdNum == 2 : gsdForBr = gsd2
-            elif gsdNum == 3 : gsdForBr = gsd3
-            elif gsdNum == 4 : gsdForBr = gsd4
-
-        else: print('\nUse user threshold to update binary map - check the binaryThreshold file in output folder for latest threshold')
+        if exitLoop == 'y': gsdOK=True
+        else: print('\n\nCheck the output file for (1) threshold error, (2) marker error')
 
 
     contactTableRW = Measure.contactNormalsSpam(corLabMap, method = 'rw')

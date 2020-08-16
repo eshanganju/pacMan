@@ -36,80 +36,69 @@ Plotting orientations in rose and EAP diagrams
 totalTimeStart=time.time()
 
 # 0 (0 MPa), 50 (1 MPa), 500 (10 MPa), 1500 (30 MPa)
-data = np.array([1500])
+data = np.array([50, 500, 1500])
 
 for i in data:
     if i == 0 :
-        inputFolderLocation = '/home/eg/codes/pacInput/OTC-0N-MD/'
-        ofl = '/home/eg/codes/pacOutput/OTC-0N/'
+        inputFolderLocation = '/home/eg/codes/pacInput/OTC-MD-0N/'
+        ofl = '/home/eg/codes/pacOutput/OTC-MD-0N/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
 
         # Data details 0N:
-        dataName = 'otc-0N'
-        measuredVoidRatioSample = 0.541                                           # Void ratio measured from 1D compression experiment
+        dataName = 'otc-MD-0N'
+        measuredVoidRatioSample = 0.609                                     # Void ratio measured from 1D compression experiment
         d50 = 0.72                                                          # D50 in mm - original gradation
         cal = 0.01193                                                       # calibration from CT mm/voxel
         zCenter = 513                                                       # Voxel units - center of slice
-        yCenter = 457                                                       # Voxel units - vertical center
-        xCenter = 507                                                       # Voxel units - horizontal center
+        yCenter = 405                                                       # Voxel units - vertical center
+        xCenter = 499                                                       # Voxel units - horizontal center
+        origGSD= np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
+
+    elif i == 50 :
+        inputFolderLocation = '/home/eg/codes/pacInput/OTC-MD-50N/'
+        ofl = '/home/eg/codes/pacOutput/OTC-MD-50N/'
+        originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
+
+        # Data details:
+        dataName = 'otc-MD-50N'
+        measuredVoidRatioSample = 0.60                                      # Void ratio measured from 1D compression experiment
+        d50 = 0.72                                                          # D50 in mm - original gradation
+        cal = 0.01193                                                       # calibration from CT mm/voxel
+        zCenter = 513                                                       # Voxel units - center of slice
+        yCenter = 486                                                       # Voxel units - vertical center
+        xCenter = 505                                                       # Voxel units - horizontal center
         origGSD= np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
 
     elif i == 500 :
-        inputFolderLocation = '/home/eg/codes/pacInput/OTC-500N/'
-        ofl = '/home/eg/codes/pacOutput/OTC-500N/'
+        inputFolderLocation = '/home/eg/codes/pacInput/OTC-MD-500N/'
+        ofl = '/home/eg/codes/pacOutput/OTC-MD-500N/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
 
         # Data details:
-        dataName = 'otc-500N'
-        measuredVoidRatioSample = 0.517                                           # Void ratio measured from 1D compression experiment
-
+        dataName = 'otc-MD-500N'
+        measuredVoidRatioSample = 0.585                                     # Void ratio measured from 1D compression experiment
         d50 = 0.72                                                          # D50 in mm - original gradation
         cal = 0.01193                                                       # calibration from CT mm/voxel
         zCenter = 513                                                       # Voxel units - center of slice
-        yCenter = 455                                                       # Voxel units - vertical center
-        xCenter = 507                                                       # Voxel units - horizontal center
+        yCenter = 495                                                       # Voxel units - vertical center
+        xCenter = 503                                                       # Voxel units - horizontal center
         origGSD= np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
 
     elif i == 1500 :
-        inputFolderLocation = '/home/eg/codes/pacInput/OTC-1500N/'
-        ofl = '/home/eg/codes/pacOutput/OTC-1500N/'
+        inputFolderLocation = '/home/eg/codes/pacInput/OTC-MD-1500N/'
+        ofl = '/home/eg/codes/pacOutput/OTC-MD-1500N/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
 
         # Data details:
-        dataName = 'otc-1500N'
-        measuredVoidRatioSample = 0.499                                           # Void ratio measured from 1D compression experiment
-
+        dataName = 'otc-MD-1500N'
+        measuredVoidRatioSample = 0.56                                      # Void ratio measured from 1D compression experiment
         d50 = 0.72                                                          # D50 in mm - original gradation
         cal = 0.01193                                                       # calibration from CT mm/voxel
         zCenter = 513                                                       # Voxel units - center of slice
-        yCenter = 462                                                       # Voxel units - vertical center
-        xCenter = 507                                                       # Voxel units - horizontal center
+        yCenter = 497                                                       # Voxel units - vertical center
+        xCenter = 505                                                       # Voxel units - horizontal center
         origGSD= np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
 
-    elif i == 4500 :
-        inputFolderLocation = '/home/eg/codes/pacInput/OTC-4500N/'
-        ofl = '/home/eg/codes/pacOutput/OTC-4500N/'
-        originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
-
-        # Data details:
-        dataName = 'otc-4500N'
-        measuredVoidRatioSample = 0.359                                           # Void ratio measured from 1D compression experiment
-
-        d50 = 0.72                                                          # D50 in mm - original gradation
-        cal = 0.01193                                                       # calibration from CT mm/voxel
-        zCenter = 513                                                       # Voxel units - center of slice
-        yCenter = 480                                                       # Voxel units - vertical center
-        xCenter = 507                                                       # Voxel units - horizontal center
-        origGSD= np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
-
-
-    # Naming tifffiles:
-    gliName = ofl + 'gliMap.tiff'
-    binName = ofl + 'binMap.tiff'
-    edName = ofl + 'edMap.tiff'
-    labName = ofl + 'labMap.tiff'
-    corLabName = ofl + 'corLabMap.tiff'
-    noEdgeCorLabName = ofl + 'noEdgeCorLabMap.tiff'
     eLen = 6*d50          # Edge length in mm
 
     # Reading and cropping the data file
@@ -120,20 +109,33 @@ for i in data:
                                           eLen,
                                           cal,
                                           invImg=False)
-    tf.imsave( gliName, gliMap.astype( 'uint32' ) )
-
     gsdOK = False
 
+    # Naming tifffiles:
+    gliName = ofl + 'gliMap.tiff'
+    binName = ofl + 'binMap.tiff'
+    edName = ofl + 'edMap.tiff'
+    labName = ofl + 'labMap.tiff'
+    corLabName = ofl + 'corLabMap.tiff'
+    noEdgeCorLabName = ofl + 'noEdgeCorLabMap.tiff'
+
     while gsdOK == False:
+        # edmScaleUpFactor = int(input('Enter scaling for EDM: '))
+        # thresholdEdForPeak = int(input('Enter threshold of ED for peaks: '))
+
+        edmScaleUpFactor = 1
+        thresholdEdForPeak = 5
+
         binMap, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
                                                                    measuredVoidRatio=measuredVoidRatioSample ,
-                                                                   outputLocation=ofl )
-        tf.imsave( binName, binMap.astype( 'uint32' ) )
-        tf.imsave( edName, edMap.astype( 'uint32' ) )
-        tf.imsave( labName, labMap.astype( 'uint32' ) )
+                                                                   outputLocation=ofl,
+                                                                   edmScaleUp = edmScaleUpFactor,           # this represents how much the EDMs must be scaled up
+                                                                   peakEdLimit = thresholdEdForPeak)        # this represents what euclid distance should be considered for a peak
 
-        corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , areaLimit = 800)
-        tf.imsave( corLabName , corLabMap.astype( 'uint32'))
+        corLabMap = Segment.fixErrSeg( labMap,
+                                       pad=2,
+                                       outputLocation=ofl,
+                                       areaLimit=700 )
 
         '''
             Currently choosing areaLimit based on trial and error
@@ -153,17 +155,22 @@ for i in data:
         '''
 
         noEdgeCorLabMap = Segment.removeEdgeLabels( corLabMap )
-        tf.imsave( noEdgeCorLabName , noEdgeCorLabMap.astype('uint32'))
-
         gsd1, gsd2, gsd3, gsd4, gsd5, gsd6= Measure.gsdAll( noEdgeCorLabMap , calib=cal )
+
         Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4,gsd5,gsd6)
 
+        tf.imsave( gliName, gliMap.astype( 'uint32' ) )
+        tf.imsave( binName, binMap.astype( 'uint32' ) )
+        tf.imsave( edName, edMap.astype( 'uint32' ) )
+        tf.imsave( labName, labMap.astype( 'uint32' ) )
+        tf.imsave( corLabName , corLabMap.astype( 'uint32'))
+        tf.imsave( noEdgeCorLabName , noEdgeCorLabMap.astype('uint32'))
 
-        # exitLoop = input('\nIs any gsd ok(y/[n])?')
-        exitLoop = 'y'
+        exitLoop = input('\nIs any gsd ok(y/[n])?')
+        #exitLoop = 'y'
 
         if exitLoop == 'y': gsdOK=True
-        else: print('\nUse user threshold to update binary map - check the binaryThreshold file in output folder for latest threshold')
+        else: print('\n\nCheck the output file for (1) threshold error, (2) marker error')
 
 
     # Save files as csv
@@ -174,7 +181,7 @@ for i in data:
     np.savetxt((ofl+ str(eLen/d50) +'D50-gsd5.csv'), gsd5, delimiter=',')                        # Feret max
     np.savetxt((ofl+ str(eLen/d50) +'D50-gsd6.csv'), gsd6, delimiter=',')                        # Feret min
 
-    # Fabric calcs
+    # Contact table
     contactTableRW = Measure.contactNormalsSpam(corLabMap, method = 'rw')
     N, F, Fq = Measure.fabricVariablesWithUncertainity( contactTableRW, vectUncert = 0.26 )
     np.savetxt((ofl+ str(eLen/d50) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
@@ -187,4 +194,3 @@ for i in data:
 
     print('\n\n--------------------------------------**')
     print('Total time taken to analyze(mins): ~' + str(totalTimeTaken//60))
-

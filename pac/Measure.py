@@ -1,7 +1,7 @@
 '''
-
 Measure module
 
+Written by eg.
 '''
 
 import numpy as np
@@ -298,16 +298,16 @@ def contactNormalsSpam( labelledMap, method=None):
 
     return contTable
 
-def fabricVariables( contactTable ):
+def fabricVariablesSpam( contactTable ):
     orts = contactTable[ :, 2:5]
     F1, F2, F3 = slab.fabricTensor( orts )
     return F1, F2, F3
 
 def fabricVariablesWithUncertainity( contactTable, vectUncert = 0.26 ):
-    vectors = contactTable[ :, 2:5]
-    uncertVectors = vectUncert*(np.ones_like(vectors))
+    vectors = contactTable[ :, 2:5]                         # contactTable col 0 is first particle label and col 1 is second particle number
+    uncertVectors = vectUncert*(np.ones_like(vectors))      # uncertainity in the vector components
 
-    uncertVectorArray = unp.uarray(vectors,uncertVectors)
+    uncertVectorArray = unp.uarray(vectors,uncertVectors)   # the uncertainity libraries takes vectors and the undertainity of those vectors to make an array
 
     N = np.zeros((3,3))
     F = np.zeros((3,3))

@@ -15,7 +15,7 @@ origGSDLoc = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD lo
 
 # Data details 0N:
 dataName = 'otc-MD-0N'
-measuredVoidRatioSample = 0.609                                     # Void ratio measured from 1D compression experiment
+measVRSamp = 0.609                                                  # Void ratio measured from 1D compression experiment
 d50 = 0.72                                                          # D50 in mm - original gradation
 cal = 0.01193                                                       # calibration from CT mm/voxel
 zCenter = 513                                                       # Voxel units - center of slice
@@ -27,52 +27,52 @@ analyzeTotalVol = True
 analyzeRevSizes = False
 
 if analyzeTotalVol == True :
-    eLen = 7.7*d50 # Max edge length in D50s
+    eLen = 7.5*d50 # Max edge length in D50s
 
-    gliMap = Reader.readTiffFileSequence( ifl,
-                                          zCenter,
-                                          yCenter,
-                                          xCenter,
-                                          eLen,
-                                          cal,
-                                          invImg=False )
-
-    binMap, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap,
-                                                               measuredVoidRatio=measuredVoidRatioSample,
-                                                               outputLocation=ofl,
-                                                               edmScaleUp = 1,
-                                                               peakEdLimit = 5 )
-
-    corLabMap = Segment.fixErrSeg( labMap,
-                                   pad=2,
-                                   ouputLocation=ofl,
-                                   areaLimit = 700)
-
+    # Particle size
+    gliMap = Reader.readTiffFileSequence( ifl,zCenter,yCenter,xCenter,eLen,cal,invImg=False )
+    binMap, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap,measuredVoidRatio=measVRSamp,outputLocation=ofl,edmScaleUp=1,peakEdLimit=5 )
+    corLabMap = Segment.fixErrSeg( labMap, pad=2, outputLocation=ofl, areaLimit = 700)
     noEdgeCorLabMap = Segment.removeEdgeLabels( corLabMap )
-    gsd1a,gsd2a,gas3a,gas4a,gas5a,gas6a = Measure.gsdAll( noEdgeCorLabMap,
-                                                          calib = cal)
 
     # Save files:
-    gliNameAll = ofl + '7.7D50-' + 'gliMap.tiff'
-    binNameAll = ofl + '7.7D50-' +'binMap.tiff'
-    edNameAll = ofl + '7.7D50-' +'edMap.tiff'
-    labNameAll = ofl + '7.7D50-' +'labMap.tiff'
-    corLabNameAll = ofl + '7.7D50-' +'corLabMap.tiff'
-    noEdgeCorLabNameAll = ofl + '7.7D50-' +'noEdgeCorLabMap.tiff'
+    gliNameAll = ofl + 'maxD50-gliMap.tiff'
+    binNameAll = ofl + 'maxD50-binMap.tiff'
+    edNameAll = ofl + 'maxD50-edMap.tiff'
+    labNameAll = ofl + 'maxD50-labMap.tiff'
+    corLabNameAll = ofl + 'maxD50-corLabMap.tiff'
+    noEdgeCorLabNameAll = ofl + 'maxD50-noEdgeCorLabMap.tiff'
+    tf.imsave( gliNameAll,gliMap.astype( 'uint32' ) )
+    tf.imsave( binNameAll,binMap.astype( 'uint32' ) )
+    tf.imsave( edNameAll, edMap.astype( 'uint32' ) )
+    tf.imsave( labNameAll,labMap.astype( 'uint32' ) )
+    tf.imsave( corLabNameAll, corLabMap.astype( 'uint32' ) )
+    tf.imsave( noEdgeCorLabNameAll, noEdgeCorLabMap.astype( 'uint32' ) )
 
-    tf.imsave( gliName,gliMap.astype( 'uint32' ) )
-    tf.imsave( binName,binMap.astype( 'uint32' ) )
-    tf.imsave( edName, edMap.astype( 'uint32' ) )
-    tf.imsave( labName,labMap.astype( 'uint32' ) )
-    tf.imsave( corLabName , corLabMap.astype( 'uint32' ) )
-    tf.imsave( noEdgeCorLabName , noEdgeCorLabMap.astype( 'uint32' ) )
+    # Grain size distribution
+    gsd1a, gsd2a, gas3a, gas4a, gas5a, gas6a = Measure.gsdAll( noEdgeCorLabMap, calib = cal )
+    np.savetxt( ( ofl + str( np.round( i ) ) +'D50-gsd1.csv'), gsd1a, delimiter=',')
+    np.savetxt( ( ofl + str( np.round( i ) ) +'D50-gsd2.csv'), gsd2a, delimiter=',')
+    np.savetxt( ( ofl + str( np.round( i ) ) +'D50-gsd3.csv'), gsd3a, delimiter=',')
+    np.savetxt( ( ofl + str( np.round( i ) ) +'D50-gsd4.csv'), gsd4a, delimiter=',')
+    np.savetxt( ( ofl + str( np.round( i ) ) +'D50-gsd5.csv'), gsd5a, delimiter=',')
+    np.savetxt( ( ofl + str( np.round( i ) ) +'D50-gsd6.csv'), gsd6a, delimiter=',')
+    Plot.grainSizeDistribution( originalGSD, gsd1a, gsd2a, gas3a, gas4a, gas5a, gas6a )
+
+    # Contact and fabric
+    contactTableRWAll = Measure.contactNormalsSpam( corLabMap, method='rw')
+    np.savetxt( ( ofl + 'maxD50-contactTableRW.csv'), contactTableRWAll, delimiter=',')    # Contact table
+    N, F, Fq = Measure.fabricVariablesWithUncertainity( contactTableRWAll, vectUncert = 0.26 )
+    np.savetxt( (ofl + 'maxD50-N.txt' ), N, fmt = '%r')    # Fabric tensor
+    np.savetxt( (ofl + 'maxD50-F.txt' ), F, fmt = '%r')    # Deviatoric fabric tensor
+    np.savetxt( (ofl + 'maxD50-Fq.txt' ), Fq, fmt = '%r')  # Ansiotropy factor
 
 if analyzeRevSizes == True :
     if analyzeTotalVol == False:
         binMap = tf.imread(binNameAll).astype('uint32')
         gliMap = tf.imread(gliNameAll).astype('uint32')
 
-    sizeRange = np.arange(1, 8, 1)
+    sizeRange = np.arange(2, 8, 1)
     zCenterSu = binMap.shape[0]//2
     yCenterSu = binMap.shape[1]//2
     xCenterSu = binMap.shape[2]//2
@@ -100,8 +100,8 @@ if analyzeRevSizes == True :
 
         subRegionGliMap = gliMap[lowSlice:upSlice,lowRow:upRow,lowCol:upCol]
         binMask, edMap, edPeaksMap, subRegionLabMap = Segment.obtLabMapITKWS( subRegionGliMap,
-                                                                              knownThreshold=10808.3,
-                                                                              outputLocation=ofl
+                                                                              knownThreshold=10574.2,
+                                                                              outputLocation=ofl,
                                                                               edmScaleUp=1,
                                                                               peakEdLimit=5)
 
@@ -111,10 +111,14 @@ if analyzeRevSizes == True :
                                                       areaLimit=700 )
 
         subRegionNoEdgeCorrectedLabMap = Segment.removeEdgeLabels( subRegionCorrectedLabMap )
-        xx,xx,xx,gsd,xx,xx = Measure.gsd( subRegionNoEdgeCorrectedLabMap , calib=cal )
-        np.savetxt( ( ofl + str( np.round( i ) ) +'D50-gsdPCAmin.csv'),
-                    gsd,
-                    delimiter=',')
+
+        gsd1,gsd2,gsd3,gsd4,gsd5,gsd6 = Measure.gsdAll( subRegionNoEdgeCorrectedLabMap , calib=cal )
+        np.savetxt( ( ofl + str( np.round( i ) ) +'D50-gsd1.csv'), gsd1, delimiter=',')
+        np.savetxt( ( ofl + str( np.round( i ) ) +'D50-gsd2.csv'), gsd2, delimiter=',')
+        np.savetxt( ( ofl + str( np.round( i ) ) +'D50-gsd3.csv'), gsd3, delimiter=',')
+        np.savetxt( ( ofl + str( np.round( i ) ) +'D50-gsd4.csv'), gsd4, delimiter=',')
+        np.savetxt( ( ofl + str( np.round( i ) ) +'D50-gsd5.csv'), gsd5, delimiter=',')
+        np.savetxt( ( ofl + str( np.round( i ) ) +'D50-gsd6.csv'), gsd6, delimiter=',')
 
         contactTableRW = Measure.contactNormalsSpam(subRegionCorrectedLabMap, method='rw')
         np.savetxt( ( ofl + str( np.round( i ) ) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
@@ -122,9 +126,15 @@ if analyzeRevSizes == True :
         np.savetxt((ofl + str( np.round( i ) ) +'-D50-N.txt'), N, fmt='%r')    # Fabric tensor
         np.savetxt((ofl + str( np.round( i ) ) +'-D50-F.txt'), F, fmt='%r')    # Deviatoric fabric tensor
         np.savetxt((ofl + str( np.round( i ) ) +'-D50-Fq.txt'), Fq, fmt='%r')  # Ansiotropy factor
+
     # Plot grain size distribution
     plt.plot(sizeList,voidRatioList)
     plt.ylim([0,2])
     plt.xlim([0,10])
     plt.show()
+
+    # Save void ratio list as output
+    textFileName = ofl + 'voidRatio.txt'
+    with open(textFileName, "w") as output:
+        output.write(str(voidRatioList))
 

@@ -23,7 +23,7 @@ def readTiffStack( folderAndFileLocation, cntrZ, cntrY, cntrX, lngt, calib ):
     data = dataBig[ lowerSlice:upperSlice, lowerRow : upperRow, lowerCol : upperCol ]
     return data
 
-def readTiffFileSequence( folderLocation, cntrZ, cntrY, cntrX, lngt, calib, invImg=True):
+def readTiffFileSequence( folderLocation, cntrZ, cntrY, cntrX, lngt, calib, invImg=False):
     print( 'Reading tiff files from: ' + folderLocation )
 
     upperSlice = cntrZ + round( ( lngt / 2 ) / calib )

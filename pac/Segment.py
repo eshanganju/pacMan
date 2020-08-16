@@ -22,6 +22,42 @@ import time
 # This is to plot all the text in the methods
 VERBOSE = True
 
+def obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, outputLocation=None, edmScaleUp=1, peakEdLimit=5):
+    print( '\nSegmenting particles by ITK topological watershed' )
+
+    if knownThreshold == None:
+        if measuredVoidRatio == None:
+            binMethod=input('Which binarization method to use (1) OTSU; (2) User; [3] Density?: ')
+        else:
+            binMethod = '3'
+        if binMethod == '1': binThresh, binMask = binarizeAccordingToOtsu( gliMap )
+        elif binMethod == '2': binThresh, binMask = binarizeAccordingToUserThreshold( gliMap  )
+        else : binThresh, binMask = binarizeAccordingToDensity( gliMap , measuredVoidRatio )
+    else :
+        print('User threshold with :' + str(round(knownThreshold)))
+        binThresh, binMask = binarizeAccordingToUserThreshold( gliMap, knownThreshold )
+
+    voidRatio = calcVoidRatio( binMask )
+
+    if outputLocation != None:
+        threshFile = open(outputLocation + 'binaryThreshold.txt',"a+")
+        threshFile.write( "Bin Threshold = " + str( binThresh ) )
+        threshFile.write( "\nVoid ratio = " + str( voidRatio ) + '\n\n')
+        threshFile.close()
+
+    # Simple Euclidean distance
+    edMap = obtainEuclidDistanceMap( binMask , scaleUp=edmScaleUp)
+
+    # Peaks in EDM
+    edPeaksMap = obtainLocalMaximaMarkers( edMap , h=peakEdLimit)
+
+    print('\n\nStarting ITK WS')
+    print( '--------------------------*' )
+    labelledMap = wsd( -edMap, markers = edPeaksMap, mask = binMask )
+    print( 'Watershed segmentation complete' )
+
+    return binMask, binThresh, edMap, edPeaksMap, labelledMap
+
 def binarizeAccordingToOtsu( gliMapToBinarize ):
     print('\nRunning Otsu Binarization')
     print('----------------------------*')
@@ -196,11 +232,6 @@ def obtainEuclidDistanceMap(binaryMapForEDM, scaleUp = int(1)):
     return edMap
 
 def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5):
-    '''
-    Fix this to be better at obtaining markers
-    Expected number of particles?
-    Particle size?
-    '''
     print('\nObtaining peaks of EDM...')
     print('------------------------------*')
 
@@ -226,42 +257,6 @@ def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5):
     print('\tCounts reset')
     print('\tNumber of peaks: ' + str(round(edmPeakMarkers.max())))
     return edmPeakMarkers
-
-def obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, outputLocation=None):
-    print( '\nSegmenting particles by ITK topological watershed' )
-
-    if knownThreshold == None:
-        if measuredVoidRatio == None:
-            binMethod=input('Which binarization method to use (1) OTSU; (2) User; [3] Density?: ')
-        else:
-            binMethod = '3'
-        if binMethod == '1': binThresh, binMask = binarizeAccordingToOtsu( gliMap )
-        elif binMethod == '2': binThresh, binMask = binarizeAccordingToUserThreshold( gliMap  )
-        else : binThresh, binMask = binarizeAccordingToDensity( gliMap , measuredVoidRatio )
-    else :
-        print('User threshold with :' + str(round(knownThreshold)))
-        binThresh, binMask = binarizeAccordingToUserThreshold( gliMap, knownThreshold )
-
-    voidRatio = calcVoidRatio( binMask )
-
-    if outputLocation != None:
-        threshFile = open(outputLocation + 'binaryThreshold.txt',"a+")
-        threshFile.write( "Bin Threshold = " + str( binThresh ) )
-        threshFile.write( "\nVoid ratio = " + str( voidRatio ) + '\n\n')
-        threshFile.close()
-
-    # Simple Euclidean distance
-    edMap = obtainEuclidDistanceMap( binMask )
-
-    # Peaks in EDM
-    edPeaksMap = obtainLocalMaximaMarkers( edMap )
-
-    print('\n\nStarting ITK WS')
-    print( '--------------------------*' )
-    labelledMap = wsd( -edMap, markers = edPeaksMap, mask = binMask )
-    print( 'Watershed segmentation complete' )
-
-    return binMask, edMap, edPeaksMap, labelledMap
 
 def fixErrSeg(labelledMapForOSCorr, pad=2, outputLocation="" , areaLimit = None, checkForSmallParticles = True):
     print('\nEntering label correction')
