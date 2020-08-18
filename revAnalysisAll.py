@@ -12,7 +12,7 @@ import numpy as np                          # numpy
 timeStart = time.time()
 
 # Options: OTC, OGF, 2QR, OTC-MD
-sandList = ['OTC']
+sandList = ['2QR']
 analyzeTotalVol = False
 analyzeRevSizes = True
 
@@ -102,7 +102,7 @@ for sand in sandList:
         np.savetxt( ( ofl + 'maxD50-gsd4.csv'), gsd4a, delimiter=',')
         np.savetxt( ( ofl + 'maxD50-gsd5.csv'), gsd5a, delimiter=',')
         np.savetxt( ( ofl + 'maxD50-gsd6.csv'), gsd6a, delimiter=',')
-        Plot.grainSizeDistribution( originalGSD, gsd1a, gsd2a, gsd3a, gsd4a, gsd5a, gsd6a )
+        #Plot.grainSizeDistribution( originalGSD, gsd1a, gsd2a, gsd3a, gsd4a, gsd5a, gsd6a )
 
         # Contact and fabric
         contactTableRWAll = Measure.contactNormalsSpam( corLabMap, method='rw')
