@@ -123,11 +123,11 @@ for i in data:
         edmScaleUpFactor = int(input('Enter scaling for EDM: '))
         thresholdEdForPeak = int(input('Enter threshold of ED for peaks: '))
 
-        binMap, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
-                                                                   measuredVoidRatio=measuredVoidRatioSample ,
-                                                                   outputLocation=ofl,
-                                                                   edmScaleUp = edmScaleUpFactor,           # this represents how much the EDMs must be scaled up
-                                                                   peakEdLimit = thresholdEdForPeak)        # this represents what euclid distance should be considered for a peak
+        binMap, binThresh, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
+                                                                              measuredVoidRatio=measuredVoidRatioSample ,
+                                                                              outputLocation=ofl,
+                                                                              edmScaleUp = edmScaleUpFactor,   # this represents how much the EDMs must be scaled up
+                                                                              peakEdLimit = thresholdEdForPeak)# this represents what euclid distance should be considered for a peak
 
         corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , areaLimit = 700)
 

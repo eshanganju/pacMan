@@ -35,7 +35,7 @@ Plotting orientations in rose and EAP diagrams
 totalTimeStart=time.time()
 
 # 0, 50, 100, 500, 1500, 4500 N
-data = np.array([0,50,100])
+data = np.array([1500])
 
 for i in data:
     if i == 0 :
@@ -46,7 +46,7 @@ for i in data:
 
         # Data details 0N:
         dataName = '2qr-0N'
-        measuredVoidRatioSample = 0.734                                     # Void ratio measured from 1D compression experiment
+        measVoidRatio = 0.734                                     # Void ratio measured from 1D compression experiment
         d50 = 0.73                                                          # D50 in mm - original gradation
         cal = 0.011932                                                      # calibration from CT mm/voxel
         zCenter = 513                                                       # Voxel units - center of slice
@@ -62,7 +62,7 @@ for i in data:
 
         # Data details 0N:
         dataName = '2qr-50N'
-        measuredVoidRatioSample = 0.726                                     # Void ratio measured from 1D compression experiment
+        measVoidRatio = 0.726                                     # Void ratio measured from 1D compression experiment
         d50 = 0.73                                                          # D50 in mm - original gradation
         cal = 0.011932                                                      # calibration from CT mm/voxel
         zCenter = 513                                                       # Voxel units - center of slice
@@ -78,7 +78,7 @@ for i in data:
 
         # Data details 0N:
         dataName = '2qr-100N'
-        measuredVoidRatioSample = 0.722                                     # Void ratio measured from 1D compression experiment
+        measVoidRatio = 0.722                                     # Void ratio measured from 1D compression experiment
         d50 = 0.73                                                          # D50 in mm - original gradation
         cal = 0.011931                                                      # calibration from CT mm/voxel
         zCenter = 513                                                       # Voxel units - center of slice
@@ -89,12 +89,12 @@ for i in data:
     if i == 500 :
         inputFolderLocation = '/home/eg/codes/pacInput/2QR-500N/'
         ofl = '/home/eg/codes/pacOutput/2QR-500N/'
-        originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv' # Original GSD location
+        originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/2qrOrig10Mpa.csv' # Original GSD location
 
 
         # Data details 0N:
         dataName = '2qr-500N'
-        measuredVoidRatioSample = 0.698                                     # Void ratio measured from 1D compression experiment
+        measVoidRatio = 0.698                                     # Void ratio measured from 1D compression experiment
         d50 = 0.73                                                          # D50 in mm - original gradation
         cal = 0.011931                                                      # calibration from CT mm/voxel
         zCenter = 513                                                       # Voxel units - center of slice
@@ -105,12 +105,12 @@ for i in data:
     if i == 1500 :
         inputFolderLocation = '/home/eg/codes/pacInput/2QR-1500N/'
         ofl = '/home/eg/codes/pacOutput/2QR-1500N/'
-        originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv' # Original GSD location
+        originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/2qrOrig30Mpa.csv' # Original GSD location
 
 
         # Data details 0N:
         dataName = '2qr-1500N'
-        measuredVoidRatioSample = 0.591                                     # Void ratio measured from 1D compression experiment
+        measVoidRatio = 0.591                                     # Void ratio measured from 1D compression experiment
         d50 = 0.73                                                          # D50 in mm - original gradation
         cal = 0.011931                                                      # calibration from CT mm/voxel
         zCenter = 513                                                       # Voxel units - center of slice
@@ -139,9 +139,14 @@ for i in data:
     noEdgeCorLabName = ofl + 'noEdgeCorLabMap.tiff'
 
     while gsdOK == False:
-        binMap, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
-                                                                   measuredVoidRatio=measuredVoidRatioSample ,
-                                                                   outputLocation=ofl )
+        edmScaleUpFactor = int(input('Enter scaling for EDM: '))
+        thresholdEdForPeak = int(input('Enter threshold of ED for peaks: '))
+
+        binMap, binThresh, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
+                                                                              measuredVoidRatio=measVoidRatio ,
+                                                                              outputLocation=ofl,
+                                                                              edmScaleUp=edmScaleUpFactor,    # this represents how much the EDMs must be scaled up
+                                                                              peakEdLimit=thresholdEdForPeak) # this represents what euclid distance should be considered for a peak
 
         corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , areaLimit = 700)
 
@@ -165,7 +170,7 @@ for i in data:
         noEdgeCorLabMap = Segment.removeEdgeLabels( corLabMap )
         gsd1, gsd2, gsd3, gsd4, gsd5, gsd6= Measure.gsdAll( noEdgeCorLabMap , calib=cal )
 
-        #Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4,gsd5,gsd6)
+        Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4,gsd5,gsd6)
 
         tf.imsave( gliName, gliMap.astype( 'uint32' ) )
         tf.imsave( binName, binMap.astype( 'uint32' ) )
@@ -174,20 +179,11 @@ for i in data:
         tf.imsave( corLabName , corLabMap.astype( 'uint32'))
         tf.imsave( noEdgeCorLabName , noEdgeCorLabMap.astype('uint32'))
 
-        # exitLoop = input('\nIs any gsd ok(y/[n])?')
-        exitLoop = 'y'
+        exitLoop = input('\nIs any gsd ok(y/[n])?')
+        #exitLoop = 'y'
 
-        if exitLoop == 'y':
-            gsdOK=True
-            #gsdNum = int(input('Which gsd is best for Br calcs(1,2,3,4)?:'))
-            gsdNum = 4
-
-            if gsdNum == 1 : gsdForBr = gsd1
-            elif gsdNum == 2 : gsdForBr = gsd2
-            elif gsdNum == 3 : gsdForBr = gsd3
-            elif gsdNum == 4 : gsdForBr = gsd4
-
-        else: print('\nUse user threshold to update binary map - check the binaryThreshold file in output folder for latest threshold')
+        if exitLoop == 'y': gsdOK=True
+        else: print('\n\nCheck the output file for (1) threshold error, (2) marker error')
 
 
     contactTableRW = Measure.contactNormalsSpam(corLabMap, method = 'rw')
@@ -201,13 +197,12 @@ for i in data:
     np.savetxt((ofl+ str(eLen/d50) +'D50-gsd5.csv'), gsd5, delimiter=',')                        # Feret max
     np.savetxt((ofl+ str(eLen/d50) +'D50-gsd6.csv'), gsd6, delimiter=',')                        # Feret min
     np.savetxt((ofl+ str(eLen/d50) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
-    np.savetxt((ofl+ str(eLen/d50) +'N.txt'), N, fmt='%r')    # Fabric tensor
-    np.savetxt((ofl+ str(eLen/d50) +'F.txt'), F, fmt='%r')    # Deviatoric fabric tensor
-    np.savetxt((ofl+ str(eLen/d50) +'Fq.txt'), Fq, fmt='%r')  # Ansiotropy factor
+    np.savetxt((ofl+ str(eLen/d50) +'N.txt'), N, fmt='%r')                                       # Fabric tensor
+    np.savetxt((ofl+ str(eLen/d50) +'F.txt'), F, fmt='%r')                                       # Deviatoric fabric tensor
+    np.savetxt((ofl+ str(eLen/d50) +'Fq.txt'), Fq, fmt='%r')                                     # Ansiotropy factor
 
     totalTimeEnd = time.time()
     totalTimeTaken = totalTimeEnd - totalTimeStart
 
     print('\n\n--------------------------------------**')
     print('Total time taken to analyze(mins): ~' + str(totalTimeTaken//60))
-
