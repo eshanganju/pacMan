@@ -121,13 +121,13 @@ for i in data:
     eLen = 6*d50          # Edge length in mm
 
     # Reading and cropping the data file
-    gliMap = Reader.readTiffFileSequence( inputFolderLocation,
-                                          zCenter,
-                                          yCenter,
-                                          xCenter,
-                                          eLen,
-                                          cal,
-                                          invImg=False)
+    #gliMap = Reader.readTiffFileSequence( inputFolderLocation,
+    #                                      zCenter,
+    #                                      yCenter,
+    #                                      xCenter,
+    #                                      eLen,
+    #                                      cal,
+    #                                      invImg=False)
     gsdOK = False
 
     # Naming tifffiles:
@@ -139,16 +139,16 @@ for i in data:
     noEdgeCorLabName = ofl + 'noEdgeCorLabMap.tiff'
 
     while gsdOK == False:
-        edmScaleUpFactor = int(input('Enter scaling for EDM: '))
-        thresholdEdForPeak = int(input('Enter threshold of ED for peaks: '))
+        #edmScaleUpFactor = int(input('Enter scaling for EDM: '))
+        #thresholdEdForPeak = int(input('Enter threshold of ED for peaks: '))
 
-        binMap, binThresh, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
-                                                                              measuredVoidRatio=measVoidRatio ,
-                                                                              outputLocation=ofl,
-                                                                              edmScaleUp=edmScaleUpFactor,    # this represents how much the EDMs must be scaled up
-                                                                              peakEdLimit=thresholdEdForPeak) # this represents what euclid distance should be considered for a peak
+        #binMap, binThresh, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
+        #                                                                      measuredVoidRatio=measVoidRatio ,
+        #                                                                      outputLocation=ofl,
+        #                                                                      edmScaleUp=edmScaleUpFactor,    # this represents how much the EDMs must be scaled up
+        #                                                                      peakEdLimit=thresholdEdForPeak) # this represents what euclid distance should be considered for a peak
 
-        corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , areaLimit = 700)
+        #corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , areaLimit = 700)
 
         '''
             Currently choosing areaLimit based on trial and error
@@ -167,27 +167,28 @@ for i in data:
             This is especially true for crushed particles.
         '''
 
-        noEdgeCorLabMap = Segment.removeEdgeLabels( corLabMap )
+        #noEdgeCorLabMap = Segment.removeEdgeLabels( corLabMap )
+        noEdgeCorLabMap = tf.imread('/home/eg/codes/pacOutput/2QR-1500N/noEdgeCorLabMap-edited9.tiff').astype('uint32')
         gsd1, gsd2, gsd3, gsd4, gsd5, gsd6= Measure.gsdAll( noEdgeCorLabMap , calib=cal )
 
         Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4,gsd5,gsd6)
 
-        tf.imsave( gliName, gliMap.astype( 'uint32' ) )
-        tf.imsave( binName, binMap.astype( 'uint32' ) )
-        tf.imsave( edName, edMap.astype( 'uint32' ) )
-        tf.imsave( labName, labMap.astype( 'uint32' ) )
-        tf.imsave( corLabName , corLabMap.astype( 'uint32'))
-        tf.imsave( noEdgeCorLabName , noEdgeCorLabMap.astype('uint32'))
+        #tf.imsave( gliName, gliMap.astype( 'uint32' ) )
+        #tf.imsave( binName, binMap.astype( 'uint32' ) )
+        #tf.imsave( edName, edMap.astype( 'uint32' ) )
+        #tf.imsave( labName, labMap.astype( 'uint32' ) )
+        #tf.imsave( corLabName , corLabMap.astype( 'uint32'))
+        #tf.imsave( noEdgeCorLabName , noEdgeCorLabMap.astype('uint32'))
 
-        exitLoop = input('\nIs any gsd ok(y/[n])?')
-        #exitLoop = 'y'
+        #exitLoop = input('\nIs any gsd ok(y/[n])?')
+        exitLoop = 'y'
 
         if exitLoop == 'y': gsdOK=True
         else: print('\n\nCheck the output file for (1) threshold error, (2) marker error')
 
 
-    contactTableRW = Measure.contactNormalsSpam(corLabMap, method = 'rw')
-    N, F, Fq = Measure.fabricVariablesWithUncertainity( contactTableRW, vectUncert = 0.26 )
+    #contactTableRW = Measure.contactNormalsSpam(corLabMap, method = 'rw')
+    #N, F, Fq = Measure.fabricVariablesWithUncertainity( contactTableRW, vectUncert = 0.26 )
 
     # Save files as csv
     np.savetxt((ofl+ str(eLen/d50) +'D50-gsd1.csv'), gsd1, delimiter=',')                        # Eqsp
@@ -196,10 +197,10 @@ for i in data:
     np.savetxt((ofl+ str(eLen/d50) +'D50-gsd4.csv'), gsd4, delimiter=',')                        # CA min
     np.savetxt((ofl+ str(eLen/d50) +'D50-gsd5.csv'), gsd5, delimiter=',')                        # Feret max
     np.savetxt((ofl+ str(eLen/d50) +'D50-gsd6.csv'), gsd6, delimiter=',')                        # Feret min
-    np.savetxt((ofl+ str(eLen/d50) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
-    np.savetxt((ofl+ str(eLen/d50) +'N.txt'), N, fmt='%r')                                       # Fabric tensor
-    np.savetxt((ofl+ str(eLen/d50) +'F.txt'), F, fmt='%r')                                       # Deviatoric fabric tensor
-    np.savetxt((ofl+ str(eLen/d50) +'Fq.txt'), Fq, fmt='%r')                                     # Ansiotropy factor
+    #np.savetxt((ofl+ str(eLen/d50) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
+    #np.savetxt((ofl+ str(eLen/d50) +'N.txt'), N, fmt='%r')                                       # Fabric tensor
+    #np.savetxt((ofl+ str(eLen/d50) +'F.txt'), F, fmt='%r')                                       # Deviatoric fabric tensor
+    #np.savetxt((ofl+ str(eLen/d50) +'Fq.txt'), Fq, fmt='%r')                                     # Ansiotropy factor
 
     totalTimeEnd = time.time()
     totalTimeTaken = totalTimeEnd - totalTimeStart

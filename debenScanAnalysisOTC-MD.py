@@ -32,16 +32,16 @@ Relative breakage according to Einav
 Contact according to ITK and RW
 Plotting orientations in rose and EAP diagrams
 '''
-
+print('Starting')
 totalTimeStart=time.time()
 
 # 0 (0 MPa), 50 (1 MPa), 500 (10 MPa), 1500 (30 MPa)
-data = np.array([50, 500, 1500])
+data = np.array([0, 50, 500, 1500])
 
 for i in data:
     if i == 0 :
         inputFolderLocation = '/home/eg/codes/pacInput/OTC-MD-0N/'
-        ofl = '/home/eg/codes/pacOutput/OTC-MD-0N/'
+        ofl = '/home/eg/codes/pacOutput/OTC-MD-0N-7D50/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
 
         # Data details 0N:
@@ -56,7 +56,7 @@ for i in data:
 
     elif i == 50 :
         inputFolderLocation = '/home/eg/codes/pacInput/OTC-MD-50N/'
-        ofl = '/home/eg/codes/pacOutput/OTC-MD-50N/'
+        ofl = '/home/eg/codes/pacOutput/OTC-MD-50N-7D50/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
 
         # Data details:
@@ -71,7 +71,7 @@ for i in data:
 
     elif i == 500 :
         inputFolderLocation = '/home/eg/codes/pacInput/OTC-MD-500N/'
-        ofl = '/home/eg/codes/pacOutput/OTC-MD-500N/'
+        ofl = '/home/eg/codes/pacOutput/OTC-MD-500N-7D50/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
 
         # Data details:
@@ -86,7 +86,7 @@ for i in data:
 
     elif i == 1500 :
         inputFolderLocation = '/home/eg/codes/pacInput/OTC-MD-1500N/'
-        ofl = '/home/eg/codes/pacOutput/OTC-MD-1500N/'
+        ofl = '/home/eg/codes/pacOutput/OTC-MD-1500N-7D50/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
 
         # Data details:
@@ -99,7 +99,7 @@ for i in data:
         xCenter = 505                                                       # Voxel units - horizontal center
         origGSD= np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
 
-    eLen = 6*d50          # Edge length in mm
+    eLen = 7*d50          # Edge length in mm
 
     # Reading and cropping the data file
     gliMap = Reader.readTiffFileSequence( inputFolderLocation,
@@ -126,11 +126,11 @@ for i in data:
         edmScaleUpFactor = 1
         thresholdEdForPeak = 5
 
-        binMap, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
-                                                                   measuredVoidRatio=measuredVoidRatioSample ,
-                                                                   outputLocation=ofl,
-                                                                   edmScaleUp = edmScaleUpFactor,           # this represents how much the EDMs must be scaled up
-                                                                   peakEdLimit = thresholdEdForPeak)        # this represents what euclid distance should be considered for a peak
+        binMap, binThresh, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
+                                                                              measuredVoidRatio=measuredVoidRatioSample ,
+                                                                              outputLocation=ofl,
+                                                                              edmScaleUp = edmScaleUpFactor,           # this represents how much the EDMs must be scaled up
+                                                                              peakEdLimit = thresholdEdForPeak)        # this represents what euclid distance should be considered for a peak
 
         corLabMap = Segment.fixErrSeg( labMap,
                                        pad=2,
@@ -157,7 +157,7 @@ for i in data:
         noEdgeCorLabMap = Segment.removeEdgeLabels( corLabMap )
         gsd1, gsd2, gsd3, gsd4, gsd5, gsd6= Measure.gsdAll( noEdgeCorLabMap , calib=cal )
 
-        Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4,gsd5,gsd6)
+        #Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4,gsd5,gsd6)
 
         tf.imsave( gliName, gliMap.astype( 'uint32' ) )
         tf.imsave( binName, binMap.astype( 'uint32' ) )
@@ -166,8 +166,8 @@ for i in data:
         tf.imsave( corLabName , corLabMap.astype( 'uint32'))
         tf.imsave( noEdgeCorLabName , noEdgeCorLabMap.astype('uint32'))
 
-        exitLoop = input('\nIs any gsd ok(y/[n])?')
-        #exitLoop = 'y'
+        #exitLoop = input('\nIs any gsd ok(y/[n])?')
+        exitLoop = 'y'
 
         if exitLoop == 'y': gsdOK=True
         else: print('\n\nCheck the output file for (1) threshold error, (2) marker error')
