@@ -82,7 +82,7 @@ def equalAreaProjection( contactSummaryTable , makeYVertical = True, nr=9):
                            binValueMax = maxBinVal,
                            binNormalisation = False,
                            numberOfRings = nr,
-                           pointMarkerSize = 8,
+                           pointMarkerSize = 1,
                            cmap = plt.cm.gist_yarg,
                            title = "",
                            subtitle = {"points":"","bins":""},
