@@ -18,6 +18,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import spam.label as slab
 import time
+import math
+
+from pac import Measure
 
 # This is to plot all the text in the methods
 VERBOSE = True
@@ -258,10 +261,12 @@ def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5):
     print('\tNumber of peaks: ' + str(round(edmPeakMarkers.max())))
     return edmPeakMarkers
 
-def fixErrSeg(labelledMapForOSCorr, pad=2, outputLocation="" , areaLimit = None, checkForSmallParticles = True):
+def fixErrSeg(labelledMapForOSCorr, pad=2, outputLocation="" , areaLimit = 700, checkForSmallParticles = True, radiusRatioLimit=0.5):
     print('\nEntering label correction')
     print('---------------------------*')
-    if areaLimit != None : print('Area limit is : ' + str( np.round( areaLimit) ) )
+    #if areaLimit != None : print('Area limit is : ' + str( np.round( areaLimit) ) )
+
+    print('Radius ratio limit is : ' + str( radiusRatioLimit) )
 
     if areaLimit == None: areaLimit = int(input('Input area limit (px): '))
 
@@ -289,8 +294,8 @@ def fixErrSeg(labelledMapForOSCorr, pad=2, outputLocation="" , areaLimit = None,
 
     correctionLog.write('\n-------------------------------------------------------')
     correctionLog.write('\nStarting edge label consolidation')
-    correctionLog.write('\nArea limit: ' + str( np.round( areaLimit ) ) + '\n\n')
-
+    #correctionLog.write('\nArea limit: ' + str( np.round( areaLimit ) ) + '\n\n')
+    correctionLog.write('\nRadius ratio limit: ' + str( radiusRatioLimit ) + '\n\n')
 
     # Loop through labels till all OS labels are merged
     while currentLabel <= lastLabel:
@@ -306,58 +311,130 @@ def fixErrSeg(labelledMapForOSCorr, pad=2, outputLocation="" , areaLimit = None,
         else:
             contactLabel, contactArea = slab.contactingLabels(correctedLabelMap, currentLabel, areas=True)
             print('\n')
-            if VERBOSE: print('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
-            if VERBOSE: print('With areas: ' + str( contactArea ) )
+                       
+            currentLabelRadius = Measure.getEqspDia(correctedLabelMap,currentLabel)/2 
+            touchingParticleRadius = []
+            contactRadius = []
+            radiusRatio =[] 
+            
+            for touchingLabel in contactLabel:
+            	touchingParticleRadius.append(Measure.getEqspDia(correctedLabelMap,touchingLabel)/2 )
 
-            correctionLog.write('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
-            correctionLog.write('\nWith areas: ' + str( contactArea ) )
+            for touchingArea in contactArea:
+            	contactAreaRadiusVal = 0.5 * ( 4 * touchingArea / math.pi ) ** 0.5
+            	contactRadius.append(contactAreaRadiusVal)
+
+            for contact in range( 0 , len(contactLabel) ):
+            	minR = min( currentLabelRadius,touchingParticleRadius[contact])
+            	r = contactRadius[contact]
+            	radiusRatio.append(r/minR)
 
             largeAreaVal = [contactArea[idx] for idx, val in enumerate(contactArea) if val >= areaLimit]
             largeAreaLabel = [contactLabel[idx] for idx, val in enumerate(contactArea) if val >= areaLimit]
 
-            if len(largeAreaVal) != 0:
-                if len(largeAreaVal) != 0:
-                    if VERBOSE: print('\tLabels with large area: ' + str( largeAreaLabel ) )
-                    if VERBOSE: print('\tArea for above labels: ' + str( largeAreaVal ) )
+            largeRatioVal = [radiusRatio[idx] for idx, ratio in enumerate(radiusRatio) if ratio >= radiusRatioLimit]
+            largeRatioLabel = [contactLabel[idx] for idx, ratio in enumerate(radiusRatio) if ratio >= radiusRatioLimit]
 
-                    correctionLog.write('\n\tLabels with large area: ' + str( largeAreaLabel ) )
-                    correctionLog.write('\n\tArea for above labels: ' + str( largeAreaVal ) )
+            if VERBOSE: print('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
+            if VERBOSE: print('With radius Ratios: ' + str( radiusRatio ) )
+            
+            correctionLog.write('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
+            correctionLog.write('\nWith areas: ' + str( contactArea ) )
+            correctionLog.write('\nCurrent particle radius: ' + str( currentLabelRadius ) )
+            correctionLog.write('\nTouching particles radius: ' + str( touchingParticleRadius ) )
+            correctionLog.write('\nRadius ratios: ' + str( radiusRatio ) )
 
-                    labelToMerge = largeAreaLabel[ largeAreaVal.index( min( largeAreaVal ) ) ]
+            # Merging with radius ratios
+            if True: 
+	            if len(largeRatioVal) != 0:
+	                if len(largeRatioVal) != 0:
+	                    if VERBOSE: print('\tLabels with large ratios: ' + str( largeRatioLabel ) )
+	                    if VERBOSE: print('\tRatio for above labels: ' + str( largeRatioVal ) )
 
-                    if currentLabel < labelToMerge:
-                        correctedLabelMap[np.where(correctedLabelMap == labelToMerge)] = int(currentLabel)
-                        if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, labelToMerge))
-                        correctionLog.write('\n\tMerging labels ' + str(currentLabel) + ' and ' + str(labelToMerge))
-                        correctedLabelMap = moveLabelsUp( correctedLabelMap , labelToMerge )
-                        lastLabel = correctedLabelMap.max()
-                        if VERBOSE: print( 'Checking from label %d again.' % currentLabel )
-                        correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' again.')
+	                    correctionLog.write('\n\tLabels with large ratio: ' + str( largeRatioLabel ) )
+	                    correctionLog.write('\n\tRatio for above labels: ' + str( largeRatioVal ) )
+
+	                    labelToMerge = largeRatioLabel[ largeRatioVal.index( min( largeRatioVal ) ) ]
+
+	                    if currentLabel < labelToMerge:
+	                        correctedLabelMap[np.where(correctedLabelMap == labelToMerge)] = int(currentLabel)
+	                        if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, labelToMerge))
+	                        correctionLog.write('\n\tMerging labels ' + str(currentLabel) + ' and ' + str(labelToMerge))
+	                        correctedLabelMap = moveLabelsUp( correctedLabelMap , labelToMerge )
+	                        lastLabel = correctedLabelMap.max()
+	                        if VERBOSE: print( 'Checking from label %d again.' % currentLabel )
+	                        correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' again.')
 
 
-                    else:
-                        correctedLabelMap[ np.where( correctedLabelMap == currentLabel ) ] = int( labelToMerge )
-                        if VERBOSE: print('\tMerging label %d and %d' %( currentLabel, labelToMerge ) )
-                        correctionLog.write('\n\tMerging labels ' + str(currentLabel) + ' and ' + str(labelToMerge))
-                        correctedLabelMap = moveLabelsUp( correctedLabelMap , currentLabel )
-                        lastLabel = correctedLabelMap.max()
-                        currentLabel = labelToMerge
-                        if VERBOSE: print( 'Checking from label %d onwards now' % currentLabel )
-                        correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' onwards now.')
+	                    else:
+	                        correctedLabelMap[ np.where( correctedLabelMap == currentLabel ) ] = int( labelToMerge )
+	                        if VERBOSE: print('\tMerging label %d and %d' %( currentLabel, labelToMerge ) )
+	                        correctionLog.write('\n\tMerging labels ' + str(currentLabel) + ' and ' + str(labelToMerge))
+	                        correctedLabelMap = moveLabelsUp( correctedLabelMap , currentLabel )
+	                        lastLabel = correctedLabelMap.max()
+	                        currentLabel = labelToMerge
+	                        if VERBOSE: print( 'Checking from label %d onwards now' % currentLabel )
+	                        correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' onwards now.')
 
-                else:
-                    if VERBOSE: print('Label' + str(currentLabel) + ' is contacting no other label.')
-                    correctionLog.write('\nLabel' + str(currentLabel) + ' is contacting no other label.')
-                    currentLabel = currentLabel + 1
-                    if VERBOSE: print('Moving to next label ' + str(currentLabel) +  ' now.')
-                    correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
+	                else:
+	                    if VERBOSE: print('Label' + str(currentLabel) + ' is contacting no other label.')
+	                    correctionLog.write('\nLabel' + str(currentLabel) + ' is contacting no other label.')
+	                    currentLabel = currentLabel + 1
+	                    if VERBOSE: print('Moving to next label ' + str(currentLabel) +  ' now.')
+	                    correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
 
-            else:
-                if VERBOSE: print('Label ' + str(currentLabel) + ' has no large contacts.')
-                correctionLog.write('\nLabel ' + str(currentLabel) + ' has no large contacts.')
-                currentLabel = currentLabel + 1
-                if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
-                correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
+	            else:
+                	if VERBOSE: print('Label ' + str(currentLabel) + ' has no large contacts.')
+                	correctionLog.write('\nLabel ' + str(currentLabel) + ' has no large contacts.')
+                	currentLabel = currentLabel + 1
+                	if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
+                	correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
+
+            # Merging with Areas
+            if False:
+	            if len(largeAreaVal) != 0:
+	                if len(largeAreaVal) != 0:
+	                    if VERBOSE: print('\tLabels with large area: ' + str( largeAreaLabel ) )
+	                    if VERBOSE: print('\tArea for above labels: ' + str( largeAreaVal ) )
+
+	                    correctionLog.write('\n\tLabels with large area: ' + str( largeAreaLabel ) )
+	                    correctionLog.write('\n\tArea for above labels: ' + str( largeAreaVal ) )
+
+	                    labelToMerge = largeAreaLabel[ largeAreaVal.index( min( largeAreaVal ) ) ]
+
+	                    if currentLabel < labelToMerge:
+	                        correctedLabelMap[np.where(correctedLabelMap == labelToMerge)] = int(currentLabel)
+	                        if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, labelToMerge))
+	                        correctionLog.write('\n\tMerging labels ' + str(currentLabel) + ' and ' + str(labelToMerge))
+	                        correctedLabelMap = moveLabelsUp( correctedLabelMap , labelToMerge )
+	                        lastLabel = correctedLabelMap.max()
+	                        if VERBOSE: print( 'Checking from label %d again.' % currentLabel )
+	                        correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' again.')
+
+
+	                    else:
+	                        correctedLabelMap[ np.where( correctedLabelMap == currentLabel ) ] = int( labelToMerge )
+	                        if VERBOSE: print('\tMerging label %d and %d' %( currentLabel, labelToMerge ) )
+	                        correctionLog.write('\n\tMerging labels ' + str(currentLabel) + ' and ' + str(labelToMerge))
+	                        correctedLabelMap = moveLabelsUp( correctedLabelMap , currentLabel )
+	                        lastLabel = correctedLabelMap.max()
+	                        currentLabel = labelToMerge
+	                        if VERBOSE: print( 'Checking from label %d onwards now' % currentLabel )
+	                        correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' onwards now.')
+
+	                else:
+	                    if VERBOSE: print('Label' + str(currentLabel) + ' is contacting no other label.')
+	                    correctionLog.write('\nLabel' + str(currentLabel) + ' is contacting no other label.')
+	                    currentLabel = currentLabel + 1
+	                    if VERBOSE: print('Moving to next label ' + str(currentLabel) +  ' now.')
+	                    correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
+
+	            else:
+                	if VERBOSE: print('Label ' + str(currentLabel) + ' has no large contacts.')
+                	correctionLog.write('\nLabel ' + str(currentLabel) + ' has no large contacts.')
+                	currentLabel = currentLabel + 1
+                	if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
+                	correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
 
     if pad > 0: correctedLabelMap = removePaddingFromLabelledMap(correctedLabelMap, pad)
 

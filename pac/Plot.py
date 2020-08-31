@@ -51,23 +51,24 @@ def blobPlot():
     '''
     '''
 
-def equalAreaProjection( contactSummaryTable , makeYVertical = True, nr=9):
+def equalAreaProjection( contactSummaryTable , makeYVertical = True, projectionOption='EA', plotToPresentOption='both', nr=9,xSize=8,ySize=4):
     print('\nPlotting the equal area projection of the contact normals')
     if makeYVertical == True: contactSummaryTable[:,[2,3]] = contactSummaryTable[:,[3,2]]
 
     orientations = contactSummaryTable[ : , 2 : 5 ]
 
-    projectionOption = input('Which projection to follow: (1) Equidistant  or [2] Equal Area?:')
-    if projectionOption == '1': projectionUser = "equidistant"
+    if projectionOption != 'EA': projectionUser = "equidistant"
     else: projectionUser = "lambert"
 
-    plotToPresentOption = input('Choose plots to present (1) Points, (2) Bins, or [3] Both:')
-    if plotToPresentOption == '1': plotToPresentUser = "points"
-    elif plotToPresentOption == '2': plotToPresentUser = "bin"
+    if plotToPresentOption == 'points': plotToPresentUser = "points"
+    elif plotToPresentOption == 'bin': plotToPresentUser = "bin"
     else : plotToPresentUser = "both"
 
-    maxBinVal = int(input('Enter max bin val: '))
-    minBinVal = int(input('Enter min bin val: '))
+    #maxBinVal = int(input('Enter max bin val: '))
+    #minBinVal = int(input('Enter min bin val: '))
+
+    maxBinVal = 10
+    minBinVal = 0
 
     #normalize = input('Normalize bin([y]/n)?')
     normalize ='n'
@@ -82,11 +83,12 @@ def equalAreaProjection( contactSummaryTable , makeYVertical = True, nr=9):
                            binValueMax = maxBinVal,
                            binNormalisation = False,
                            numberOfRings = nr,
-                           pointMarkerSize = 1,
+                           pointMarkerSize = 2,
                            cmap = plt.cm.gist_yarg,
                            title = "",
-                           subtitle = {"points":"","bins":""},
-                           saveFigPath = None )
+                           saveFigPath = None,
+			   figx = xSize,
+			   figy = ySize)
     plt.show()
 
 

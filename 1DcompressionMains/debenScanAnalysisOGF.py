@@ -86,7 +86,7 @@ for i in data:
 
     if i == 1500 :
         inputFolderLocation = '/home/eg/codes/pacInput/OGF-1500N/'
-        ofl = '/home/eg/codes/pacOutput/OGF-1500N/'
+        ofl = '/home/eg/codes/pacOutput/OGF-1500N-2/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogf30MPa.csv' # Original GSD location
 
         # Data details 0N:
@@ -102,61 +102,47 @@ for i in data:
     eLen = 6*d50          # Edge length in mm
 
     # Reading and cropping the data file
-    gliMap = Reader.readTiffFileSequence( inputFolderLocation,
-                                          zCenter,
-                                          yCenter,
-                                          xCenter,
-                                          eLen,
-                                          cal,
-                                          invImg=False)
+    #gliMap = Reader.readTiffFileSequence( inputFolderLocation,
+    #                                      zCenter,
+    #                                      yCenter,
+    #                                      xCenter,
+    #                                      eLen,
+    #                                      cal,
+    #                                      invImg=False)
+    
     gsdOK = False
 
     # Naming tifffiles:
-    gliName = ofl + 'gliMap.tiff'
-    binName = ofl + 'binMap.tiff'
-    edName = ofl + 'edMap.tiff'
-    labName = ofl + 'labMap.tiff'
+    #gliName = ofl + 'gliMap.tiff'
+    #binName = ofl + 'binMap.tiff'
+    #edName = ofl + 'edMap.tiff'
+    #labName = ofl + 'labMap.tiff'
     corLabName = ofl + 'corLabMap.tiff'
     noEdgeCorLabName = ofl + 'noEdgeCorLabMap.tiff'
 
     while gsdOK == False:
-        edmScaleUpFactor = int(input('Enter scaling for EDM: '))
-        thresholdEdForPeak = int(input('Enter threshold of ED for peaks: '))
+        #edmScaleUpFactor = int(input('Enter scaling for EDM: '))
+        #thresholdEdForPeak = int(input('Enter threshold of ED for peaks: '))
 
-        binMap, binThresh, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
-                                                                              measuredVoidRatio=measuredVoidRatioSample ,
-                                                                              outputLocation=ofl,
-                                                                              edmScaleUp = edmScaleUpFactor,   # this represents how much the EDMs must be scaled up
-                                                                              peakEdLimit = thresholdEdForPeak)# this represents what euclid distance should be considered for a peak
+        #binMap, binThresh, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
+        #                                                                      measuredVoidRatio=measuredVoidRatioSample ,
+        #                                                                      outputLocation=ofl,
+        #                                                                      edmScaleUp = edmScaleUpFactor,   # this represents how much the EDMs must be scaled up
+        #                                                                      peakEdLimit = thresholdEdForPeak)# this represents what euclid distance should be considered for a peak
 
-        corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , areaLimit = 700)
-
-        '''
-            Currently choosing areaLimit based on trial and error
-
-            This can be some factor of the size of the particle and will depend on the resolution
-            The diameters are 0.62, 0.72, 0.73 mm
-            Average is 0.67mm
-            That translates to 57 pixels
-            Asuming a contact of half a particle i.e. 28 pixels, we get an area
-            of 784 (square with edge 28 px)
-            of 615 (circle with diameter 28 px)
-            Average is around 700
-
-            The area to be used should be a function of the sizes of the particles touching
-            i.e. the contact between larger particles will be large and so for smaller
-            This is especially true for crushed particles.
-        '''
+        
+        labMap = tf.imread('/home/eg/codes/pacOutput/OGF-1500N/labMap.tiff')
+        corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , radiusRatioLimit=0.7)
 
         noEdgeCorLabMap = Segment.removeEdgeLabels( corLabMap )
         gsd1, gsd2, gsd3, gsd4, gsd5, gsd6= Measure.gsdAll( noEdgeCorLabMap , calib=cal )
 
         Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4,gsd5,gsd6)
 
-        tf.imsave( gliName, gliMap.astype( 'uint32' ) )
-        tf.imsave( binName, binMap.astype( 'uint32' ) )
-        tf.imsave( edName, edMap.astype( 'uint32' ) )
-        tf.imsave( labName, labMap.astype( 'uint32' ) )
+        #tf.imsave( gliName, gliMap.astype( 'uint32' ) )
+        #tf.imsave( binName, binMap.astype( 'uint32' ) )
+        #tf.imsave( edName, edMap.astype( 'uint32' ) )
+        #tf.imsave( labName, labMap.astype( 'uint32' ) )
         tf.imsave( corLabName , corLabMap.astype( 'uint32'))
         tf.imsave( noEdgeCorLabName , noEdgeCorLabMap.astype('uint32'))
 

@@ -13,6 +13,8 @@ from uncertainties import unumpy as unp
 from uncertainties import ufloat
 from uncertainties.umath import *
 
+from pac import Segment
+
 VERBOSE = True
 
 def gsdAll( labelledMap , calib = 0.01193 ):
@@ -154,6 +156,7 @@ def relBreak( gsdOriginal, gsdCurrent , maxSize=None , fracDim=None ):
     Br = B/Bp * 100
     if VERBOSE: print('Relative breakage (Br) is: ' + str(np.round(Br,2)) + '%')
     return gsdOrig, gsdCur, gsdUlt, Br
+
 
 def getAspectRatioSphericity( particleSizeSummary ):
     print("Measuring particle morphology...")
@@ -345,3 +348,31 @@ def fabricVariablesWithUncertainity( contactTable, vectUncert = 0.26 ):
     uFq[0,0] = ((3/2)*( uF[0,0]*uF[0,0] + uF[0,1]*uF[0,1] + uF[0,2]*uF[0,2] + uF[1,0]*uF[1,0] + uF[1,1]*uF[1,1] + uF[1,2]*uF[1,2] + uF[2,0]*uF[2,0] + uF[2,1]*uF[2,1] + uF[2,2]*uF[2,2])) ** 0.5
 
     return uN, uF, uFq
+
+def getCoordinationNumberList(labelledMap):
+    
+    numberOfLabels = labelledMap.max()
+    coordinationNumberArray = np.zeros( ( numberOfLabels, 2) )
+    
+    labelledMap = Segment.applyPaddingToLabelledMap(labelledMap, 2)
+    
+    for currentLabel in range(2, numberOfLabels + 1):
+        print('\nChecking for label ' + str(np.round(currentLabel)))
+        contactLabels = slab.contactingLabels( labelledMap, currentLabel, areas=False)
+        numberOfContacts = len(contactLabels)
+        coordinationNumberArray[currentLabel-1,0] = currentLabel
+        coordinationNumberArray[currentLabel-1,1] = numberOfContacts
+    
+    # labelledMap = Segment.removePaddingFromLabelledMap(padLabMap, 2)
+
+    return coordinationNumberArray
+
+def getEqspDia(labelMap, label):
+    
+    labOnlyMap = np.zeros_like( labelMap )
+    labOnlyMap[np.where(labelMap == label)] = 1
+    volume = labOnlyMap.sum()
+    eqspLabelRadius = (0.75*volume/math.pi)**(1/3)
+    eqspDia = eqspLabelRadius * 2
+    
+    return eqspDia

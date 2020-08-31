@@ -88,12 +88,12 @@ for i in data:
 
     if i == 500 :
         inputFolderLocation = '/home/eg/codes/pacInput/2QR-500N/'
-        ofl = '/home/eg/codes/pacOutput/2QR-500N/'
+        ofl = '/home/eg/codes/pacOutput/2QR-500N-2/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/2qrOrig10Mpa.csv' # Original GSD location
 
 
         # Data details 0N:
-        dataName = '2qr-500N'
+        dataName = '2qr-500N-2'
         measVoidRatio = 0.698                                     # Void ratio measured from 1D compression experiment
         d50 = 0.73                                                          # D50 in mm - original gradation
         cal = 0.011931                                                      # calibration from CT mm/voxel
@@ -104,12 +104,12 @@ for i in data:
 
     if i == 1500 :
         inputFolderLocation = '/home/eg/codes/pacInput/2QR-1500N/'
-        ofl = '/home/eg/codes/pacOutput/2QR-1500N/'
+        ofl = '/home/eg/codes/pacOutput/2QR-1500N-2/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/2qrOrig30Mpa.csv' # Original GSD location
 
 
         # Data details 0N:
-        dataName = '2qr-1500N'
+        dataName = '2qr-1500N-2'
         measVoidRatio = 0.591                                     # Void ratio measured from 1D compression experiment
         d50 = 0.73                                                          # D50 in mm - original gradation
         cal = 0.011931                                                      # calibration from CT mm/voxel
@@ -117,6 +117,7 @@ for i in data:
         yCenter = 450                                                       # Voxel units - vertical center
         xCenter = 507                                                       # Voxel units - horizontal center
         origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )         # Original GSD
+        print('Analysing 2QR - 1500')
 
     eLen = 6*d50          # Edge length in mm
 
@@ -131,10 +132,10 @@ for i in data:
     gsdOK = False
 
     # Naming tifffiles:
-    gliName = ofl + 'gliMap.tiff'
-    binName = ofl + 'binMap.tiff'
-    edName = ofl + 'edMap.tiff'
-    labName = ofl + 'labMap.tiff'
+    #gliName = ofl + 'gliMap.tiff'
+    #binName = ofl + 'binMap.tiff'
+    #edName = ofl + 'edMap.tiff'
+    #labName = ofl + 'labMap.tiff'
     corLabName = ofl + 'corLabMap.tiff'
     noEdgeCorLabName = ofl + 'noEdgeCorLabMap.tiff'
 
@@ -148,27 +149,10 @@ for i in data:
         #                                                                      edmScaleUp=edmScaleUpFactor,    # this represents how much the EDMs must be scaled up
         #                                                                      peakEdLimit=thresholdEdForPeak) # this represents what euclid distance should be considered for a peak
 
-        #corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , areaLimit = 700)
+        labMap = tf.imread('/home/eg/codes/pacOutput/2QR-1500N/labMap.tiff').astype('uint32')
+        corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , radiusRatioLimit=0.7)
 
-        '''
-            Currently choosing areaLimit based on trial and error
-
-            This can be some factor of the size of the particle and will depend on the resolution
-            The diameters are 0.62, 0.72, 0.73 mm
-            Average is 0.67mm
-            That translates to 57 pixels
-            Asuming a contact of half a particle i.e. 28 pixels, we get an area
-            of 784 (square with edge 28 px)
-            of 615 (circle with diameter 28 px)
-            Average is around 700
-
-            The area to be used should be a function of the sizes of the particles touching
-            i.e. the contact between larger particles will be large and so for smaller
-            This is especially true for crushed particles.
-        '''
-
-        #noEdgeCorLabMap = Segment.removeEdgeLabels( corLabMap )
-        noEdgeCorLabMap = tf.imread('/home/eg/codes/pacOutput/2QR-1500N/noEdgeCorLabMap-edited9.tiff').astype('uint32')
+        noEdgeCorLabMap = Segment.removeEdgeLabels( corLabMap )
         gsd1, gsd2, gsd3, gsd4, gsd5, gsd6= Measure.gsdAll( noEdgeCorLabMap , calib=cal )
 
         Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4,gsd5,gsd6)
@@ -177,8 +161,8 @@ for i in data:
         #tf.imsave( binName, binMap.astype( 'uint32' ) )
         #tf.imsave( edName, edMap.astype( 'uint32' ) )
         #tf.imsave( labName, labMap.astype( 'uint32' ) )
-        #tf.imsave( corLabName , corLabMap.astype( 'uint32'))
-        #tf.imsave( noEdgeCorLabName , noEdgeCorLabMap.astype('uint32'))
+        tf.imsave( corLabName , corLabMap.astype( 'uint32'))
+        tf.imsave( noEdgeCorLabName , noEdgeCorLabMap.astype('uint32'))
 
         #exitLoop = input('\nIs any gsd ok(y/[n])?')
         exitLoop = 'y'
@@ -187,8 +171,8 @@ for i in data:
         else: print('\n\nCheck the output file for (1) threshold error, (2) marker error')
 
 
-    #contactTableRW = Measure.contactNormalsSpam(corLabMap, method = 'rw')
-    #N, F, Fq = Measure.fabricVariablesWithUncertainity( contactTableRW, vectUncert = 0.26 )
+    contactTableRW = Measure.contactNormalsSpam(corLabMap, method = 'rw')
+    N, F, Fq = Measure.fabricVariablesWithUncertainity( contactTableRW, vectUncert = 0.26 )
 
     # Save files as csv
     np.savetxt((ofl+ str(eLen/d50) +'D50-gsd1.csv'), gsd1, delimiter=',')                        # Eqsp
@@ -197,10 +181,10 @@ for i in data:
     np.savetxt((ofl+ str(eLen/d50) +'D50-gsd4.csv'), gsd4, delimiter=',')                        # CA min
     np.savetxt((ofl+ str(eLen/d50) +'D50-gsd5.csv'), gsd5, delimiter=',')                        # Feret max
     np.savetxt((ofl+ str(eLen/d50) +'D50-gsd6.csv'), gsd6, delimiter=',')                        # Feret min
-    #np.savetxt((ofl+ str(eLen/d50) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
-    #np.savetxt((ofl+ str(eLen/d50) +'N.txt'), N, fmt='%r')                                       # Fabric tensor
-    #np.savetxt((ofl+ str(eLen/d50) +'F.txt'), F, fmt='%r')                                       # Deviatoric fabric tensor
-    #np.savetxt((ofl+ str(eLen/d50) +'Fq.txt'), Fq, fmt='%r')                                     # Ansiotropy factor
+    np.savetxt((ofl+ str(eLen/d50) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
+    np.savetxt((ofl+ str(eLen/d50) +'N.txt'), N, fmt='%r')                                       # Fabric tensor
+    np.savetxt((ofl+ str(eLen/d50) +'F.txt'), F, fmt='%r')                                       # Deviatoric fabric tensor
+    np.savetxt((ofl+ str(eLen/d50) +'Fq.txt'), Fq, fmt='%r')                                     # Ansiotropy factor
 
     totalTimeEnd = time.time()
     totalTimeTaken = totalTimeEnd - totalTimeStart
