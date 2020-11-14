@@ -122,32 +122,32 @@ for i in data:
     eLen = 6*d50          # Edge length in mm
 
     # Reading and cropping the data file
-    #gliMap = Reader.readTiffFileSequence( inputFolderLocation,
-    #                                      zCenter,
-    #                                      yCenter,
-    #                                      xCenter,
-    #                                      eLen,
-    #                                      cal,
-    #                                      invImg=False)
+    gliMap = Reader.readTiffFileSequence( inputFolderLocation,
+                                          zCenter,
+                                          yCenter,
+                                          xCenter,
+                                          eLen,
+                                          cal,
+                                          invImg=False)
     gsdOK = False
 
     # Naming tifffiles:
-    #gliName = ofl + 'gliMap.tiff'
-    #binName = ofl + 'binMap.tiff'
-    #edName = ofl + 'edMap.tiff'
-    #labName = ofl + 'labMap.tiff'
+    gliName = ofl + 'gliMap.tiff'
+    binName = ofl + 'binMap.tiff'
+    edName = ofl + 'edMap.tiff'
+    labName = ofl + 'labMap.tiff'
     corLabName = ofl + 'corLabMap.tiff'
     noEdgeCorLabName = ofl + 'noEdgeCorLabMap.tiff'
 
     while gsdOK == False:
-        #edmScaleUpFactor = int(input('Enter scaling for EDM: '))
-        #thresholdEdForPeak = int(input('Enter threshold of ED for peaks: '))
+        dmScaleUpFactor = int(input('Enter scaling for EDM: '))
+        thresholdEdForPeak = int(input('Enter threshold of ED for peaks: '))
 
-        #binMap, binThresh, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
-        #                                                                      measuredVoidRatio=measVoidRatio ,
-        #                                                                      outputLocation=ofl,
-        #                                                                      edmScaleUp=edmScaleUpFactor,    # this represents how much the EDMs must be scaled up
-        #                                                                      peakEdLimit=thresholdEdForPeak) # this represents what euclid distance should be considered for a peak
+        binMap, binThresh, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
+                                                                              measuredVoidRatio=measVoidRatio ,
+                                                                              outputLocation=ofl,
+                                                                              edmScaleUp=edmScaleUpFactor,    # this represents how much the EDMs must be scaled up
+                                                                              peakEdLimit=thresholdEdForPeak) # this represents what euclid distance should be considered for a peak
 
         labMap = tf.imread('/home/eg/codes/pacOutput/2QR-1500N/labMap.tiff').astype('uint32')
         corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , radiusRatioLimit=0.7)
@@ -157,10 +157,10 @@ for i in data:
 
         Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4,gsd5,gsd6)
 
-        #tf.imsave( gliName, gliMap.astype( 'uint32' ) )
-        #tf.imsave( binName, binMap.astype( 'uint32' ) )
-        #tf.imsave( edName, edMap.astype( 'uint32' ) )
-        #tf.imsave( labName, labMap.astype( 'uint32' ) )
+        tf.imsave( gliName, gliMap.astype( 'uint32' ) )
+        tf.imsave( binName, binMap.astype( 'uint32' ) )
+        tf.imsave( edName, edMap.astype( 'uint32' ) )
+        tf.imsave( labName, labMap.astype( 'uint32' ) )
         tf.imsave( corLabName , corLabMap.astype( 'uint32'))
         tf.imsave( noEdgeCorLabName , noEdgeCorLabMap.astype('uint32'))
 

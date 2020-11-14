@@ -105,9 +105,9 @@ for sample in scanData:
         topTip = np.array( [ zTopTip , yTopTip , xTopTip ] )
         topDist = np.array( [ [ 0 , 0 , 0 ] , topMid , topTip ]  )
         subregionLoc = np.zeros( ( 3 , subregionLocTop.shape[0] , subregionLocTop.shape[1] ) )
-        subregion[0] = subregionLocTop
-        subregion[1] = subregionLocMid
-        subregion[2] = subregionLocTip
+        subregionLoc[0] = subregionLocTop
+        subregionLoc[1] = subregionLocMid
+        subregionLoc[2] = subregionLocTip
 
     if sample == '2QR50':
         print('code goes plop...')
@@ -136,11 +136,15 @@ for sample in scanData:
         print('code goes plop...')
 
     # Analysis--------------------------------------------------------------------------------------------------------------------------*
-    # Analysis carried out for each section (top mid and top)
+    # Analysis carried out for each sample collected at 25, 50 and 90 kPa
+        # With scans at top, middle and bottom
+        # and 7 regions within each sample - location obtained from y
+
     for section in range(0,3):
         # Read the files----------------------------------------------------------------------------------------------------------------*
         #   Read one scan at a time and only that much in Z direction that is large enough to have the subregion size
         #   Extract subregions in a loop till all the subregions needed are analyzed. - no fabric so the gradation analysis should be faster
+        
 
         # Get particle size distribution for subregions---------------------------------------------------------------------------------*
         #   Take subregions from the file and analyze for particle size distribution - Bin - EDM - WS - GSD
