@@ -69,7 +69,6 @@ for sand in sandList:
         xCenter = 504                                                       # Voxel units - horizontal center
         originalGSD = np.loadtxt( origGSDLoc , delimiter=',' )              # Original GSD
 
-
     gliNameAll = ofl + 'maxD50-gliMap.tiff'
     binNameAll = ofl + 'maxD50-binMap.tiff'
     edNameAll = ofl + 'maxD50-edMap.tiff'

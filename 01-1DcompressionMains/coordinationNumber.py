@@ -1,6 +1,10 @@
 '''
 List of coordination numerbs for labelled map
+    The image file is read from the corlabmap
+    Measure gets the coordination number.
+    The coordination number distribution is saved as text.
 '''
+
 
 import skimage.external.tifffile as tf
 from pac import Measure
