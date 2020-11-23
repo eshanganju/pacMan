@@ -95,13 +95,13 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor = 1):
         caMed = statistics.median( caDims )[ 0 ] # Param 4
 
         # Feret diameters - SPAM
-        feretMax, feretMin = getMinMaxFeretDia( labelledMapForParticleSizeAnalysis, particleNum )
+        #feretMax, feretMin = getMinMaxFeretDia( labelledMapForParticleSizeAnalysis, particleNum )
 
         particleSizeDataSummary[particleNum, 3] = caMax * calibrationFactor
         particleSizeDataSummary[particleNum, 4] = caMed * calibrationFactor
         particleSizeDataSummary[particleNum, 5] = caMin * calibrationFactor
-        particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
-        particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
+        #particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
+        #particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
 
     return particleSizeDataSummary  # [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
 

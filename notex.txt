@@ -1,8 +1,20 @@
 Running notes file.
 
-2020-11-22:
-1. Fix image errors for rings and add figs to the paper
-2. Morphology analysis for the samples at different loads
-3. Add discussion in the paper for particl shape and morphology
-4. ???
-5. Submit.
+Stripey images:
+---
+Images are stripey because of issued in data collection
+These stripes show up as ring artifacts in certain cross section
+    and as stripes in other crosssections
+
+
+Cleaning stripey images
+---
+
+Sources of stripes:
+    Bad detector
+    Dust on the sintillator or optic system
+    Degradation over time
+
+Cleaning of stripes in the CT data
+    Real space
+    Fourier space
