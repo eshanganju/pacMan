@@ -1,0 +1,11 @@
+2020-12-08
+
+Things to do:
+    1. Local location for subregion extraction.
+    2. Particle size distribution:
+        2.1. Binarization - how?
+        2.2. EDM and WSS.
+        2.3. Over-segmentation correction.
+    3. Relative breakage parameter.
+    4. Position wrt sholder.
+    5. Relative breakage contours.

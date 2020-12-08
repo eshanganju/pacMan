@@ -105,6 +105,18 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor = 1):
 
     return particleSizeDataSummary  # [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
 
+def getEqspDia():
+    '''
+    '''
+
+def getLengthsAlongCentroidalAxes():
+    '''
+    '''
+
+def getMinMaxFeretDia():
+    '''
+    '''
+
 def getMinMaxFeretDia(labelledMap, label, numOrts=100):
     labOneOnly = np.zeros_like( labelledMap )
     labOneOnly[ np.where( labelledMap == label ) ] = 1
