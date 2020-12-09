@@ -35,12 +35,22 @@ scanData = ['2QR_25_top','2QR_25_mid','2QR_25_tip',
 
 for each scan in scanData:
     scanInputLoc = '/home/eg/codes/pacInput/' + scan + '/'
-    subregionXYList = '/home/eg/codes/pacInput/' + scan + '/' + 'subregionLocs.csv'
-    subregionsXY = np.genfromtxt(subregionXYList, delimiter=',', skiprows=1)
+    subregionZYXListLoc = '/home/eg/codes/pacInput/' + scan + '/' + 'subregionZYXLocs.csv'
+    '''
+    D50 and Calibfactor code selection code
+    '''
+    subregionYXArray = np.genfromtxt(subregionZYXListLoc, delimiter=',', skip_header=2)
+    subregionZ = int(np.genfromtxt(subregionZYXListLoc, delimiter=',', skip_footer=10))
+    numberSubregions = subregionXYList.shape[0]
 
     analysisOutputLoc = '/home/eg/codes/pacOutput/cone/' + scan + '/'
     imageOutputLoc = '/media/eg/EshanGanju/coneImages/' + scan + '/'
 
-    subregion = 
-
-
+    for currentSubregion in range(0,numberSubregions):
+        subregionGLIMap = Reader.tifffileSequence2(folderLocation=scanInputLoc,
+                                                   centerZ=subregionZ,
+                                                   topLeftY=subregionYXArray[currentSubregion,0],
+                                                   topLeftX=subregionYXArray[currentSubregion,1],
+                                                   lngt=6*D50,
+                                                   calib=calibrationFactor,
+                                                   invImg=False)
