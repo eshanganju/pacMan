@@ -6,6 +6,13 @@ Things to do:
         2.1. Binarization - how?
         2.2. EDM and WSS.
         2.3. Over-segmentation correction.
-    3. Relative breakage parameter.
+        2.4. Removal of edge particles. 
+    3. Relative breakage parameter calculation.
     4. Position wrt sholder.
     5. Relative breakage contours.
+
+---
+Approach:
+    Locating the subregions can be manual or auto.
+    Manual is by  creating new files using fiji.
+    
