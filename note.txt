@@ -1,7 +1,8 @@
 2020-12-08
 
 Things to do:
-    1. Local location for subregion extraction.
+    0. Local location for subregion extraction
+    1. Filteration of the extracted subregions
     2. Particle size distribution:
         2.1. Binarization - how?
         2.2. EDM and WSS.
@@ -15,4 +16,10 @@ Things to do:
 Approach:
     Locating the subregions can be manual or auto.
     Manual is by  creating new files using fiji.
-    
+
+20201209
+    Extraction of subregion
+      The images will be corrected (inverted) in fiji
+      From fiji, we will get location of subregions extracted.
+      
+
