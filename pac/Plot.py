@@ -17,12 +17,22 @@ Objectives are
 
 VERBOSE = True
 
-def centerCrossSection( labelledMap, colorMap = 'rainbow'):
-    '''
-    Show the first and last points of the axis
-    Add a scale on the color map
-    Make scale so that the image does not stretch
-    '''
+def centerCrossSection( volumeMap, colorMap = 'gray'):
+    """
+    Description
+        Takes a 3D numpy array representing a 3D volume from XCT
+        Plots the center slice of the XCT
+
+    Parameters
+        volumeMap: 3D numpy array
+        colorMap: cmap code
+
+    Output
+        Image of the center slice
+    """
+    plt.imshow(volumeMap[volumeMap.shape[0]//2],cmap=colorMap)
+    plt.show()
+
 
 def grainSizeDistribution (gsd0, gsd1, gsd2=np.zeros((1,2)), gsd3=np.zeros((1,2)), gsd4=np.zeros((1,2)), gsd5=np.zeros((1,2)), gsd6=np.zeros((1,2)), xmax = 10, xmin = 0.001):
     '''
@@ -89,6 +99,7 @@ def equalAreaProjection( contactSummaryTable , makeYVertical = True, projectionO
                            saveFigPath = None,
 			   figx = xSize,
 			   figy = ySize)
+
     plt.show()
 
 
