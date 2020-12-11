@@ -44,32 +44,20 @@ for scan in scanData:
     analysisOutputLoc = '/home/eg/codes/pacOutput/cone/' + scan + '/'
     imageOutputLoc = '/media/eg/EshanGanju/coneImages/' + scan + '/'
 
-    subregionCalib = float(np.genfromtxt(subregionInfo,
-                                         delimiter=',',
-                                         skip_header=1,
-                                         skip_footer=numberofSubregionsPerScan+2))
-
-    subregionD50 = float(np.genfromtxt(subregionInfo,
-                                       delimiter=',',
-                                       skip_header=2,
-                                       skip_footer=numberofSubregionsPerScan+1))
-
-    subregionZ = int(np.genfromtxt(subregionInfo,
-                                   delimiter=',',
-                                   skip_header=3,
-                                   skip_footer=numberofSubregionsPerScan))
-
-    subregionYXArray = np.genfromtxt(subregionInfo,
-                                     delimiter=',',
-                                     skip_header=4)
+    subregionCalib = Reader.readDataFromCsv(subregionInfo,skipHeader=1,skipFooter=numberofSubregionsPerScan+2,fmt='float',dataForm='number')
+    subregionD50 = Reader.readDataFromCsv(subregionInfo,skipHeader=2,skipFooter=numberofSubregionsPerScan+1,fmt='float',dataForm='number')
+    subregionZ = Reader.readDataFromCsv(subregionInfo,skipHeader=3,skipFooter=numberofSubregionsPerScan,fmt='int',dataForm='number')
+    subregionYXArray = Reader.readDataFromCsv(subregionInfo,skipHeader=4,fmt='int',dataForm='array')
 
     for currentSubregion in range(0,numberofSubregionsPerScan):
-        subregionGLIMap = Reader.readTiffFileSequence2(folderLocation=scanInputLoc,
-                                                       centerZ=subregionZ,
-                                                       topLeftY=subregionYXArray[currentSubregion,0],
-                                                       topLeftX=subregionYXArray[currentSubregion,1],
-                                                       lngt=6*subregionD50,
-                                                       calib=subregionCalib,
-                                                       invImg=False)
+        subregionGLIMap = Reader.readTiffFileSequence2(folderLocation=scanInputLoc,centerZ=subregionZ,topLeftY=subregionYXArray[currentSubregion,0],topLeftX=subregionYXArray[currentSubregion,1],lngt=6*subregionD50,calib=subregionCalib,invImg=False)
+
+        # Filter - NLM
+        # Binarization - Otsu?
+        # EDM and particle centers
+        # Watershed segmentation
+        #
+
+
         Plot.centerCrossSection(subregionGLIMap)
 
