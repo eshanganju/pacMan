@@ -50,14 +50,19 @@ for scan in scanData:
     subregionYXArray = Reader.readDataFromCsv(subregionInfo,skipHeader=4,fmt='int',dataForm='array')
 
     for currentSubregion in range(0,numberofSubregionsPerScan):
-        subregionGLIMap = Reader.readTiffFileSequence2(folderLocation=scanInputLoc,centerZ=subregionZ,topLeftY=subregionYXArray[currentSubregion,0],topLeftX=subregionYXArray[currentSubregion,1],lngt=6*subregionD50,calib=subregionCalib,invImg=False)
+        subregionGLIMap = Reader.readTiffFileSequence2(folderLocation=scanInputLoc,
+                                                       centerZ=subregionZ,
+                                                       topLeftY=subregionYXArray[currentSubregion,0],
+                                                       topLeftX=subregionYXArray[currentSubregion,1],
+                                                       lngt=6*subregionD50,
+                                                       calib=subregionCalib,
+                                                       invImg=False)
 
         # Filter - NLM
         # Binarization - Otsu?
         # EDM and particle centers
         # Watershed segmentation
-        #
-
+        # Particle size analysis
 
         Plot.centerCrossSection(subregionGLIMap)
 

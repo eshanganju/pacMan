@@ -10,14 +10,19 @@ import numpy as np
 import glob
 import gc
 
-def readTiffStack( folderAndFileLocation, cntrZ, cntrY, cntrX, lngt, calib ):
+def readTiffStack(folderAndFileLocation,cntrZ,cntrY,cntrX,lngt,calib):
     """
     Description:
-        
+        Reads a tiff stack created in fiji and passess a subregion of that slice
     Parameters:
-        
+        folderAndFileLocation ('str'):
+        cntrZ ('int'): Z location of center slice of subregion
+        cntrY ('int'): Y location of center slice of subregion
+        cntrX ('int'): X location of center slice of subregion
+        lngt ('float'): length of subregion in mm
+        calib ('float'): calibration factor converting pixel to mm
     Output:
-        
+        numpy array of the file.
     """
     print('\nReading tiff stack from: ' + folderAndFileLocation)
     upperSlice = cntrZ + round( ( lngt / 2 ) / calib )
@@ -57,7 +62,6 @@ def readDataFromCsv(fileLocation,skipHeader=0,skipFooter=0,delim=',',fmt='float'
             return float(data)
         elif fmt == 'int':
             return int(data)
-
 
 def readTiffFileSequence2(folderLocation,centerZ,topLeftY,topLeftX,lngt,calib,invImg=False):
     """
@@ -193,7 +197,7 @@ def readTiffFileSequence( folderLocation, cntrZ, cntrY, cntrX, lngt, calib, invI
     croppedGLIMap = gliMap[ :, lowerRow : upperRow, lowerCol : upperCol ]
     return croppedGLIMap
 
-def invertImage( gliMapToInvert ):
+def invertImage(gliMapToInvert ):
     """
     Description:
 

@@ -2,22 +2,33 @@
 Filter class
 '''
 
-import skimage.external.tifffile as tiffy
+import tifffile as tiffy
 from skimage import restoration
 import matplotlib.pyplot as plt
 import numpy as np
 import time
 
-def filterDenoiseNlm( sandName, gli, gliMax, outputDir ):
+def filterDenoiseNlm(gli, gliMax, outputDir, sandName='sampleX'):
+    """
+    Description
+        This function takes in a unfiltered grey level intensity map and loops over parameters
+        till it outputs a filtered map that is filtered using the non local means filter.
+        The non local means filter removes noise with minimal effect on grey-level edges.
+    Parameters
+        gli (np array): the ct scan data in the form of a NP array.
+        gliMax (int): the maximum integer value in the plot. (can be set to the max of the image or max of the dtype).
+        outputDir (str): path to storage of the filtered image.
+        sandName (str): name of the sand used for the analysis, default to sample X.
+    Returns
+        filtered image in the form of a numpy array.
+    """
     inputImage = gli[ gli.shape[ 0 ] // 2 ]
     filteredImage = np.zeros_like( inputImage )
     noiseRemoved = np.zeros_like( filteredImage )
 
-
     # Local variables for the entire map
     inputMap = gli
     filteredMap = np.zeros_like( inputMap )
-
 
     # Histograms
     numHistPts = inputImage.shape[ 0 ] * inputImage.shape[ 1 ]
@@ -31,9 +42,9 @@ def filterDenoiseNlm( sandName, gli, gliMax, outputDir ):
 
 
     # Inital settings chosen based on parameteric study
-    patchSize = 3
-    patchDistance = 5
-    hVal = 450
+    patchSize = 3           # Patch size: 
+    patchDistance = 5       # Patch distance: 
+    hVal = 450              # h-value: 
 
     print('\n\nIntial parameters for filter----------------------*\n')
     print('Patch size: ', patchSize)
