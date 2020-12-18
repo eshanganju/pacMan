@@ -1,11 +1,9 @@
 '''
-Segment module of PAC.
-
-Written by eg.
+Description:
+    Segment module of PAC.
 
 '''
 
-# Importing libraries
 from scipy.ndimage.morphology import distance_transform_edt as edt
 from scipy.ndimage.morphology import binary_fill_holes
 from scipy.ndimage.morphology import binary_opening
@@ -196,13 +194,14 @@ def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
 
 def calcVoidRatio(binaryMapforVoidRatioCalc):
     '''
-    Parameters
-    ----------
-    binaryMap : numpy array with 1 and 0
+    Description:
+        Caculated void ratio from binary map
+
+    Parameters:
+        binaryMap (int array): numpy array with 1 and 0
 
     Returns
-    -------
-    void ratio of the binary map assumin 1 is particle
+        void ratio of the binary map assumin 1 is particle
     '''
     volSolids = binaryMapforVoidRatioCalc.sum()
     lenZ = binaryMapforVoidRatioCalc.shape[ 0 ]

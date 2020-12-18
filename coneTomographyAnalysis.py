@@ -18,6 +18,7 @@ Steps:
 '''
 
 from pac import Reader
+from pac import Filter
 from pac import Segment
 from pac import Measure
 from pac import Plot
@@ -36,33 +37,74 @@ scanData = ['2QR_25_tip/test']
 #            'OTC_90_top','OTC_90_mid','OTC_90_tip']
 
 numberofSubregionsPerScan=10
+nD50=6
+
+mainInput = '/home/eg/codes/pacInput/'
+mainOutput = '/home/eg/codes/pacOutput/cone/'
 
 for scan in scanData:
-    scanInputLoc = '/home/eg/codes/pacInput/' + scan + '/'
-    subregionInfo = '/home/eg/codes/pacInput/' + scan + '/' + 'subregionInfo.csv'
 
-    analysisOutputLoc = '/home/eg/codes/pacOutput/cone/' + scan + '/'
-    imageOutputLoc = '/media/eg/EshanGanju/coneImages/' + scan + '/'
+    # Locations of data
+    scanInputLoc = mainInput + scan + '/'
+    subregionInfo = mainInput + scan + '/' + 'subregionInfo.csv'
+    outputLoc = mainOutput + scan + '/'
 
-    subregionCalib = Reader.readDataFromCsv(subregionInfo,skipHeader=1,skipFooter=numberofSubregionsPerScan+2,fmt='float',dataForm='number')
-    subregionD50 = Reader.readDataFromCsv(subregionInfo,skipHeader=2,skipFooter=numberofSubregionsPerScan+1,fmt='float',dataForm='number')
-    subregionZ = Reader.readDataFromCsv(subregionInfo,skipHeader=3,skipFooter=numberofSubregionsPerScan,fmt='int',dataForm='number')
-    subregionYXArray = Reader.readDataFromCsv(subregionInfo,skipHeader=4,fmt='int',dataForm='array')
+    subregionCalib = Reader.readDataFromCsv( subregionInfo,
+                                             skipHeader=1,
+                                             skipFooter=numberofSubregionsPerScan+2,
+                                             fmt='float',
+                                             dataForm='number' )
+
+    subregionD50 = Reader.readDataFromCsv( subregionInfo,
+                                           skipHeader=2,
+                                           skipFooter=numberofSubregionsPerScan+1,
+                                           fmt='float',
+                                           dataForm='number')
+
+    subregionZ = Reader.readDataFromCsv( subregionInfo,
+                                         skipHeader=3,
+                                         skipFooter=numberofSubregionsPerScan,
+                                         fmt='int',
+                                         dataForm='number')
+
+    subregionYXArray = Reader.readDataFromCsv( subregionInfo,
+                                               skipHeader=4,
+                                               fmt='int',
+                                               dataForm='array' )
 
     for currentSubregion in range(0,numberofSubregionsPerScan):
-        subregionGLIMap = Reader.readTiffFileSequence2(folderLocation=scanInputLoc,
-                                                       centerZ=subregionZ,
-                                                       topLeftY=subregionYXArray[currentSubregion,0],
-                                                       topLeftX=subregionYXArray[currentSubregion,1],
-                                                       lngt=6*subregionD50,
-                                                       calib=subregionCalib,
-                                                       invImg=False)
 
-        # Filter - NLM
+        # Extraction of the subregion from the complete scan
+        subregionGLIMap = Reader.readTiffFileSequence2( folderLocation=scanInputLoc,
+                                                        centerZ=subregionZ,
+                                                        topLeftY=subregionYXArray[currentSubregion,0],
+                                                        topLeftX=subregionYXArray[currentSubregion,1],
+                                                        lngt=nD50*subregionD50,    # based on REV analysis
+                                                        calib=subregionCalib,
+                                                        invImg=False )
+
+        # Filteration of the images using non-local means filter
+        # Fix sandName to "scan" + str(round(currentSubregion)) when done with update
+        filteredGLIMap = Filter.filterUsingNlm( gli=subregionGLIMap,
+                                                bitDepth=16,
+                                                outputDir=outputLoc,
+                                                sandName='test2QR_25_tip' ) 
+
         # Binarization - Otsu?
-        # EDM and particle centers
-        # Watershed segmentation
-        # Particle size analysis
+        binaryMap = 0
 
-        Plot.centerCrossSection(subregionGLIMap)
+        # EDM and particle centers
+        edmMap = 0
+
+        # Watershed segmentation
+        labMap = 0
+        corLabMap = 0
+        noEdgeCorLabMap = 0
+
+        # Particle size and morphology analysis
+        particleSizeList = 0
+        gsdFeretMin = 0
+        aspectRatio = 0
+
+        #Plot.centerCrossSection(subregionGLIMap)
 

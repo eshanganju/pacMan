@@ -1,11 +1,6 @@
-'''
-Plotting
-'''
-import matplotlib.pyplot as plt
-import spam
-import numpy as np
-import spam.plotting as splt
-'''
+"""
+Plotting module
+
 Objectives are
     0. Cross-section plots
     1. Plot GSD
@@ -13,7 +8,13 @@ Objectives are
         2.1 2D rose plots
         2.2 3D rose plots - blob plots
         2.3 Equal area projection plots
-'''
+
+"""
+
+import matplotlib.pyplot as plt
+import spam
+import numpy as np
+import spam.plotting as splt
 
 VERBOSE = True
 
@@ -35,11 +36,11 @@ def centerCrossSection( volumeMap, colorMap = 'gray'):
 
 
 def grainSizeDistribution (gsd0, gsd1, gsd2=np.zeros((1,2)), gsd3=np.zeros((1,2)), gsd4=np.zeros((1,2)), gsd5=np.zeros((1,2)), gsd6=np.zeros((1,2)), xmax = 10, xmin = 0.001):
-    '''
+    """
     plots semilogx grain size distribution
     add additional  gradations if passed
     add a legend with the gradations, ask user for legend labels
-    '''
+    """
     plt.figure()
     plt.semilogx( gsd0[ :,0 ] , gsd0[ : , 1 ] , label='0' )
     plt.semilogx( gsd1[ :,0 ] , gsd1[ : , 1 ] , label='1' )
@@ -54,14 +55,16 @@ def grainSizeDistribution (gsd0, gsd1, gsd2=np.zeros((1,2)), gsd3=np.zeros((1,2)
     plt.show()
 
 def rosePlot():
-    '''
-    '''
+    """
+    """
 
 def blobPlot():
-    '''
-    '''
+    """
+    """
 
 def equalAreaProjection( contactSummaryTable , makeYVertical = True, projectionOption='EA', plotToPresentOption='both', nr=9,xSize=8,ySize=4):
+    """
+    """
     print('\nPlotting the equal area projection of the contact normals')
     if makeYVertical == True: contactSummaryTable[:,[2,3]] = contactSummaryTable[:,[3,2]]
 
@@ -97,8 +100,8 @@ def equalAreaProjection( contactSummaryTable , makeYVertical = True, projectionO
                            cmap = plt.cm.gist_yarg,
                            title = "",
                            saveFigPath = None,
-			   figx = xSize,
-			   figy = ySize)
+                           figx = xSize,
+                           figy = ySize)
 
     plt.show()
 

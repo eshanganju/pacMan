@@ -1,0 +1,36 @@
+20201208
+---
+Things to do:
+    0. Local location for subregion extraction
+    1. Filteration of the extracted subregions
+    2. Particle size distribution:
+        2.1. Binarization - how?
+        2.2. EDM and WSS.
+        2.3. Over-segmentation correction.
+        2.4. Removal of edge particles.
+    3. Relative breakage parameter calculation.
+    4. Position wrt sholder.
+    5. Relative breakage contours.
+
+20201209
+---
+Extraction of subregion
+  The images will be corrected (inverted) in fiji
+  From fiji, we will get location of subregions extracted.
+
+20201215
+---
+Extraction of subregion done - updated the reader module to read file sequence and extract 
+    subregions from the images.
+    The subregions are references according to the top left corner of subregion
+    As it is easy to see subregion in Fiji that way.
+
+Filteration - using non local means filter.
+    Other filter methods exit
+        Median
+        Mean
+    We use the non local means filte
+        It prevents damage to edges in the 3dTomo - Vlahinic.
+        Explanation: https://youtu.be/Va4Rwoy1v88
+    Added the Code for filteration
+    Need to update for multiple files
