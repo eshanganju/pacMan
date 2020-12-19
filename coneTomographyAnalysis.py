@@ -100,7 +100,11 @@ for scan in scanData:
                                                      returnThresholdVal=True )
 
         # EDM and particle centers
-        edmMap = 0
+        edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=filteredGLIMap,
+                                                  scaleUp = int(1),
+                                                  saveImg=True,
+                                                  sampleName=currentSampleName,
+                                                  outputDir=outputLoc )
 
         # Watershed segmentation
         labMap = 0

@@ -249,11 +249,16 @@ def removeSpecks( oldBinaryMapWithSpecks ):
 
     return newNoSpekBinaryMap.astype(int)
 
-def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1) ):
+def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1), saveImg=False, sampleName='', outputDir=''):
     print('\nFinding Euclidian distance map (EDM)')
     print('------------------------------------*')
+
     edMap = edt( binaryMapForEDM )
     if scaleUp!=0 : edMap =  edMap * scaleUp
+
+    fileName = outputDir + sampleName + '-edm.tif'
+    if saveImg == True: tiffy.imsave(fileName,edMap.astype('uint16'))
+
     print( "EDM Created" )
     return edMap
 
