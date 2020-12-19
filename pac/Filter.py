@@ -9,7 +9,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 
-def filterUsingNlm(gli, bitDepth=16, outputDir='', sandName='sampleX',pSize=3,pDistance=7,hVal=450):
+# This is to plot all the text when running the functions
+VERBOSE = True
+
+def filterUsingNlm(gli,bitDepth=16,saveImg=False,outputDir='',sampleName='sampleX',pSize=3,pDistance=7,hVal=450):
     """
     Description
         This function takes in a unfiltered grey level and filters it using non-local means (nlm) filter
@@ -19,8 +22,9 @@ def filterUsingNlm(gli, bitDepth=16, outputDir='', sandName='sampleX',pSize=3,pD
     Parameters
         gli (np array): the ct scan data in the form of a NP array
         gliMax (int): the maximum integer value in the plot. (can be set to the max of the image or max of the dtype)
+        saveImg (bool): Save image in outputDir?
         outputDir (str): path to storage of the filtered image
-        sandName (str): name of the sand used for the analysis, default to sample X
+        sampleName (str): name of the sample used for the analysis, default to sampleX
         pSize (int): patch size for application of nlm filter
         pDist (int): edge of volume over which the image is seacherd for mean
         hVal (int): cut off value for filter GLI
@@ -28,7 +32,6 @@ def filterUsingNlm(gli, bitDepth=16, outputDir='', sandName='sampleX',pSize=3,pD
     Returns
         filtered image in the form of a numpy array.
         Saves filtered slices in the ouput directory.
-        Does not save the 3D printed image.
     """
     # Calculting the maximum gli value from bit depth passed to the func.
     gliMax = 2**bitDepth-1
@@ -57,20 +60,20 @@ def filterUsingNlm(gli, bitDepth=16, outputDir='', sandName='sampleX',pSize=3,pD
     print('Gaussian noise Map: ' + str(sigmaEstimateMap) + '\n')
 
 
-    noiseParameterFileName = outputDir + sandName + '-gaussianNoise.txt'
+    # File containing image noise details
+    noiseParameterFileName = outputDir+sampleName+'-gaussianNoise.txt'
     f = open(noiseParameterFileName,"w+")
     f.write("Noise-------*\n")
     f.write("Gaussian noise slice: %f\n" %sigmaEstimateImage)
     f.write("Gaussian noise map: %f\n" %sigmaEstimateMap)
     f.close()
 
+    # Loop for checking filtering parameters; run on CS of data
     print('\n\nIntial parameters for filter----------------------*\n')
     print('Patch size: ', pSize)
     print('Patch distance: ', pDistance)
     print('Cut-off pixel intensity: ', round(hVal))
 
-
-    # Loop for checking filtering parameters; run on CS of data
     runSliceFilter = True
     while runSliceFilter == True:
 
@@ -79,12 +82,12 @@ def filterUsingNlm(gli, bitDepth=16, outputDir='', sandName='sampleX',pSize=3,pD
 
         # Using skimage.restoration to apply the nlm filter on a single slige
         filteredImage = restoration.denoise_nl_means(inputImage,
-                                                     patch_size=pSize,
-                                                     patch_distance=pDistance,
-                                                     h=hVal,
-                                                     multichannel=False,
-                                                     fast_mode=True,
-                                                     sigma=sigmaEstimateImage)
+                patch_size=pSize,
+                patch_distance=pDistance,
+                h=hVal,
+                multichannel=False,
+                fast_mode=True,
+                sigma=sigmaEstimateImage)
 
         noiseRemoved = abs( inputImage - filteredImage )
 
@@ -98,34 +101,34 @@ def filterUsingNlm(gli, bitDepth=16, outputDir='', sandName='sampleX',pSize=3,pD
         histClean = np.histogram(listClean, bins = gliMax + 1, range = ( 0, gliMax ) )
         histNoisy = histNoisy / ( histNoisy[0].sum() ) * 100
         histClean = histClean / ( histClean[0].sum() ) * 100
-        np.savetxt(outputDir+'histSliceNoisy.csv',histNoisy[0],delimiter=',',header='%')
-        np.savetxt(outputDir+'histSliceClean.csv',histClean[0],delimiter=',',header='%')
+        np.savetxt(outputDir+sampleName+'-histSliceNoisy.csv',histNoisy[0],delimiter=',',header='%')
+        np.savetxt(outputDir+sampleName+'-histSliceClean.csv',histClean[0],delimiter=',',header='%')
 
         # Center slice of original image
         plt.figure()
         plt.imshow(inputImage, cmap= 'Greys_r' )
         plt.draw() # draw the plot
-        nameofTempFile = outputDir + 'noisyImage-CenterSlice.png'
+        nameofTempFile = outputDir+sampleName+'-noisyImage-CenterSlice.png'
         plt.savefig(nameofTempFile)
-        plt.pause( 5 ) # show it for 5 seconds
+        plt.pause( 1 ) # show it for 1 seconds
         plt.close()
 
         # Center slice of filtered image
         plt.figure()
         plt.imshow(filteredImage, cmap= 'Greys_r' )
         plt.draw() # draw the plot
-        nameofTempFile = outputDir + 'filteredImage-CenterSlice.png'
+        nameofTempFile = outputDir+sampleName+'-filteredImage-CenterSlice.png'
         plt.savefig(nameofTempFile)
-        plt.pause( 5 ) # show it for 5 seconds
+        plt.pause( 1 ) # show it for 5 seconds
         plt.close()
 
         # Center slice of noise
         plt.figure()
         plt.imshow(noiseRemoved, cmap= 'Greys_r' )
         plt.draw() # draw the plot
-        nameofTempFile = outputDir + 'noiseRemoved-CenterSlice.png'
+        nameofTempFile = outputDir+sampleName+'-noiseRemoved-CenterSlice.png'
         plt.savefig(nameofTempFile)
-        plt.pause( 5 ) # show it for 5 seconds
+        plt.pause( 1 ) # show it for 5 seconds
         plt.close()
 
         # Figures - Histogram
@@ -134,9 +137,9 @@ def filterUsingNlm(gli, bitDepth=16, outputDir='', sandName='sampleX',pSize=3,pD
         plt.plot(his_x, histClean[ 0 ])
         plt.grid()
         plt.draw() # draw the plot
-        nameofTempFile = outputDir + 'histogram-CenterSlice.png'
+        nameofTempFile = outputDir+sampleName+'-histogram-CenterSlice.png'
         plt.savefig(nameofTempFile)
-        plt.pause( 5 ) # show it for 5 seconds
+        plt.pause( 1 ) # show it for 5 seconds
         plt.close()
 
         timeTakenThisLoop = ( time.time() - start_time )
@@ -158,12 +161,12 @@ def filterUsingNlm(gli, bitDepth=16, outputDir='', sandName='sampleX',pSize=3,pD
     start_time = time.time()
 
     filteredMap = restoration.denoise_nl_means(inputMap,
-                                               patch_size=pSize,
-                                               patch_distance=pDistance,
-                                               h=hVal,
-                                               multichannel=False,
-                                               fast_mode=True,
-                                               sigma=sigmaEstimateMap)
+            patch_size=pSize,
+            patch_distance=pDistance,
+            h=hVal,
+            multichannel=False,
+            fast_mode=True,
+            sigma=sigmaEstimateMap)
 
     listNoisy = inputMap.reshape( ( numHistPtsMap, 1 ) )
     listClean = filteredMap.reshape( ( numHistPtsMap, 1 ) )
@@ -173,16 +176,17 @@ def filterUsingNlm(gli, bitDepth=16, outputDir='', sandName='sampleX',pSize=3,pD
     histClean = np.histogram( listClean, bins = gliMax + 1, range = ( 0, gliMax ) )
     histNoisy = histNoisy / ( histNoisy[ 0 ].sum() ) * 100
     histClean = histClean / ( histClean[ 0 ].sum() ) * 100
-    np.savetxt(outputDir+'histNoisy.csv',histNoisy[0],delimiter=',',header='%')
-    np.savetxt(outputDir+'histClean.csv',histClean[0],delimiter=',',header='%')
+    np.savetxt(outputDir+sampleName+'-histNoisy.csv',histNoisy[0],delimiter=',',header='%')
+    np.savetxt(outputDir+sampleName+'-histClean.csv',histClean[0],delimiter=',',header='%')
 
     # Figures - Histogram
     plt.figure()
-    plt.plot(his_x, histNoisy[ 0 ])
-    plt.plot(his_x, histClean[ 0 ])
+
+    plt.plot(his_x,histNoisy[ 0 ])
+    plt.plot(his_x,histClean[ 0 ])
     plt.grid()
     plt.draw() # draw the plot
-    volumeHistogramName = outputDir + sandName+'GLIhistogram-volume.png'
+    volumeHistogramName = outputDir+sampleName+'-GLIhistogram-volume.png'
     plt.savefig(volumeHistogramName)
     plt.pause( 5 ) # show it for 5 seconds
     plt.close()
@@ -192,7 +196,7 @@ def filterUsingNlm(gli, bitDepth=16, outputDir='', sandName='sampleX',pSize=3,pD
     print( "\n--- Time taken: %s minutes ---\n" % round( timeTakenThisLoop // 60 ) )
 
     # Updating filtered parameters
-    filterParameterFileName = outputDir + sandName + '-NLMParameters.txt'
+    filterParameterFileName = outputDir+sampleName+'-NLMParameters.txt'
     f = open(filterParameterFileName,"w+")
     f.write("NLM filter parameters---------------------*\n")
     f.write("Patch size = %f\n" % patchSize)
@@ -202,6 +206,9 @@ def filterUsingNlm(gli, bitDepth=16, outputDir='', sandName='sampleX',pSize=3,pD
     f.write("Estimated sigma - Map = %f\n" % sigmaEstimateMap)
     f.write("Time taken for filter (s) = %f\n" % round(timeTakenThisLoop))
     f.close()
+
+    # Save a copy of the filtered image
+    if saveImg == True: tiffy.imsave(outputDir+sampleName+'-filteredGLIMap.tif',filteredMap.astype('uint16'))
 
     return filteredMap
 

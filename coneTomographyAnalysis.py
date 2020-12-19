@@ -1,8 +1,6 @@
 '''
 Code for the analysis of 3D tomo data for samples collected around the cone penetrometer
 
-written by @eg
-
 Steps:
     -Initialize the samples variables
     -Read the files and extract subregions from the 3D tomo data - 6D50 edge length
@@ -23,9 +21,8 @@ from pac import Segment
 from pac import Measure
 from pac import Plot
 
-import numpy as np
+scanData = ['2QR_25_tip-test']
 
-scanData = ['2QR_25_tip/test']
 #scanData = ['2QR_25_top','2QR_25_mid','2QR_25_tip',
 #            '2QR_50_top','2QR_50_mid','2QR_50_tip',
 #            '2QR_90_top','2QR_90_mid','2QR_90_tip',
@@ -74,24 +71,33 @@ for scan in scanData:
 
     for currentSubregion in range(0,numberofSubregionsPerScan):
 
+        currentSampleName = scan + '-' + str( round( currentSubregion ) )
+
         # Extraction of the subregion from the complete scan
         subregionGLIMap = Reader.readTiffFileSequence2( folderLocation=scanInputLoc,
                                                         centerZ=subregionZ,
                                                         topLeftY=subregionYXArray[currentSubregion,0],
                                                         topLeftX=subregionYXArray[currentSubregion,1],
-                                                        lngt=nD50*subregionD50,    # based on REV analysis
+                                                        lngt=nD50*subregionD50,
                                                         calib=subregionCalib,
-                                                        invImg=False )
+                                                        invImg=False,
+                                                        saveImg=False,
+                                                        outputDir=outputLoc,
+                                                        sampleName=currentSampleName)
 
         # Filteration of the images using non-local means filter
-        # Fix sandName to "scan" + str(round(currentSubregion)) when done with update
         filteredGLIMap = Filter.filterUsingNlm( gli=subregionGLIMap,
                                                 bitDepth=16,
+                                                saveImg=True,
                                                 outputDir=outputLoc,
-                                                sandName='test2QR_25_tip' ) 
+                                                sampleName=currentSampleName )
 
-        # Binarization - Otsu?
-        binaryMap = 0
+        # Binarization - Otsu
+        binaryMap = Segment.binarizeAccordingToOtsu( gliMapToBinarize=filteredGLIMap,
+                                                     saveImg=True,
+                                                     outputDir=outputLoc,
+                                                     sampleName=currentSampleName,
+                                                     returnThresholdVal=True )
 
         # EDM and particle centers
         edmMap = 0

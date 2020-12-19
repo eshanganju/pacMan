@@ -63,20 +63,23 @@ def readDataFromCsv(fileLocation,skipHeader=0,skipFooter=0,delim=',',fmt='float'
         elif fmt == 'int':
             return int(data)
 
-def readTiffFileSequence2(folderLocation,centerZ,topLeftY,topLeftX,lngt,calib,invImg=False):
+def extractSubregionFromTiffSequence(folderDir,centerZ,topLeftY,topLeftX,lngt,calib,invImg=False,saveImg=False,outputDir='',sampleName='XXX'):
     """
     Description:
         This function reads data from sequence of tiff images from XCT
         The entire image is read and a cubic subregion specified by the user is returned
 
     Parameters:
-        folderLocation (str) :   location of the image sequences
+        folderDir (str) :   location of the image sequences
         centerZ (int) : slice number of center of the subregion
         topLeftY (int) : Y (vertical) location in pixel units of the lop left corner of the subregion (in correct orientation)
         topLeftX (int) : X (horizontal) location in pixel units of the lop left corner of the subregion (in correct orientation)
         lngt (float) : length in mm of the subregion volume
         calib (float) : calibration factor (mm/pixel)
         invImg (bool) : Keep true if the image needs to be inverted before extraction
+        saveImg (bool): Save image in outputDir?
+        outputDir (str): path to storage of the filtered image
+        sampleName (str): name of the sample used for the analysis, default to sampleX
 
     Output:
         subregion (np array) : 3D numpy array of extracted subregion.
@@ -91,9 +94,9 @@ def readTiffFileSequence2(folderLocation,centerZ,topLeftY,topLeftX,lngt,calib,in
     leftCol = int(topLeftX)
     rightCol = int(topLeftX) + int(lngt/calib)
 
-    print( 'Reading files from: ' + folderLocation )
-    searchString = folderLocation + '/*tif'
-    searchString2 = folderLocation + '/*tiff'
+    print( 'Reading files from: ' + folderDir )
+    searchString = folderDir + '/*tif'
+    searchString2 = folderDir + '/*tiff'
 
     fileList1 = glob.glob(searchString)
     fileList2 = glob.glob(searchString2)

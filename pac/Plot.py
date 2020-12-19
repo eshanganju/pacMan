@@ -1,6 +1,5 @@
 """
 Plotting module
-
 Objectives are
     0. Cross-section plots
     1. Plot GSD
@@ -8,14 +7,14 @@ Objectives are
         2.1 2D rose plots
         2.2 3D rose plots - blob plots
         2.3 Equal area projection plots
-
 """
 
-import matplotlib.pyplot as plt
 import spam
 import numpy as np
 import spam.plotting as splt
+import matplotlib.pyplot as plt
 
+# This is to plot all the text when running the functions
 VERBOSE = True
 
 def centerCrossSection( volumeMap, colorMap = 'gray'):

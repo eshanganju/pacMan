@@ -1,8 +1,6 @@
-'''
+"""
 Measure module
-
-Written by eg.
-'''
+"""
 
 import numpy as np
 import math
@@ -15,9 +13,12 @@ from uncertainties.umath import *
 
 from pac import Segment
 
+# This is to plot all the text when running the functions
 VERBOSE = True
 
-def gsdAll( labelledMap , calib = 0.01193 ):
+def gsdAll( labelledMap , calib = 1.0 ):
+    """
+    """
     gss = getParticleSize( labelledMap ) # [ Label, Volume(vx), Size1(px), Size2(px), Size3(px), Size4(px), Size5(ND), Size6(ND)]
 
     gsd1 = getGrainSizeDistribution( gss , sizeParam=1 ) # [ Lable, Volume(vx), Size(px), percent passing(%) ]
@@ -37,11 +38,20 @@ def gsdAll( labelledMap , calib = 0.01193 ):
 
     return gsd1[:,-2:], gsd2[:,-2:], gsd3[:,-2:], gsd4[:,-2:], gsd5[:,-2:], gsd6[:,-2:]# [ Size(mm), percent passing(%) ]
 
-def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor = 1):
+def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1 ):
+    """
+    """
     numberOfParticles = int( labelledMapForParticleSizeAnalysis.max() )
 
     # Particle size summary columns
-    # [0] Index, [1] Volume, [2] Eqsp, [3] Centroidal - max, [4] Centroidal - med, [5] Centroidal - min, [6] and [7] are open
+    # [0] Index,
+    # [1] Volume,
+    # [2] Eqsp,
+    # [3] Centroidal - max,
+    # [4] Centroidal - med,
+    # [5] Centroidal - min,
+    # [6] Feret-min
+    # [7] Feret-max
     particleSizeDataSummary = np.zeros( ( numberOfParticles + 1 , 8 ) )
     print( "Starting measurement of particles..." )
 
@@ -105,19 +115,24 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor = 1):
 
     return particleSizeDataSummary  # [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
 
-def getEqspDia():
-    '''
-    '''
+def getEqspDia(labelMap, label):
+    """
+    """
+    labOnlyMap = np.zeros_like( labelMap )
+    labOnlyMap[np.where(labelMap == label)] = 1
+    volume = labOnlyMap.sum()
+    eqspLabelRadius = (0.75*volume/math.pi)**(1/3)
+    eqspDia = eqspLabelRadius * 2
 
-def getLengthsAlongCentroidalAxes():
-    '''
-    '''
+    return eqspDia
 
-def getMinMaxFeretDia():
-    '''
-    '''
+def getPrincipalAxesLengths():
+    """
+    """
 
-def getMinMaxFeretDia(labelledMap, label, numOrts=100):
+def getMinMaxFeretDia( labelledMap, label, numOrts=100 ):
+    """
+    """
     labOneOnly = np.zeros_like( labelledMap )
     labOneOnly[ np.where( labelledMap == label ) ] = 1
     feretDims, feretOrts = slab.feretDiameters( labOneOnly, numberOfOrientations=numOrts )
@@ -126,7 +141,9 @@ def getMinMaxFeretDia(labelledMap, label, numOrts=100):
     feretMin = feretDims[1,1] # Look up ^^
     return feretMax, feretMin
 
-def getGrainSizeDistribution(psSummary,sizeParam=1):
+def getGrainSizeDistribution( psSummary, sizeParam=1 ):
+    """
+    """
     print('\nGetting GSD for size param #' + str( sizeParam ) )
     label = psSummary[ : , 0 ].reshape( psSummary.shape[ 0 ] , 1 )
     vol = psSummary[ : , 1 ].reshape( psSummary.shape[ 0 ] , 1 )
@@ -143,13 +160,17 @@ def getGrainSizeDistribution(psSummary,sizeParam=1):
     print('Done')
     return gsdPP # [ Label, Volume(vx), Size(px), percent passing(%) ]
 
-def computeVolumeOfLabel( labelledMap, label):
+def computeVolumeOfLabel( labelledMap, label ):
+    """
+    """
     labelOnlyMap = np.zeros_like(labelledMap)
     labelOnlyMap[np.where(labelledMap == label)] = 1
     volumeOfLabel = labelOnlyMap.sum()
     return volumeOfLabel
 
-def getZYXLocationOfLabel( labelledMap, label):
+def getZYXLocationOfLabel( labelledMap, label ):
+    """
+    """
     particleLocationArrays = np.where(labelledMap == label)
     zyxLocationData = np.zeros( ( particleLocationArrays[ 0 ].shape[ 0 ], 3 ) )
     zyxLocationData[:,0] = particleLocationArrays[0]
@@ -158,6 +179,8 @@ def getZYXLocationOfLabel( labelledMap, label):
     return zyxLocationData
 
 def relBreak( gsdOriginal, gsdCurrent , maxSize=None , fracDim=None ):
+    """
+    """
     if maxSize == None: maxSize = float(input('Enter max size of particles (mm): '))
     if fracDim == None: fracDim = float(input('Enter fractal dimension to use: '))
     gsdOrig, gsdCur, gsdUlt = formatGradationsAndGetUltimate(gsdOriginal,gsdCurrent,maxSize,fracDim)
@@ -169,14 +192,14 @@ def relBreak( gsdOriginal, gsdCurrent , maxSize=None , fracDim=None ):
     if VERBOSE: print('Relative breakage (Br) is: ' + str(np.round(Br,2)) + '%')
     return gsdOrig, gsdCur, gsdUlt, Br
 
-
-def getAspectRatioSphericity( particleSizeSummary ):
+def getAspectRatioSphericity( ):
+    """
+    """
     print("Measuring particle morphology...")
-    '''
-    Take the ratio of the long axis - could be the ratio of CA max and CA min
-    '''
 
-def getAreaBetweenGSDs(gsdUp,gsdDown,bins=1000):
+def getAreaBetweenGSDs( gsdUp,gsdDown,bins=1000 ):
+    """
+    """
     x1 = gsdUp[ : , 0 ]
     y1 = gsdUp[ : , 1 ]
     x2 = gsdDown[ : , 0 ]
@@ -208,7 +231,9 @@ def getAreaBetweenGSDs(gsdUp,gsdDown,bins=1000):
 
     return totalArea
 
-def formatGradationsAndGetUltimate(gsdOriginal,gsdCurrent,maxSize,fracDim):
+def formatGradationsAndGetUltimate( gsdOriginal,gsdCurrent,maxSize,fracDim ):
+    """
+    """
     xmax = float( maxSize )
     xmin = float( getStartOfUltimateGradation( xmax , fracDim ) )
     ymax = float( 100 )
@@ -230,6 +255,8 @@ def formatGradationsAndGetUltimate(gsdOriginal,gsdCurrent,maxSize,fracDim):
     return corGsdOrig, corGsdCurr, corGSDUlt
 
 def getStartOfUltimateGradation( dm , fracDim ):
+    """
+    """
     if VERBOSE: print( '\nGetting minimum size of ultimate gradation.' )
     d = dm
     small = False
@@ -244,6 +271,8 @@ def getStartOfUltimateGradation( dm , fracDim ):
     return d
 
 def getUltimateGradation( xmax , xmin , fracDim ):
+    """
+    """
     logIncr = float(( np.log10( xmax ) - np.log10( xmin ) ) / 100)
     logx = np.arange( np.log10( xmin ) , np.log10( xmax ) + logIncr , logIncr ).astype(float)
     x = 10**logx
@@ -254,7 +283,9 @@ def getUltimateGradation( xmax , xmin , fracDim ):
     ultimateGradation = np.append( x , y , axis=1 )
     return ultimateGradation.astype( float )
 
-def contactNormalsSpam( labelledMap, method=None):
+def contactNormalsSpam( labelledMap, method=None ):
+    """
+    """
     print( "\nMeasuring contact normals using SPAM library\n" )
 
     labelledData = labelledMap
@@ -314,11 +345,15 @@ def contactNormalsSpam( labelledMap, method=None):
     return contTable
 
 def fabricVariablesSpam( contactTable ):
+    """
+    """
     orts = contactTable[ :, 2:5]
     F1, F2, F3 = slab.fabricTensor( orts )
     return F1, F2, F3
 
-def fabricVariablesWithUncertainity( contactTable, vectUncert = 0.26 ):
+def fabricVariablesWithUncertainity( contactTable, vectUncert = 0 ):
+    """
+    """
     vectors = contactTable[ :, 2:5]                         # contactTable col 0 is first particle label and col 1 is second particle number
     uncertVectors = vectUncert*(np.ones_like(vectors))      # uncertainity in the vector components
 
@@ -362,29 +397,22 @@ def fabricVariablesWithUncertainity( contactTable, vectUncert = 0.26 ):
     return uN, uF, uFq
 
 def getCoordinationNumberList(labelledMap):
-    
+    """
+    """
     numberOfLabels = labelledMap.max()
     coordinationNumberArray = np.zeros( ( numberOfLabels, 2) )
-    
+
     labelledMap = Segment.applyPaddingToLabelledMap(labelledMap, 2)
-    
+
     for currentLabel in range(2, numberOfLabels + 1):
         print('\nChecking for label ' + str(np.round(currentLabel)))
         contactLabels = slab.contactingLabels( labelledMap, currentLabel, areas=False)
         numberOfContacts = len(contactLabels)
         coordinationNumberArray[currentLabel-1,0] = currentLabel
         coordinationNumberArray[currentLabel-1,1] = numberOfContacts
-    
+
     # labelledMap = Segment.removePaddingFromLabelledMap(padLabMap, 2)
 
     return coordinationNumberArray
 
-def getEqspDia(labelMap, label):
-    
-    labOnlyMap = np.zeros_like( labelMap )
-    labOnlyMap[np.where(labelMap == label)] = 1
-    volume = labOnlyMap.sum()
-    eqspLabelRadius = (0.75*volume/math.pi)**(1/3)
-    eqspDia = eqspLabelRadius * 2
-    
-    return eqspDia
+

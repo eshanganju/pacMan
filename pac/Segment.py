@@ -1,7 +1,6 @@
 '''
 Description:
     Segment module of PAC.
-
 '''
 
 from scipy.ndimage.morphology import distance_transform_edt as edt
@@ -20,10 +19,10 @@ import math
 
 from pac import Measure
 
-# This is to plot all the text in the methods
+# This is to plot all the text when running the functions
 VERBOSE = True
 
-def obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, outputLocation=None, edmScaleUp=1, peakEdLimit=5):
+def obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, outputLoc=None, edmScaleUp=1, peakEdLimit=5):
     print( '\nSegmenting particles by ITK topological watershed' )
 
     if knownThreshold == None:
@@ -40,8 +39,8 @@ def obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, ou
 
     voidRatio = calcVoidRatio( binMask )
 
-    if outputLocation != None:
-        threshFile = open(outputLocation + 'binaryThreshold.txt',"a+")
+    if outputLoc != None:
+        threshFile = open(outputLoc + 'binaryThreshold.txt',"a+")
         threshFile.write( "Bin Threshold = " + str( binThresh ) )
         threshFile.write( "\nVoid ratio = " + str( voidRatio ) + '\n\n')
         threshFile.close()
@@ -59,7 +58,23 @@ def obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, ou
 
     return binMask, binThresh, edMap, edPeaksMap, labelledMap
 
-def binarizeAccordingToOtsu( gliMapToBinarize ):
+def binarizeAccordingToOtsu( gliMapToBinarize, sampleName='sampleX', saveImg=False, outputDir='', returnThresholdVal=True):
+    """
+    Description:
+        Function to binarize GLI map according to OTSUs algorithm
+        Uses the skimage.filter module threshold_otsu
+
+    Parameters:
+        gliMapToBinarize (nd array): (preferably) filtered GLI Map
+        fileName (str): name of the sample
+        saveImg (bool): Should we save the image or not
+        outputLic (str): Location of the output image
+
+    Returns:
+        otsuThreshold (float): duh
+        binaryMap (nd array): Array binarized.
+
+    """
     print('\nRunning Otsu Binarization')
     print('----------------------------*')
     otsuThreshold = threshold_otsu( gliMapToBinarize )
@@ -80,7 +95,15 @@ def binarizeAccordingToOtsu( gliMapToBinarize ):
     print( 'Void ratio after filling holes = %f' % e2 )
     print( 'Void ratio after removing specks = %f' % e3 )
 
-    return otsuThreshold, binaryMap
+    if saveImg == True: tiffy.imsave( outputDir + sampleName + '-binaryMap.tif', binaryMap)
+    otsuThresholdFileName = outputDir+sampleName+'-otsuThreshold.txt'
+    f = open( otsuThresholdFileName,"w+" )
+    f.write( 'Otsus threshold = %f' % otsuThreshold )
+    f.close()
+
+    if returnThresholdVal == True: return otsuThreshold, binaryMap
+    elif returnThresholdVal == False: return binaryMap
+
 
 def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold = None ):
     if userThreshold == None:
@@ -105,6 +128,7 @@ def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold = None ):
     print( 'Void ratio after removing specks = %f' % e3 )
 
     return userThreshold, binaryMap
+
 
 def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
     print('\nRunning density-based threshold...')
@@ -182,7 +206,7 @@ def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
 
         iterationNum = iterationNum + 1
 
-    #densityBasedThresholdTextFileName = outputLocation +  sampleName + '-userThresholdDensityBased.txt'
+    #densityBasedThresholdTextFileName = outputLoc +  sampleName + '-userThresholdDensityBased.txt'
     #f = open( densityBasedThresholdTextFileName, "w+" )
     #f.write( "Global density based threshold = %f\n" % currentThreshold )
     #f.close()
@@ -192,7 +216,7 @@ def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
 
     return currentThreshold, currentBinaryMap
 
-def calcVoidRatio(binaryMapforVoidRatioCalc):
+def calcVoidRatio( binaryMapforVoidRatioCalc ):
     '''
     Description:
         Caculated void ratio from binary map
@@ -225,7 +249,7 @@ def removeSpecks( oldBinaryMapWithSpecks ):
 
     return newNoSpekBinaryMap.astype(int)
 
-def obtainEuclidDistanceMap(binaryMapForEDM, scaleUp = int(1)):
+def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1) ):
     print('\nFinding Euclidian distance map (EDM)')
     print('------------------------------------*')
     edMap = edt( binaryMapForEDM )
@@ -260,7 +284,7 @@ def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5):
     print('\tNumber of peaks: ' + str(round(edmPeakMarkers.max())))
     return edmPeakMarkers
 
-def fixErrSeg(labelledMapForOSCorr, pad=2, outputLocation="" , areaLimit = 700, checkForSmallParticles = True, radiusRatioLimit=0.5):
+def fixErrSeg( labelledMapForOSCorr, pad=2, outputLoc="" , areaLimit = 700, checkForSmallParticles = True, radiusRatioLimit=0.5 ):
     print('\nEntering label correction')
     print('---------------------------*')
     #if areaLimit != None : print('Area limit is : ' + str( np.round( areaLimit) ) )
@@ -286,7 +310,7 @@ def fixErrSeg(labelledMapForOSCorr, pad=2, outputLocation="" , areaLimit = 700, 
         print('\tOk, consolidating edge labels\n')
         edgePad = 0
 
-    if outputLocation != "" : correctionLog = open(outputLocation+"correctionLog.Txt","a+")
+    if outputLoc != "" : correctionLog = open(outputLoc+"correctionLog.Txt","a+")
     else: correctionLog = open("lableCorrectionLog.txt","a+")
 
     print('Starting edge label consolidation - This may take 10-20 mins')
@@ -451,13 +475,13 @@ def fixErrSeg(labelledMapForOSCorr, pad=2, outputLocation="" , areaLimit = 700, 
 
     return correctedCleanedLabelMap
 
-def applyPaddingToLabelledMap(labelledMap, pad):
+def applyPaddingToLabelledMap( labelledMap, pad ):
     paddedMap = labelledMap
     padLabMap = np.zeros( ( labelledMap.shape[0]+2*pad, labelledMap.shape[0]+2*pad, labelledMap.shape[0]+2*pad ) )
     padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ] = labelledMap
     return padLabMap.astype(int)
 
-def removePaddingFromLabelledMap(padLabMap, pad):
+def removePaddingFromLabelledMap( padLabMap, pad ):
     cleanLabMap = padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ].astype(int)
     return cleanLabMap
 
@@ -552,7 +576,7 @@ def checkIfEdgeLabel( labelledMap, label, pad ):
         return True
     else: return False
 
-def countEdgeLabels(labelledMap):
+def countEdgeLabels( labelledMap ):
     countTrue = 0
     countFalse = 0
     for i in range(1,labelledMap.max() + 1):
@@ -568,7 +592,7 @@ def countEdgeLabels(labelledMap):
     print('Edge labels: ' + str( countTrue ) )
     print('Non-edge labels: ' + str( countFalse ) )
 
-def removeLabelAndUpdate(labMap,label):
+def removeLabelAndUpdate( labMap,label ):
     labMap[np.where(labMap == label)] = 0
     updatedLabMap = moveLabelsUp(labMap,label)
     return updatedLabMap
