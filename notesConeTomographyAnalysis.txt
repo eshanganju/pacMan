@@ -34,3 +34,15 @@ Filteration - using non local means filter.
         Explanation: https://youtu.be/Va4Rwoy1v88
     Added the Code for filteration
     Need to update for multiple files
+
+
+20201221
+---
+
+How to binarize without knowing the density.
+
+Options:
+    1. Use Otsu's method
+          No closed loop control
+          May over estimate the sample density
+          

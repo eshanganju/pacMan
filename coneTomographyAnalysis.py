@@ -46,6 +46,7 @@ for scan in scanData:
     subregionInfo = mainInput + scan + '/' + 'subregionInfo.csv'
     outputLoc = mainOutput + scan + '/'
 
+    # Rading subregion data saved in the subregionInfo location.
     subregionCalib = Reader.readDataFromCsv( subregionInfo,
                                              skipHeader=1,
                                              skipFooter=numberofSubregionsPerScan+2,
@@ -74,16 +75,16 @@ for scan in scanData:
         currentSampleName = scan + '-' + str( round( currentSubregion ) )
 
         # Extraction of the subregion from the complete scan
-        subregionGLIMap = Reader.readTiffFileSequence2( folderLocation=scanInputLoc,
-                                                        centerZ=subregionZ,
-                                                        topLeftY=subregionYXArray[currentSubregion,0],
-                                                        topLeftX=subregionYXArray[currentSubregion,1],
-                                                        lngt=nD50*subregionD50,
-                                                        calib=subregionCalib,
-                                                        invImg=False,
-                                                        saveImg=False,
-                                                        outputDir=outputLoc,
-                                                        sampleName=currentSampleName)
+        subregionGLIMap = Reader.extractSubregionFromTiffSequence( folderDir=scanInputLoc,
+                                                                   centerZ=subregionZ,
+                                                                   topLeftY=subregionYXArray[currentSubregion,0],
+                                                                   topLeftX=subregionYXArray[currentSubregion,1],
+                                                                   lngt=nD50*subregionD50,
+                                                                   calib=subregionCalib,
+                                                                   invImg=False,
+                                                                   saveImg=False,
+                                                                   outputDir=outputLoc,
+                                                                   sampleName=currentSampleName )
 
         # Filteration of the images using non-local means filter
         filteredGLIMap = Filter.filterUsingNlm( gli=subregionGLIMap,
@@ -97,10 +98,10 @@ for scan in scanData:
                                                      saveImg=True,
                                                      outputDir=outputLoc,
                                                      sampleName=currentSampleName,
-                                                     returnThresholdVal=True )
+                                                     returnThresholdVal=False )
 
         # EDM and particle centers
-        edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=filteredGLIMap,
+        edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binaryMap,
                                                   scaleUp = int(1),
                                                   saveImg=True,
                                                   sampleName=currentSampleName,
