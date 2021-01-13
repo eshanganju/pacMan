@@ -45,4 +45,22 @@ Options:
     1. Use Otsu's method
           No closed loop control
           May over estimate the sample density
-          
+
+20210112
+---
+
+Targets
+    1. Binarization method code
+        1.1 Approaches - Otsu's, Visual, Fonseca modified.
+        1.2 Known gradations, checking with 1D scans.
+    2. Checking if method works - using 1D sample as example
+    3. Watershed segmentation
+    4. QC and correction of oversegmentation size dependent
+        4.1 Estimation of error for particles smaller than threshold
+        4.2 Method to compute the error
+    5. Generation of relative breakage contours
+
+Presentation:
+    1. Outline - CT analysis method.
+    2. Binarization method update.
+    3. Simple example.
