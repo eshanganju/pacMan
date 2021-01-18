@@ -63,18 +63,18 @@ def _obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, o
 def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleName='',saveImg=True,outputDir=''):
     """
     Description:
-        Simple function that uses skimage watershed and saves a copy of the file
+        Simple function that uses skimage watershed and saves a copy of the segmented image
 
     Parameters:
         binaryMapToSeg
-        edmMapForTopo,
-        edmPeaksForSeed,
-        sampleName='',
-        saveImg=True,
+        edmMapForTopo
+        edmPeaksForSeed
+        sampleName=''
+        saveImg=True
         outputDir=''
 
     Return:
-        labelled map
+        labelled map with each particle assigned a separate integer value
     """
     labMap = wsd(-edmMapForTopo,markers=edmPeaksForSeed,mask=binaryMapToSeg)
 
@@ -136,7 +136,18 @@ def binarizeAccordingToOtsu( gliMapToBinarize, sampleName='', saveImg=False, out
     elif returnThresholdVal == False: return binaryMap
 
 
-def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold = None ):
+def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold = None, returnThresholdVal=False ):
+    """
+    Description:
+        Binarize according to user supplied threshold
+
+    Parameters:
+        gliMapToBinarize
+        userThreshold
+
+    Return:
+        Binarized map and user threshold
+    """
     if userThreshold == None:
         userThreshold = int( input( 'Enter user threshold: ' ) )
 
@@ -158,7 +169,8 @@ def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold = None ):
     print( 'Void ratio after filling holes = %f' % e2 )
     print( 'Void ratio after removing specks = %f' % e3 )
 
-    return userThreshold, binaryMap
+    if returnThresholdVal == True: return userThreshold, binaryMap
+    if returnThresholdVal == False: return binaryMap
 
 
 def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
@@ -333,14 +345,33 @@ def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5, saveImg=F
     return edmPeakMarkers
 
 
-def fixErrSeg( labelledMapForOSCorr, pad=2, outputLoc="" , areaLimit = 700, checkForSmallParticles = True, radiusRatioLimit=0.5 ):
+def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, considerEdgeLabels=True,checkForSmallParticles = True, radiusCheck=True, radiusRatioLimit=0.5, sampleName='', saveImg=True, outputDir=''):
+    """
+    Description:
+        Corrects over segmentation caused by incorrect edm peak selection
+
+    Parameters:
+        labelledMapForOSCorr
+        pad=2
+        areaLimit = 700
+        considerEdgeLabels=True
+        checkForSmallParticles = True
+        radiusCheck=True
+        radiusRatioLimit=0.5
+        sampleName=''
+        saveImg=True
+        outputDir=''
+
+    Return:
+        Corrected label map - numpy array
+    """
+
     print('\nEntering label correction')
     print('---------------------------*')
     #if areaLimit != None : print('Area limit is : ' + str( np.round( areaLimit) ) )
 
-    print('Radius ratio limit is : ' + str( radiusRatioLimit) )
-
-    if areaLimit == None: areaLimit = int(input('Input area limit (px): '))
+    if radiusCheck == True: print('Radius ratio limit is: ' + str( radiusRatioLimit) )
+    elif radiusCheck == False: print('Area limit is: ' + str(areaLimit))
 
     if pad > 0: labelledMapForOSCorr = applyPaddingToLabelledMap(labelledMapForOSCorr, pad)
     lastLabel = labelledMapForOSCorr.max()
@@ -350,24 +381,24 @@ def fixErrSeg( labelledMapForOSCorr, pad=2, outputLoc="" , areaLimit = 700, chec
 
     print('Currently padding is ' + str(pad) + ' px')
 
-    #considerEdgeLabels = input("Consolidate edge labels also ([y]/n): ")
-    considerEdgeLabels = 'y'
-    if considerEdgeLabels == 'n':
-        print('\tOk, not consolidating edge labels\n')
+    # Include the edge labels in the calculation
+    if considerEdgeLabels == False:
+        if VERBOSE: print('\tOk, not consolidating edge labels\n')
         edgePad = pad
     else:
-        print('\tOk, consolidating edge labels\n')
+        if VERBOSE: print('\tOk, consolidating edge labels\n')
         edgePad = 0
 
-    if outputLoc != "" : correctionLog = open(outputLoc+"correctionLog.Txt","a+")
+    if outputDir != '' : correctionLog = open(outputDir + sampleName + 'correctionLog.Txt',"a+")
     else: correctionLog = open("lableCorrectionLog.txt","a+")
 
     print('Starting edge label consolidation - This may take 10-20 mins')
 
     correctionLog.write('\n-------------------------------------------------------')
     correctionLog.write('\nStarting edge label consolidation')
-    #correctionLog.write('\nArea limit: ' + str( np.round( areaLimit ) ) + '\n\n')
-    correctionLog.write('\nRadius ratio limit: ' + str( radiusRatioLimit ) + '\n\n')
+
+    if radiusCheck == False: correctionLog.write('\nArea limit: ' + str( np.round( areaLimit ) ) + '\n\n')
+    elif radiusCheck == True: correctionLog.write('\nRadius ratio limit: ' + str( radiusRatioLimit ) + '\n\n')
 
     # Loop through labels till all OS labels are merged
     while currentLabel <= lastLabel:
@@ -376,7 +407,7 @@ def fixErrSeg( labelledMapForOSCorr, pad=2, outputLoc="" , areaLimit = 700, chec
         # If edge label, move to next label
         if isEdgeLabel == True:
             if VERBOSE: print('Label %d is an edge label, moving to next label' % currentLabel)
-            correctionLog.write('\nLabel ' + str(currentLabel) + ' is an edge label, moving to next label')
+            correctionLog.write('\n\nLabel ' + str(currentLabel) + ' is an edge label, moving to next label')
             currentLabel += 1
 
         # If not edge label, check contacting labels
@@ -384,7 +415,7 @@ def fixErrSeg( labelledMapForOSCorr, pad=2, outputLoc="" , areaLimit = 700, chec
             contactLabel, contactArea = slab.contactingLabels(correctedLabelMap, currentLabel, areas=True)
             print('\n')
 
-            currentLabelRadius = Measure.getEqspDia(correctedLabelMap,currentLabel)/2 
+            currentLabelRadius = Measure.getEqspDia(correctedLabelMap,currentLabel)/2
             touchingParticleRadius = []
             contactRadius = []
             radiusRatio =[]
@@ -410,14 +441,14 @@ def fixErrSeg( labelledMapForOSCorr, pad=2, outputLoc="" , areaLimit = 700, chec
             if VERBOSE: print('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
             if VERBOSE: print('With radius Ratios: ' + str( radiusRatio ) )
 
-            correctionLog.write('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
+            correctionLog.write('\n\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
             correctionLog.write('\nWith areas: ' + str( contactArea ) )
             correctionLog.write('\nCurrent particle radius: ' + str( currentLabelRadius ) )
             correctionLog.write('\nTouching particles radius: ' + str( touchingParticleRadius ) )
             correctionLog.write('\nRadius ratios: ' + str( radiusRatio ) )
 
             # Merging with radius ratios
-            if True:
+            if radiusCheck == True:
                 if len(largeRatioVal) != 0:
                     if len(largeRatioVal) != 0:
                         if VERBOSE: print('\tLabels with large ratios: ' + str( largeRatioLabel ) )
@@ -436,7 +467,6 @@ def fixErrSeg( labelledMapForOSCorr, pad=2, outputLoc="" , areaLimit = 700, chec
                             lastLabel = correctedLabelMap.max()
                             if VERBOSE: print( 'Checking from label %d again.' % currentLabel )
                             correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' again.')
-
 
                         else:
                             correctedLabelMap[ np.where( correctedLabelMap == currentLabel ) ] = int( labelToMerge )    
@@ -463,8 +493,8 @@ def fixErrSeg( labelledMapForOSCorr, pad=2, outputLoc="" , areaLimit = 700, chec
                     correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
 
             # Merging with Areas
-            if False:
-                if len(largeAreaVal) != 0:
+            else:
+                if len(largeAreaVal) != 0: 
                     if len(largeAreaVal) != 0:
                         if VERBOSE: print('\tLabels with large area: ' + str( largeAreaLabel ) )
                         if VERBOSE: print('\tArea for above labels: ' + str( largeAreaVal ) )
@@ -476,34 +506,38 @@ def fixErrSeg( labelledMapForOSCorr, pad=2, outputLoc="" , areaLimit = 700, chec
 
                         if currentLabel < labelToMerge:
                             correctedLabelMap[np.where(correctedLabelMap == labelToMerge)] = int(currentLabel)
+
                             if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, labelToMerge))
                             correctionLog.write('\n\tMerging labels ' + str(currentLabel) + ' and ' + str(labelToMerge))
                             correctedLabelMap = moveLabelsUp( correctedLabelMap , labelToMerge )
                             lastLabel = correctedLabelMap.max()
+
                             if VERBOSE: print( 'Checking from label %d again.' % currentLabel )
                             correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' again.')
 
 
                         else:
                             correctedLabelMap[ np.where( correctedLabelMap == currentLabel ) ] = int( labelToMerge )
+
                             if VERBOSE: print('\tMerging label %d and %d' %( currentLabel, labelToMerge ) )
                             correctionLog.write('\n\tMerging labels ' + str(currentLabel) + ' and ' + str(labelToMerge))
                             correctedLabelMap = moveLabelsUp( correctedLabelMap , currentLabel )
                             lastLabel = correctedLabelMap.max()
                             currentLabel = labelToMerge
+
                             if VERBOSE: print( 'Checking from label %d onwards now' % currentLabel )
                             correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' onwards now.')
 
                     else:
                         if VERBOSE: print('Label' + str(currentLabel) + ' is contacting no other label.')
-                        correctionLog.write('\nLabel' + str(currentLabel) + ' is contacting no other label.')
+                        correctionLog.write('\n\nLabel' + str(currentLabel) + ' is contacting no other label.')
                         currentLabel = currentLabel + 1
                         if VERBOSE: print('Moving to next label ' + str(currentLabel) +  ' now.')
                         correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
 
                 else:
                     if VERBOSE: print('Label ' + str(currentLabel) + ' has no large contacts.')
-                    correctionLog.write('\nLabel ' + str(currentLabel) + ' has no large contacts.')
+                    correctionLog.write('\n\nLabel ' + str(currentLabel) + ' has no large contacts.')
                     currentLabel = currentLabel + 1
                     if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
                     correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
@@ -574,14 +608,26 @@ def moveLabelsUp( labelMapToFix, labelStartingWhichMoveUp ):
     return fixedLabelMap
 
 
-def removeEdgeLabels( labelledMapForEdgeLabelRemoval , pad=0 ):
+def removeEdgeLabels( labelledMapForEdgeLabelRemoval, pad=0, sampleName='', saveImg=False, outputDir='' ):
+    """
+    Description:
+        Removes edge labels that may be cut due to the subregion boundary
+
+    Parameters:
+        labelledMapForEdgeRemoval
+        pad (default set to 0)
+
+    Return:
+        labelled map with edge labels removed.
+    """
     labMap = labelledMapForEdgeLabelRemoval
     numberOfLabels = labMap.max()
     startingNumberOfLabels = numberOfLabels
     currentLabel = 1
 
     print( '\n\nRemoving Edge Labels...' )
-    print( 'Starting total number of labels = ' + str( labMap.max() ) + '\n' )
+    print( '----------------------------*' )
+    print( '\nStarting total number of labels = ' + str( labMap.max() ) + '\n' )
 
     startTime = time.time()
     while currentLabel <= numberOfLabels:
@@ -600,12 +646,17 @@ def removeEdgeLabels( labelledMapForEdgeLabelRemoval , pad=0 ):
             if VERBOSE: print( '\tLabel #' + str( currentLabel ) + ' is not on the edge: KEEPING' )
             currentLabel += 1
 
-    print( 'Removal of edge labels complete' )
+    print( '\nRemoval of edge labels complete' )
     print( 'Total Number of labels at start:' + str( startingNumberOfLabels ) )
     print( 'Total Number of labels remaining:' + str( numberOfLabels ) + '\n' )
     endTime = time.time()
     timeTaken = endTime - startTime
     print( 'Total time taken:~' + str( np.round( timeTaken // 60 ) ) + ' mins' )
+
+    if saveImg == True:
+        print('\nSaving corrected label map...')
+        tiffy.imsave(outputDir+sampleName+'-correctedLabelMap.tif', labMap.astype('uint16'))
+
     return labMap
 
 

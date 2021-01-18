@@ -105,8 +105,25 @@ for currentSubregion in range(0,numberofSubregionsPerScan):
                                             sampleName=currentSampleName,
                                             saveImg=True,
                                             outputDir=outputLoc )
-    corLabMap = 0
-    noEdgeCorLabMap = 0
+
+    # Correction of segmentation errors
+    corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
+                                                 pad=int(2),
+                                                 areaLimit=700,
+                                                 considerEdgeLabels=True,
+                                                 checkForSmallParticles=True,
+                                                 radiusCheck=True,
+                                                 radiusRatioLimit=0.7,
+                                                 sampleName=currentSampleName,
+                                                 saveImg=True,
+                                                 outputDir=outputLoc )
+
+    # Removal of edge labels
+    noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLabMap,
+                                                pad=0,
+                                                sampleName=currentSampleName,
+                                                saveImg=True,
+                                                outputDir=outputLoc )
 
     # Particle size and morphology analysis
     particleSizeList = 0
