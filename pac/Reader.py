@@ -10,6 +10,9 @@ import numpy as np
 import glob
 import gc
 
+# Set this to false if you want to suppress the messages.
+VERBOSE = True
+
 def readTiffStack(folderAndFileLocation,cntrZ,cntrY,cntrX,lngt,calib):
     """
     Description:
@@ -94,7 +97,7 @@ def extractSubregionFromTiffSequence(folderDir,centerZ,topLeftY,topLeftX,lngt,ca
     leftCol = int(topLeftX)
     rightCol = int(topLeftX) + int(lngt/calib)
 
-    print( 'Reading files from: ' + folderDir )
+    print( '\n\nReading files from: ' + folderDir )
     searchString = folderDir + '/*tif'
     searchString2 = folderDir + '/*tiff'
 
@@ -133,6 +136,9 @@ def extractSubregionFromTiffSequence(folderDir,centerZ,topLeftY,topLeftX,lngt,ca
 
     # Cropping image
     croppedGLIMap = gliMap[ :, topRow : bottomRow, leftCol : rightCol ]
+    if saveImg == True: 
+        if VERBOSE: print('\nSaving gli subregion map...')
+        tiffy.imsave( outputDir + sampleName + '-gliMap.tif',croppedGLIMap.astype('uint16') )
     return croppedGLIMap
 
 def readTiffFileSequence( folderLocation, cntrZ, cntrY, cntrX, lngt, calib, invImg=False):

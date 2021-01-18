@@ -9,6 +9,7 @@ Steps:
     -Get particel aspect ration from PCA length ratios
     -Get particle size distribution
     -Calculate relative breakage parameter
+    ---
     -Get contact normals
     -Get fabric tensors
     -Get fabric projection plots
@@ -21,17 +22,7 @@ from pac import Segment
 from pac import Measure
 from pac import Plot
 
-scanData = ['2QR_25_tip-test']
-
-#scanData = ['2QR_25_top','2QR_25_mid','2QR_25_tip',
-#            '2QR_50_top','2QR_50_mid','2QR_50_tip',
-#            '2QR_90_top','2QR_90_mid','2QR_90_tip',
-#            'OGF_25_top','OGF_25_mid','OGF_25_tip',
-#            'OGF_50_top','OGF_50_mid','OGF_50_tip',
-#            'OGF_90_top','OGF_90_mid','OGF_90_tip',
-#            'OTC_25_top','OTC_25_mid','OTC_25_tip',
-#            'OTC_50_top','OTC_50_mid','OTC_50_tip',
-#            'OTC_90_top','OTC_90_mid','OTC_90_tip']
+scan = '2QR_25_tip'
 
 numberofSubregionsPerScan=10
 nD50=6
@@ -39,83 +30,86 @@ nD50=6
 mainInput = '/home/eg/codes/pacInput/'
 mainOutput = '/home/eg/codes/pacOutput/cone/'
 
-for scan in scanData:
+# Locations of data
+scanInputLoc = mainInput + scan + '/'
+subregionInfo = mainInput + scan + '/' + 'subregionInfo.csv'
+outputLoc = mainOutput + scan + '/'
 
-    # Locations of data
-    scanInputLoc = mainInput + scan + '/'
-    subregionInfo = mainInput + scan + '/' + 'subregionInfo.csv'
-    outputLoc = mainOutput + scan + '/'
+# Reading subregion data saved in the subregionInfo location.
+subregionCalib = Reader.readDataFromCsv( subregionInfo,
+                                         skipHeader=1,
+                                         skipFooter=numberofSubregionsPerScan+2,
+                                         fmt='float',
+                                         dataForm='number' )
 
-    # Rading subregion data saved in the subregionInfo location.
-    subregionCalib = Reader.readDataFromCsv( subregionInfo,
-                                             skipHeader=1,
-                                             skipFooter=numberofSubregionsPerScan+2,
-                                             fmt='float',
-                                             dataForm='number' )
+# The average particle size of the sand
+subregionD50 = Reader.readDataFromCsv( subregionInfo,
+                                       skipHeader=2,
+                                       skipFooter=numberofSubregionsPerScan+1,
+                                       fmt='float',
+                                       dataForm='number')
 
-    subregionD50 = Reader.readDataFromCsv( subregionInfo,
-                                           skipHeader=2,
-                                           skipFooter=numberofSubregionsPerScan+1,
-                                           fmt='float',
-                                           dataForm='number')
+# Slice number for center of the scan
+subregionZ = Reader.readDataFromCsv( subregionInfo,
+                                     skipHeader=3,
+                                     skipFooter=numberofSubregionsPerScan,
+                                     fmt='int',
+                                     dataForm='number')
 
-    subregionZ = Reader.readDataFromCsv( subregionInfo,
-                                         skipHeader=3,
-                                         skipFooter=numberofSubregionsPerScan,
-                                         fmt='int',
-                                         dataForm='number')
+# Location of points in the scan - top left corner of the cube
+subregionYXArray = Reader.readDataFromCsv( subregionInfo,
+                                           skipHeader=4,
+                                           fmt='int',
+                                           dataForm='array' )
 
-    subregionYXArray = Reader.readDataFromCsv( subregionInfo,
-                                               skipHeader=4,
-                                               fmt='int',
-                                               dataForm='array' )
+for currentSubregion in range(0,numberofSubregionsPerScan):
 
-    for currentSubregion in range(0,numberofSubregionsPerScan):
+    currentSampleName = scan + '-' + str( round( currentSubregion ) )
 
-        currentSampleName = scan + '-' + str( round( currentSubregion ) )
+    # Extraction of the subregion from the complete scan
+    subregionGLIMap = Reader.extractSubregionFromTiffSequence( folderDir=scanInputLoc,
+                                                               centerZ=subregionZ,
+                                                               topLeftY=subregionYXArray[currentSubregion,0],
+                                                               topLeftX=subregionYXArray[currentSubregion,1],
+                                                               lngt=nD50*subregionD50,
+                                                               calib=subregionCalib,
+                                                               invImg=False,
+                                                               saveImg=True,
+                                                               outputDir=outputLoc,
+                                                               sampleName=currentSampleName )
 
-        # Extraction of the subregion from the complete scan
-        subregionGLIMap = Reader.extractSubregionFromTiffSequence( folderDir=scanInputLoc,
-                                                                   centerZ=subregionZ,
-                                                                   topLeftY=subregionYXArray[currentSubregion,0],
-                                                                   topLeftX=subregionYXArray[currentSubregion,1],
-                                                                   lngt=nD50*subregionD50,
-                                                                   calib=subregionCalib,
-                                                                   invImg=False,
-                                                                   saveImg=False,
-                                                                   outputDir=outputLoc,
-                                                                   sampleName=currentSampleName )
+    # Binarization using Otsu
+    binMap = Segment.binarizeAccordingToOtsu( gliMapToBinarize=subregionGLIMap,
+                                              sampleName=currentSampleName,
+                                              saveImg=True,
+                                              outputDir=outputLoc,
+                                              returnThresholdVal=False)
 
-        # Filteration of the images using non-local means filter
-        filteredGLIMap = Filter.filterUsingNlm( gli=subregionGLIMap,
-                                                bitDepth=16,
-                                                saveImg=True,
-                                                outputDir=outputLoc,
-                                                sampleName=currentSampleName )
+    # EDM and particle centers
+    edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
+                                              scaleUp = int(1),
+                                              saveImg=True,
+                                              sampleName=currentSampleName,
+                                              outputDir=outputLoc )
+    # EDM peaks
+    edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
+                                                    h=int(1),
+                                                    sampleName=currentSampleName,
+                                                    saveImg=True,
+                                                    outputDir=outputLoc )
 
-        # Binarization - Otsu
-        binaryMap = Segment.binarizeAccordingToOtsu( gliMapToBinarize=filteredGLIMap,
-                                                     saveImg=True,
-                                                     outputDir=outputLoc,
-                                                     sampleName=currentSampleName,
-                                                     returnThresholdVal=False )
+    # Watershed segmentation
+    labMap = Segment.segmentUsingWatershed( binaryMapToSeg=binMap,
+                                            edmMapForTopo=edmMap,
+                                            edmPeaksForSeed=edmPeaksMap,
+                                            sampleName=currentSampleName,
+                                            saveImg=True,
+                                            outputDir=outputLoc )
+    corLabMap = 0
+    noEdgeCorLabMap = 0
 
-        # EDM and particle centers
-        edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binaryMap,
-                                                  scaleUp = int(1),
-                                                  saveImg=True,
-                                                  sampleName=currentSampleName,
-                                                  outputDir=outputLoc )
-
-        # Watershed segmentation
-        labMap = 0
-        corLabMap = 0
-        noEdgeCorLabMap = 0
-
-        # Particle size and morphology analysis
-        particleSizeList = 0
-        gsdFeretMin = 0
-        aspectRatio = 0
-
-        #Plot.centerCrossSection(subregionGLIMap)
+    # Particle size and morphology analysis
+    particleSizeList = 0
+    gsdFeretMin = 0
+    aspectRatio = 0
 

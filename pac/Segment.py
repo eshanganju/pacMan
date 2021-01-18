@@ -22,7 +22,7 @@ from pac import Measure
 # This is to plot all the text when running the functions
 VERBOSE = True
 
-def obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, outputLoc=None, edmScaleUp=1, peakEdLimit=5):
+def _obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, outputLoc=None, edmScaleUp=1, peakEdLimit=5):
     print( '\nSegmenting particles by ITK topological watershed' )
 
     if knownThreshold == None:
@@ -33,6 +33,7 @@ def obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, ou
         if binMethod == '1': binThresh, binMask = binarizeAccordingToOtsu( gliMap )
         elif binMethod == '2': binThresh, binMask = binarizeAccordingToUserThreshold( gliMap  )
         else : binThresh, binMask = binarizeAccordingToDensity( gliMap , measuredVoidRatio )
+
     else :
         print('User threshold with :' + str(round(knownThreshold)))
         binThresh, binMask = binarizeAccordingToUserThreshold( gliMap, knownThreshold )
@@ -59,7 +60,32 @@ def obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, ou
     return binMask, binThresh, edMap, edPeaksMap, labelledMap
 
 
-def binarizeAccordingToOtsu( gliMapToBinarize, sampleName='sampleX', saveImg=False, outputDir='', returnThresholdVal=False):
+def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleName='',saveImg=True,outputDir=''):
+    """
+    Description:
+        Simple function that uses skimage watershed and saves a copy of the file
+
+    Parameters:
+        binaryMapToSeg
+        edmMapForTopo,
+        edmPeaksForSeed,
+        sampleName='',
+        saveImg=True,
+        outputDir=''
+
+    Return:
+        labelled map
+    """
+    labMap = wsd(-edmMapForTopo,markers=edmPeaksForSeed,mask=binaryMapToSeg)
+
+    if saveImg == True:
+        if VERBOSE: print('\nSaving lab map...')
+        tiffy.imsave(outputDir+sampleName+'-labMap.tif',labMap.astype('uint16'))
+
+    return labMap.astype('uint16')
+
+
+def binarizeAccordingToOtsu( gliMapToBinarize, sampleName='', saveImg=False, outputDir='', returnThresholdVal=False):
     """
     Description:
         Function to binarize GLI map according to OTSUs algorithm
@@ -91,18 +117,22 @@ def binarizeAccordingToOtsu( gliMapToBinarize, sampleName='sampleX', saveImg=Fal
     binaryMap = removeSpecks( binaryMap )
     e3 = calcVoidRatio( binaryMap )
 
-    print( 'Global Otsu threshold = %f' % otsuThreshold )
-    print( 'Void ratio after threshold = %f' % e1 )
-    print( 'Void ratio after filling holes = %f' % e2 )
-    print( 'Void ratio after removing specks = %f' % e3 )
+    if VERBOSE == True: print( 'Global Otsu threshold = %f' % otsuThreshold )
+    if VERBOSE == True: print( 'Void ratio after threshold = %f' % e1 )
+    if VERBOSE == True: print( 'Void ratio after filling holes = %f' % e2 )
+    if VERBOSE == True: print( 'Void ratio after removing specks = %f' % e3 )
 
-    if saveImg == True: tiffy.imsave( outputDir + sampleName + '-binaryMap.tif', binaryMap)
+    if saveImg == True:
+        if VERBOSE: print('\nSaving binary map...')
+        tiffy.imsave( outputDir + sampleName + '-binaryMap.tif', binaryMap.astype('uint16'))
     otsuThresholdFileName = outputDir+sampleName+'-otsuThreshold.txt'
+
     f = open( otsuThresholdFileName,"w+" )
     f.write( 'Otsus threshold = %f' % otsuThreshold )
     f.close()
 
     if returnThresholdVal == True: return otsuThreshold, binaryMap
+
     elif returnThresholdVal == False: return binaryMap
 
 
@@ -261,14 +291,16 @@ def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1), saveImg=False, s
     edMap = edt( binaryMapForEDM )
     if scaleUp!=0 : edMap =  edMap * scaleUp
 
-    fileName = outputDir + sampleName + '-edm.tif'
-    if saveImg == True: tiffy.imsave(fileName,edMap.astype('uint16'))
-
     print( "EDM Created" )
+
+    if saveImg == True:
+        if VERBOSE: print('\nSaving EDM map...')
+        tiffy.imsave(outputDir + sampleName + '-edm.tif',edMap.astype('uint16'))
+
     return edMap
 
 
-def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5):
+def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5, saveImg=False, sampleName='', outputDir=''):
     print('\nObtaining peaks of EDM...')
     print('------------------------------*')
 
@@ -293,6 +325,11 @@ def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5):
 
     print('\tCounts reset')
     print('\tNumber of peaks: ' + str(round(edmPeakMarkers.max())))
+
+    if saveImg == True:
+        if VERBOSE: print('\nSaving EDM peaks map...')
+        tiffy.imsave( outputDir + sampleName + '-edmPeaks.tif', edmPeakMarkers.astype('uint16'))
+
     return edmPeakMarkers
 
 
@@ -382,7 +419,7 @@ def fixErrSeg( labelledMapForOSCorr, pad=2, outputLoc="" , areaLimit = 700, chec
             # Merging with radius ratios
             if True:
                 if len(largeRatioVal) != 0:
-                     if len(largeRatioVal) != 0:
+                    if len(largeRatioVal) != 0:
                         if VERBOSE: print('\tLabels with large ratios: ' + str( largeRatioLabel ) )
                         if VERBOSE: print('\tRatio for above labels: ' + str( largeRatioVal ) )
 
@@ -402,7 +439,7 @@ def fixErrSeg( labelledMapForOSCorr, pad=2, outputLoc="" , areaLimit = 700, chec
 
 
                         else:
-                        correctedLabelMap[ np.where( correctedLabelMap == currentLabel ) ] = int( labelToMerge )    
+                            correctedLabelMap[ np.where( correctedLabelMap == currentLabel ) ] = int( labelToMerge )    
                             if VERBOSE: print('\tMerging label %d and %d' %( currentLabel, labelToMerge ) )
                             correctionLog.write('\n\tMerging labels ' + str(currentLabel) + ' and ' + str(labelToMerge))
                             correctedLabelMap = moveLabelsUp( correctedLabelMap , currentLabel )
