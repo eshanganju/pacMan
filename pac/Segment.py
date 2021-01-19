@@ -23,6 +23,13 @@ from pac import Measure
 VERBOSE = True
 
 def _obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, outputLoc=None, edmScaleUp=1, peakEdLimit=5):
+    """
+    Description:
+
+    Parameters:
+
+    Return:
+    """
     print( '\nSegmenting particles by ITK topological watershed' )
 
     if knownThreshold == None:
@@ -76,6 +83,8 @@ def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleNam
     Return:
         labelled map with each particle assigned a separate integer value
     """
+    print('\nStarting segmentation using watershed')
+    print('-----------------------------------------*')
     labMap = wsd(-edmMapForTopo,markers=edmPeaksForSeed,mask=binaryMapToSeg)
 
     if saveImg == True:
@@ -313,6 +322,21 @@ def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1), saveImg=False, s
 
 
 def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5, saveImg=False, sampleName='', outputDir=''):
+    """
+    Description:
+        This function located the local maximas in a Euclidian distance map
+
+    Parameters:
+       edMapForPeaks
+       method = 'hlocal'
+       h=5,
+       saveImg=False,
+       sampleName='',
+       outputDir=''
+
+    Returns:
+        map of peaks in the edm, numbered in an increasing order
+    """
     print('\nObtaining peaks of EDM...')
     print('------------------------------*')
 
@@ -366,7 +390,7 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, consi
         Corrected label map - numpy array
     """
 
-    print('\nEntering label correction')
+    print('\nStarting label correction')
     print('---------------------------*')
     #if areaLimit != None : print('Area limit is : ' + str( np.round( areaLimit) ) )
 

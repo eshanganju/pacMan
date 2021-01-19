@@ -1,5 +1,7 @@
 """
 Measure module
+
+Written by eg
 """
 
 import numpy as np
@@ -40,6 +42,12 @@ def gsdAll( labelledMap , calib = 1.0 ):
 
 def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1 ):
     """
+    Description:
+
+    Parameters:
+
+    Return:
+
     """
     numberOfParticles = int( labelledMapForParticleSizeAnalysis.max() )
 
@@ -52,97 +60,149 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1 ):
     # [5] Centroidal - min,
     # [6] Feret-min
     # [7] Feret-max
+
     particleSizeDataSummary = np.zeros( ( numberOfParticles + 1 , 8 ) )
-    print( "Starting measurement of particles..." )
+    print( '\nStarting measurement of particles' )
+    print( '------------------------------------*' )
 
     for particleNum in range( 1, numberOfParticles + 1 ):
         print( "Computing size of", particleNum, "/", numberOfParticles, "particle" )
         particleSizeDataSummary[particleNum, 0] = particleNum
 
-        # Equivalent sphere diameter (Param 1)
-        vol = computeVolumeOfLabel(labelledMapForParticleSizeAnalysis,particleNum)
+        # Equivalent sphere diameter
+        vol, eqspDia = getEqspDia( labelMap=labelledMapForParticleSizeAnalysis, label=int(particleNum) ):
         particleSizeDataSummary[particleNum, 1] = vol
-        sphDia = 2 * ( ( ( 3 * vol ) / ( 4 * math.pi ) ) ** ( 1 / 3 ) )
-        particleSizeDataSummary[particleNum, 2] = sphDia
+        particleSizeDataSummary[particleNum, 2] = eqspDia
 
         # Centroidal axes lengths
-        # Get z, y, x locations of particle
-        pointCloud = getZYXLocationOfLabel(labelledMapForParticleSizeAnalysis,particleNum)
-
-        # Get covariance matrix of particle point cloud
-        covarianceMatrix = np.cov( pointCloud.T )
-
-        # Covariance matrix
-        eigval, eigvec = np.linalg.eig( covarianceMatrix )
-
-        meanZ = np.average( pointCloud[ :, 0 ] )
-        meanY = np.average( pointCloud[ :, 1 ] )
-        meanX = np.average( pointCloud[ :, 2 ] )
-
-        meanMatrix = np.zeros_like( pointCloud )
-
-        meanMatrix[ :, 0 ] = meanZ
-        meanMatrix[ :, 1 ] = meanY
-        meanMatrix[ :, 2 ] = meanX
-
-        centeredLocationData = pointCloud - meanMatrix
-
-        rotationMatrix = np.zeros( ( 3, 3 ) )
-
-        rotationMatrix[ :, 0 ] = eigvec[ 0 ]
-        rotationMatrix[ :, 1 ] = eigvec[ 1 ]
-        rotationMatrix[ :, 2 ] = eigvec[ 2 ]
-
-        rotCentPointCloud = ( np.matmul( rotationMatrix, centeredLocationData.T ) ).T
-
-        caDims = np.zeros( ( 3, 1 ) )
-        caDims[ 0 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 0 ].min()
-        caDims[ 1 ] = rotCentPointCloud[ :, 1 ].max() - rotCentPointCloud[ :, 1 ].min()
-        caDims[ 2 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 2 ].min()
-
-        caMax = max( caDims )[ 0 ] # Param 2
-        caMin = min( caDims )[ 0 ] # Param 3
-        caMed = statistics.median( caDims )[ 0 ] # Param 4
-
-        # Feret diameters - SPAM
-        #feretMax, feretMin = getMinMaxFeretDia( labelledMapForParticleSizeAnalysis, particleNum )
-
+        caMax, caMed, caMin = getPrincipalAxesLengths( labelMap=labelledMapForParticleSizeAnalysis,
+                                                       label=int(particleNum) )
         particleSizeDataSummary[particleNum, 3] = caMax * calibrationFactor
         particleSizeDataSummary[particleNum, 4] = caMed * calibrationFactor
         particleSizeDataSummary[particleNum, 5] = caMin * calibrationFactor
-        #particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
-        #particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
+
+        # Feret diameters
+        feretMax, feretMin = getMinMaxFeretDiaSPAM( labelMap=labelledMapForParticleSizeAnalysis,
+                                                    label=int(particleNum),
+                                                    numOrts=100 )
+        particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
+        particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
 
     return particleSizeDataSummary  # [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
 
-def getEqspDia(labelMap, label):
+def getEqspDia( labelMap, label ):
     """
+    Description:
+        Fuction calculates the equivalent sphere diameter of a volume
+        the equivalent sphere diameter is the diameter of the sphere with the sample volume as the partcle
+
+    Parameter:
+        labelMap
+        label
+
+    Return:
+        volume of particle and the equivalent sphere diameter in pixel units
     """
     labOnlyMap = np.zeros_like( labelMap )
     labOnlyMap[np.where(labelMap == label)] = 1
     volume = labOnlyMap.sum()
-    eqspLabelRadius = (0.75*volume/math.pi)**(1/3)
-    eqspDia = eqspLabelRadius * 2
+    eqspLabelDia = (6*volume/(math.pi))**(1/3)
 
-    return eqspDia
+    return volume, eqspLabelDia
 
-def getPrincipalAxesLengths():
-    """
-    """
 
-def getMinMaxFeretDia( labelledMap, label, numOrts=100 ):
+def getPrincipalAxesLengths( labelMap, label ):
     """
+    Description:
+        Computes the principal axes lengths of the particle
+
+    Parameter:
+        labelMap
+        label
+
+    Return:
+       centroidalAxesLengthMax
+       centroidalAxesLengthMed
+       centroidalAxesLengthMin
     """
-    labOneOnly = np.zeros_like( labelledMap )
-    labOneOnly[ np.where( labelledMap == label ) ] = 1
+    # Centroidal axes lengths
+    # Get z, y, x locations of particle
+    pointCloud = getZYXLocationOfLabel(labelMap,label)
+
+    # Get covariance matrix of particle point cloud
+    covarianceMatrix = np.cov( pointCloud.T )
+
+    # Covariance matrix
+    eigval, eigvec = np.linalg.eig( covarianceMatrix )
+
+    meanZ = np.average( pointCloud[ :, 0 ] )
+    meanY = np.average( pointCloud[ :, 1 ] )
+    meanX = np.average( pointCloud[ :, 2 ] )
+
+    meanMatrix = np.zeros_like( pointCloud )
+
+    meanMatrix[ :, 0 ] = meanZ
+    meanMatrix[ :, 1 ] = meanY
+    meanMatrix[ :, 2 ] = meanX
+
+    centeredLocationData = pointCloud - meanMatrix
+
+    rotationMatrix = np.zeros( ( 3, 3 ) )
+
+    rotationMatrix[ :, 0 ] = eigvec[ 0 ]
+    rotationMatrix[ :, 1 ] = eigvec[ 1 ]
+    rotationMatrix[ :, 2 ] = eigvec[ 2 ]
+
+    rotCentPointCloud = ( np.matmul( rotationMatrix, centeredLocationData.T ) ).T
+
+    caDims = np.zeros( ( 3, 1 ) )
+    caDims[ 0 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 0 ].min()
+    caDims[ 1 ] = rotCentPointCloud[ :, 1 ].max() - rotCentPointCloud[ :, 1 ].min()
+    caDims[ 2 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 2 ].min()
+
+    centroidalAxesLengthMax = max( caDims )[ 0 ]
+    centroidalAxesLengthMin = min( caDims )[ 0 ]
+    centroidalAxesLengthMed = statistics.median( caDims )[ 0 ]
+    return centroidalAxesLengthMax, centroidalAxesLengthMed, centroidalAxesLengthMin
+
+
+def getMinMaxFeretDiaSPAM( labelMap, label, numOrts=100 ):
+    """
+    Description:
+
+    parameter:
+
+    Return:
+
+    """
+    labOneOnly = np.zeros_like( labelMap )
+    labOneOnly[ np.where( labelMap == label ) ] = 1
     feretDims, feretOrts = slab.feretDiameters( labOneOnly, numberOfOrientations=numOrts )
 
     feretMax = feretDims[1,0] # Indexing start at 1 cuz spam.feret measures the 0 index - void space
     feretMin = feretDims[1,1] # Look up ^^
     return feretMax, feretMin
 
+def getMinMaxFeretDia( labelMap, label, numOrts=400 ):
+    """
+    Description:
+
+    Parameter:
+
+    Return:
+
+    """
+    print('Calculating Feret diameters for label ' + str(np.round(label)))
+    #
+
 def getGrainSizeDistribution( psSummary, sizeParam=1 ):
     """
+    Description:
+
+    parameter:
+
+    Return:
+
     """
     print('\nGetting GSD for size param #' + str( sizeParam ) )
     label = psSummary[ : , 0 ].reshape( psSummary.shape[ 0 ] , 1 )

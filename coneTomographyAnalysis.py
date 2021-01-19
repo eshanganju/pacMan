@@ -93,7 +93,7 @@ for currentSubregion in range(0,numberofSubregionsPerScan):
                                               outputDir=outputLoc )
     # EDM peaks
     edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
-                                                    h=int(1),
+                                                    h=int(5),
                                                     sampleName=currentSampleName,
                                                     saveImg=True,
                                                     outputDir=outputLoc )
