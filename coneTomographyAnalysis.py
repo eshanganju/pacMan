@@ -24,7 +24,7 @@ from pac import Plot
 
 scan = '2QR_25_tip'
 
-numberofSubregionsPerScan=10
+numberofSubregionsPerScan=9
 nD50=6
 
 mainInput = '/home/eg/codes/pacInput/'
@@ -58,10 +58,10 @@ subregionZ = Reader.readDataFromCsv( subregionInfo,
 
 # Location of points in the scan - top left corner of the cube
 subregionYXArray = Reader.readDataFromCsv( subregionInfo,
-                                           skipHeader=4,
+                                           skipHeader=5,
                                            maxRows=numberofSubregionsPerScan,
                                            fmt='int',
-                                           dataForm='array' )
+                                           dataForm='array' ).reshape(numberofSubregionsPerScan,2)
 
 for currentSubregion in range(0,numberofSubregionsPerScan):
 
@@ -94,7 +94,7 @@ for currentSubregion in range(0,numberofSubregionsPerScan):
                                               outputDir=outputLoc )
     # EDM peaks
     edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
-                                                    h=int(5),                       # 5 works well
+                                                    h=int(3),
                                                     sampleName=currentSampleName,
                                                     saveImg=True,
                                                     outputDir=outputLoc )
@@ -114,7 +114,7 @@ for currentSubregion in range(0,numberofSubregionsPerScan):
                                                  considerEdgeLabels=True,
                                                  checkForSmallParticles=True,
                                                  radiusCheck=True,
-                                                 radiusRatioLimit=0.7,
+                                                 radiusRatioLimit=0.6,
                                                  sampleName=currentSampleName,
                                                  saveImg=True,
                                                  outputDir=outputLoc )
@@ -126,11 +126,18 @@ for currentSubregion in range(0,numberofSubregionsPerScan):
                                                 saveImg=True,
                                                 outputDir=outputLoc )
 
+    # Remove small labels
+    cleanNoEdgeCorLabMap = Segment.removeSmallParticles( labMapWithSmallPtcl=noEdgeCorLabMap,
+                                                         voxelCountThreshold=10,
+                                                         sampleName=currentSampleName,
+                                                         saveImg=True,
+                                                         outputDir=outputLoc )
+
     # Particle size list
-    psList = Segment.getParticleSize( labelledMapForParticleSizeAnalysis=noEdgeCorLabMap,
+    psList = Measure.getParticleSize( labelledMapForParticleSizeAnalysis=cleanNoEdgeCorLabMap,
                                       calibrationFactor=subregionCalib,
                                       sampleName=currentSampleName,
                                       saveData=True,
-                                      outputDir=outputLoc)
+                                      outputDir=outputLoc )
 
 

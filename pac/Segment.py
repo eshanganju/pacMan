@@ -580,6 +580,10 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, consi
         correctedCleanedLabelMap = removeSmallParticles( correctedLabelMap )
     else : correctedCleanedLabelMap = correctedLabelMap
 
+    if saveImg == True:
+        print('\nSaving corrected labelled map...')
+        tiffy.imsave(outputDir+sampleName+'-correctedLabelMap.tif',correctedCleanedLabelMap.astype('uint16'))
+
     return correctedCleanedLabelMap
 
 
@@ -595,8 +599,9 @@ def removePaddingFromLabelledMap( padLabMap, pad ):
     return cleanLabMap
 
 
-def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 10 ):
+def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 10, saveImg=False, sampleName='', outputDir=''):
     print('\nRemoving small particles with voxel count smaller than ' + str( np.round( voxelCountThreshold ) ) + ' voxels' )
+    print('--------------------------------------------------------------------*' )
 
     ptclNo = 1
     ptclCount = int( labMapWithSmallPtcl.max() )
@@ -621,6 +626,11 @@ def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 10 ):
 
     print('-------------')
     print('Complete')
+
+    if saveImg == True:
+        print('\nSaving labelled map with small particles removed')
+        tiffy.imsave(outputDir+sampleName+'-noSmallCorLabMap.tif',labMapUpdated.astype('uint16'))
+
     return labMapUpdated
 
 
@@ -679,7 +689,7 @@ def removeEdgeLabels( labelledMapForEdgeLabelRemoval, pad=0, sampleName='', save
 
     if saveImg == True:
         print('\nSaving corrected label map...')
-        tiffy.imsave(outputDir+sampleName+'-correctedLabelMap.tif', labMap.astype('uint16'))
+        tiffy.imsave(outputDir+sampleName+'-noEdgeCorrectedLabelMap.tif', labMap.astype('uint16'))
 
     return labMap
 

@@ -59,8 +59,8 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sa
             [3] Centroidal - max
             [4] Centroidal - med
             [5] Centroidal - min
-            [6] Feret-min
-            [7] Feret-max
+            [6] Feret-min X
+            [7] Feret-max X
     """
     numberOfParticles = int( labelledMapForParticleSizeAnalysis.max() )
 
@@ -74,8 +74,8 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sa
 
         # Equivalent sphere diameter
         vol, eqspDia = getEqspDia( labelMap=labelledMapForParticleSizeAnalysis, label=int(particleNum) )
-        particleSizeDataSummary[particleNum, 1] = vol
-        particleSizeDataSummary[particleNum, 2] = eqspDia
+        particleSizeDataSummary[particleNum, 1] = vol * (calibrationFactor**3)
+        particleSizeDataSummary[particleNum, 2] = eqspDia * calibrationFactor
 
         # Centroidal axes lengths
         caMax, caMed, caMin = getPrincipalAxesLengths( labelMap=labelledMapForParticleSizeAnalysis,
@@ -85,11 +85,11 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sa
         particleSizeDataSummary[particleNum, 5] = caMin * calibrationFactor
 
         # Feret diameters
-        feretMax, feretMin = getMinMaxFeretDiaSPAM( labelMap=labelledMapForParticleSizeAnalysis,
-                                                    label=int(particleNum),
-                                                    numOrts=100 )
-        particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
-        particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
+        #feretMax, feretMin = getMinMaxFeretDiaSPAM( labelMap=labelledMapForParticleSizeAnalysis,
+        #                                            label=int(particleNum),
+        #                                             numOrts=100 )
+        #particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
+        #particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
 
     if saveData == True:
         print('\nSaving particle size list...')
@@ -188,7 +188,7 @@ def getMinMaxFeretDiaSPAM( labelMap, label, numOrts=100 ):
     feretDims, feretOrts = slab.feretDiameters( labOneOnly, numberOfOrientations=numOrts )
 
     feretMax = feretDims[1,0] # Indexing start at 1 cuz spam.feret measures the 0 index - void space
-    feretMin = feretDims[1,1] # Look up ^^
+    feretMin = feretDims[1,1] # ^^
     return feretMax, feretMin
 
 
