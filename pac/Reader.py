@@ -39,7 +39,7 @@ def readTiffStack(folderAndFileLocation,cntrZ,cntrY,cntrX,lngt,calib):
     data = dataBig[ lowerSlice:upperSlice, lowerRow : upperRow, lowerCol : upperCol ]
     return data
 
-def readDataFromCsv(fileLocation,skipHeader=0,skipFooter=0,delim=',',fmt='float',dataForm='number'):
+def readDataFromCsv(fileLocation,skipHeader=0,maxRows=0,delim=',',fmt='float',dataForm='number'):
     """
     Description:
         Reads data from csv and converts them to appropriate formats
@@ -53,7 +53,7 @@ def readDataFromCsv(fileLocation,skipHeader=0,skipFooter=0,delim=',',fmt='float'
     Return:
         Data in correct format.
     """
-    data = np.genfromtxt(fileLocation,delimiter=delim,skip_header=skipHeader,skip_footer=skipFooter)
+    data = np.genfromtxt(fileLocation,delimiter=delim,skip_header=skipHeader,max_rows=maxRows)
 
     if dataForm == 'array':
         if fmt == 'float':

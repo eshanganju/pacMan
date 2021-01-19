@@ -64,16 +64,6 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sa
     """
     numberOfParticles = int( labelledMapForParticleSizeAnalysis.max() )
 
-    # Particle size summary columns
-    # [0] Index,
-    # [1] Volume,
-    # [2] Eqsp,
-    # [3] Centroidal - max,
-    # [4] Centroidal - med,
-    # [5] Centroidal - min,
-    # [6] Feret-min
-    # [7] Feret-max
-
     particleSizeDataSummary = np.zeros( ( numberOfParticles + 1 , 8 ) )
     print( '\nStarting measurement of particles' )
     print( '------------------------------------*' )
@@ -83,7 +73,7 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sa
         particleSizeDataSummary[particleNum, 0] = particleNum
 
         # Equivalent sphere diameter
-        vol, eqspDia = getEqspDia( labelMap=labelledMapForParticleSizeAnalysis, label=int(particleNum) ):
+        vol, eqspDia = getEqspDia( labelMap=labelledMapForParticleSizeAnalysis, label=int(particleNum) )
         particleSizeDataSummary[particleNum, 1] = vol
         particleSizeDataSummary[particleNum, 2] = eqspDia
 
@@ -201,6 +191,7 @@ def getMinMaxFeretDiaSPAM( labelMap, label, numOrts=100 ):
     feretMin = feretDims[1,1] # Look up ^^
     return feretMax, feretMin
 
+
 def getMinMaxFeretDia( labelMap, label, numOrts=400 ):
     """
     Description:
@@ -212,6 +203,7 @@ def getMinMaxFeretDia( labelMap, label, numOrts=400 ):
     """
     print('Calculating Feret diameters for label ' + str(np.round(label)))
     #
+
 
 def getGrainSizeDistribution( psSummary, sizeParam=1 ):
     """
@@ -238,6 +230,7 @@ def getGrainSizeDistribution( psSummary, sizeParam=1 ):
     print('Done')
     return gsdPP # [ Label, Volume(vx), Size(px), percent passing(%) ]
 
+
 def computeVolumeOfLabel( labelledMap, label ):
     """
     """
@@ -245,6 +238,7 @@ def computeVolumeOfLabel( labelledMap, label ):
     labelOnlyMap[np.where(labelledMap == label)] = 1
     volumeOfLabel = labelOnlyMap.sum()
     return volumeOfLabel
+
 
 def getZYXLocationOfLabel( labelledMap, label ):
     """
@@ -255,6 +249,7 @@ def getZYXLocationOfLabel( labelledMap, label ):
     zyxLocationData[:,1] = particleLocationArrays[1]
     zyxLocationData[:,2] = particleLocationArrays[2]
     return zyxLocationData
+
 
 def relBreak( gsdOriginal, gsdCurrent , maxSize=None , fracDim=None ):
     """
@@ -270,10 +265,12 @@ def relBreak( gsdOriginal, gsdCurrent , maxSize=None , fracDim=None ):
     if VERBOSE: print('Relative breakage (Br) is: ' + str(np.round(Br,2)) + '%')
     return gsdOrig, gsdCur, gsdUlt, Br
 
+
 def getAspectRatioSphericity( ):
     """
     """
     print("Measuring particle morphology...")
+
 
 def getAreaBetweenGSDs( gsdUp,gsdDown,bins=1000 ):
     """
@@ -309,6 +306,7 @@ def getAreaBetweenGSDs( gsdUp,gsdDown,bins=1000 ):
 
     return totalArea
 
+
 def formatGradationsAndGetUltimate( gsdOriginal,gsdCurrent,maxSize,fracDim ):
     """
     """
@@ -332,6 +330,7 @@ def formatGradationsAndGetUltimate( gsdOriginal,gsdCurrent,maxSize,fracDim ):
 
     return corGsdOrig, corGsdCurr, corGSDUlt
 
+
 def getStartOfUltimateGradation( dm , fracDim ):
     """
     """
@@ -348,6 +347,7 @@ def getStartOfUltimateGradation( dm , fracDim ):
 
     return d
 
+
 def getUltimateGradation( xmax , xmin , fracDim ):
     """
     """
@@ -360,6 +360,7 @@ def getUltimateGradation( xmax , xmin , fracDim ):
     y = y.reshape( y.shape[ 0 ] , 1 )
     ultimateGradation = np.append( x , y , axis=1 )
     return ultimateGradation.astype( float )
+
 
 def contactNormalsSpam( labelledMap, method=None ):
     """
@@ -422,12 +423,14 @@ def contactNormalsSpam( labelledMap, method=None ):
 
     return contTable
 
+
 def fabricVariablesSpam( contactTable ):
     """
     """
     orts = contactTable[ :, 2:5]
     F1, F2, F3 = slab.fabricTensor( orts )
     return F1, F2, F3
+
 
 def fabricVariablesWithUncertainity( contactTable, vectUncert = 0 ):
     """
@@ -474,6 +477,7 @@ def fabricVariablesWithUncertainity( contactTable, vectUncert = 0 ):
 
     return uN, uF, uFq
 
+
 def getCoordinationNumberList(labelledMap):
     """
     """
@@ -492,5 +496,4 @@ def getCoordinationNumberList(labelledMap):
     # labelledMap = Segment.removePaddingFromLabelledMap(padLabMap, 2)
 
     return coordinationNumberArray
-
 

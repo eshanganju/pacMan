@@ -38,27 +38,28 @@ outputLoc = mainOutput + scan + '/'
 # Reading subregion data saved in the subregionInfo location.
 subregionCalib = Reader.readDataFromCsv( subregionInfo,
                                          skipHeader=1,
-                                         skipFooter=numberofSubregionsPerScan+2,
+                                         maxRows=1,
                                          fmt='float',
                                          dataForm='number' )
 
 # The average particle size of the sand
 subregionD50 = Reader.readDataFromCsv( subregionInfo,
                                        skipHeader=2,
-                                       skipFooter=numberofSubregionsPerScan+1,
+                                       maxRows=1,
                                        fmt='float',
                                        dataForm='number')
 
 # Slice number for center of the scan
 subregionZ = Reader.readDataFromCsv( subregionInfo,
                                      skipHeader=3,
-                                     skipFooter=numberofSubregionsPerScan,
+                                     maxRows=1,
                                      fmt='int',
                                      dataForm='number')
 
 # Location of points in the scan - top left corner of the cube
 subregionYXArray = Reader.readDataFromCsv( subregionInfo,
                                            skipHeader=4,
+                                           maxRows=numberofSubregionsPerScan,
                                            fmt='int',
                                            dataForm='array' )
 

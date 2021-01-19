@@ -413,8 +413,8 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, consi
         if VERBOSE: print('\tOk, consolidating edge labels\n')
         edgePad = 0
 
-    if outputDir != '' : correctionLog = open(outputDir + sampleName + 'correctionLog.Txt',"a+")
-    else: correctionLog = open("lableCorrectionLog.txt","a+")
+    if outputDir != '' : correctionLog = open(outputDir + sampleName + '-correctionLog.Txt',"a+")
+    else: correctionLog = open("correctionLog.txt","a+")
 
     print('Starting edge label consolidation - This may take 10-20 mins')
 
@@ -439,13 +439,13 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, consi
             contactLabel, contactArea = slab.contactingLabels(correctedLabelMap, currentLabel, areas=True)
             print('\n')
 
-            currentLabelRadius = Measure.getEqspDia(correctedLabelMap,currentLabel)/2
+            currentLabelRadius = Measure.getEqspDia(correctedLabelMap,currentLabel)[1]/2
             touchingParticleRadius = []
             contactRadius = []
             radiusRatio =[]
 
             for touchingLabel in contactLabel:
-                touchingParticleRadius.append(Measure.getEqspDia(correctedLabelMap,touchingLabel)/2 )
+                touchingParticleRadius.append((Measure.getEqspDia(correctedLabelMap,touchingLabel)[1])/2 )
 
             for touchingArea in contactArea:
                 contactAreaRadiusVal = 0.5 * ( 4 * touchingArea / math.pi ) ** 0.5
