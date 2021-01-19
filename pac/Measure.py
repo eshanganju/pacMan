@@ -40,14 +40,27 @@ def gsdAll( labelledMap , calib = 1.0 ):
 
     return gsd1[:,-2:], gsd2[:,-2:], gsd3[:,-2:], gsd4[:,-2:], gsd5[:,-2:], gsd6[:,-2:]# [ Size(mm), percent passing(%) ]
 
-def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1 ):
+def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sampleName='',saveData=False,outputDir=''):
     """
     Description:
+        Computes particle size parameters for all the labels in the data
 
     Parameters:
+        labelledMapForParticleSizeAnalysis,
+        calibrationFactor=1,
+        sampleName='',
+        saveData=False,outputDir=''
 
     Return:
-
+        Particle size array containing columns:
+            [0] Index
+            [1] Volume
+            [2] Eqsp
+            [3] Centroidal - max
+            [4] Centroidal - med
+            [5] Centroidal - min
+            [6] Feret-min
+            [7] Feret-max
     """
     numberOfParticles = int( labelledMapForParticleSizeAnalysis.max() )
 
@@ -88,9 +101,14 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1 ):
         particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
         particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
 
+    if saveData == True:
+        print('\nSaving particle size list...')
+        np.savetxt( outputDir + sampleName + '-particleSizeList.csv',particleSizeDataSummary, delimiter=',')
+
     return particleSizeDataSummary  # [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
 
 def getEqspDia( labelMap, label ):
+
     """
     Description:
         Fuction calculates the equivalent sphere diameter of a volume

@@ -93,7 +93,7 @@ for currentSubregion in range(0,numberofSubregionsPerScan):
                                               outputDir=outputLoc )
     # EDM peaks
     edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
-                                                    h=int(5),
+                                                    h=int(5),                       # 5 works well
                                                     sampleName=currentSampleName,
                                                     saveImg=True,
                                                     outputDir=outputLoc )
@@ -125,8 +125,11 @@ for currentSubregion in range(0,numberofSubregionsPerScan):
                                                 saveImg=True,
                                                 outputDir=outputLoc )
 
-    # Particle size and morphology analysis
-    particleSizeList = 0
-    gsdFeretMin = 0
-    aspectRatio = 0
+    # Particle size list
+    psList = Segment.getParticleSize( labelledMapForParticleSizeAnalysis=noEdgeCorLabMap,
+                                      calibrationFactor=subregionCalib,
+                                      sampleName=currentSampleName,
+                                      saveData=True,
+                                      outputDir=outputLoc)
+
 
