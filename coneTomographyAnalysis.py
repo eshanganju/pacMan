@@ -22,122 +22,123 @@ from pac import Segment
 from pac import Measure
 from pac import Plot
 
-scan = '2QR_25_tip'
+scanList = ['OTC_25_mid','OTC_25_top','2QR_25_mid','2QR_25_top']
 
-numberofSubregionsPerScan=9
+numberofSubregionsPerScan=10
 nD50=6
 
-mainInput = '/home/eg/codes/pacInput/'
-mainOutput = '/home/eg/codes/pacOutput/cone/'
+for scan in scanList:
+    mainInput = '/home/eg/codes/pacInput/'
+    mainOutput = '/home/eg/codes/pacOutput/cone/'
 
-# Locations of data
-scanInputLoc = mainInput + scan + '/'
-subregionInfo = mainInput + scan + '/' + 'subregionInfo.csv'
-outputLoc = mainOutput + scan + '/'
+    # Locations of data
+    scanInputLoc = mainInput + scan + '/'
+    subregionInfo = mainInput + scan + '/' + 'subregionInfo.csv'
+    outputLoc = mainOutput + scan + '/'
 
-# Reading subregion data saved in the subregionInfo location.
-subregionCalib = Reader.readDataFromCsv( subregionInfo,
-                                         skipHeader=1,
+    # Reading subregion data saved in the subregionInfo location.
+    subregionCalib = Reader.readDataFromCsv( subregionInfo,
+                                             skipHeader=1,
+                                             maxRows=1,
+                                             fmt='float',
+                                             dataForm='number' )
+
+    # The average particle size of the sand
+    subregionD50 = Reader.readDataFromCsv( subregionInfo,
+                                           skipHeader=2,
+                                           maxRows=1,
+                                           fmt='float',
+                                           dataForm='number')
+
+    # Slice number for center of the scan
+    subregionZ = Reader.readDataFromCsv( subregionInfo,
+                                         skipHeader=3,
                                          maxRows=1,
-                                         fmt='float',
-                                         dataForm='number' )
+                                         fmt='int',
+                                         dataForm='number')
 
-# The average particle size of the sand
-subregionD50 = Reader.readDataFromCsv( subregionInfo,
-                                       skipHeader=2,
-                                       maxRows=1,
-                                       fmt='float',
-                                       dataForm='number')
+    # Location of points in the scan - top left corner of the cube
+    subregionYXArray = Reader.readDataFromCsv( subregionInfo,
+                                               skipHeader=4,
+                                               maxRows=numberofSubregionsPerScan,
+                                               fmt='int',
+                                               dataForm='array' ).reshape(numberofSubregionsPerScan,2)
 
-# Slice number for center of the scan
-subregionZ = Reader.readDataFromCsv( subregionInfo,
-                                     skipHeader=3,
-                                     maxRows=1,
-                                     fmt='int',
-                                     dataForm='number')
+    for currentSubregion in range(0,numberofSubregionsPerScan):
 
-# Location of points in the scan - top left corner of the cube
-subregionYXArray = Reader.readDataFromCsv( subregionInfo,
-                                           skipHeader=5,
-                                           maxRows=numberofSubregionsPerScan,
-                                           fmt='int',
-                                           dataForm='array' ).reshape(numberofSubregionsPerScan,2)
+        currentSampleName = scan + '-' + str( round( currentSubregion ) )
 
-for currentSubregion in range(0,numberofSubregionsPerScan):
+        # Extraction of the subregion from the complete scan
+        subregionGLIMap = Reader.extractSubregionFromTiffSequence( folderDir=scanInputLoc,
+                                                                   centerZ=subregionZ,
+                                                                   topLeftY=subregionYXArray[currentSubregion,0],
+                                                                   topLeftX=subregionYXArray[currentSubregion,1],
+                                                                   lngt=nD50*subregionD50,
+                                                                   calib=subregionCalib,
+                                                                   invImg=False,
+                                                                   saveImg=True,
+                                                                   outputDir=outputLoc,
+                                                                   sampleName=currentSampleName )
 
-    currentSampleName = scan + '-' + str( round( currentSubregion ) )
+        # Binarization using Otsu
+        binMap = Segment.binarizeAccordingToOtsu( gliMapToBinarize=subregionGLIMap,
+                                                  sampleName=currentSampleName,
+                                                  saveImg=True,
+                                                  outputDir=outputLoc,
+                                                  returnThresholdVal=False)
 
-    # Extraction of the subregion from the complete scan
-    subregionGLIMap = Reader.extractSubregionFromTiffSequence( folderDir=scanInputLoc,
-                                                               centerZ=subregionZ,
-                                                               topLeftY=subregionYXArray[currentSubregion,0],
-                                                               topLeftX=subregionYXArray[currentSubregion,1],
-                                                               lngt=nD50*subregionD50,
-                                                               calib=subregionCalib,
-                                                               invImg=False,
-                                                               saveImg=True,
-                                                               outputDir=outputLoc,
-                                                               sampleName=currentSampleName )
+        # EDM and particle centers
+        edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
+                                                  scaleUp = int(1),
+                                                  saveImg=True,
+                                                  sampleName=currentSampleName,
+                                                  outputDir=outputLoc )
+        # EDM peaks
+        edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
+                                                        h=int(3),
+                                                        sampleName=currentSampleName,
+                                                        saveImg=True,
+                                                        outputDir=outputLoc )
 
-    # Binarization using Otsu
-    binMap = Segment.binarizeAccordingToOtsu( gliMapToBinarize=subregionGLIMap,
-                                              sampleName=currentSampleName,
-                                              saveImg=True,
-                                              outputDir=outputLoc,
-                                              returnThresholdVal=False)
-
-    # EDM and particle centers
-    edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
-                                              scaleUp = int(1),
-                                              saveImg=True,
-                                              sampleName=currentSampleName,
-                                              outputDir=outputLoc )
-    # EDM peaks
-    edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
-                                                    h=int(3),
-                                                    sampleName=currentSampleName,
-                                                    saveImg=True,
-                                                    outputDir=outputLoc )
-
-    # Watershed segmentation
-    labMap = Segment.segmentUsingWatershed( binaryMapToSeg=binMap,
-                                            edmMapForTopo=edmMap,
-                                            edmPeaksForSeed=edmPeaksMap,
-                                            sampleName=currentSampleName,
-                                            saveImg=True,
-                                            outputDir=outputLoc )
-
-    # Correction of segmentation errors
-    corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
-                                                 pad=int(2),
-                                                 areaLimit=700,
-                                                 considerEdgeLabels=True,
-                                                 checkForSmallParticles=True,
-                                                 radiusCheck=True,
-                                                 radiusRatioLimit=0.6,
-                                                 sampleName=currentSampleName,
-                                                 saveImg=True,
-                                                 outputDir=outputLoc )
-
-    # Removal of edge labels
-    noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLabMap,
-                                                pad=0,
+        # Watershed segmentation
+        labMap = Segment.segmentUsingWatershed( binaryMapToSeg=binMap,
+                                                edmMapForTopo=edmMap,
+                                                edmPeaksForSeed=edmPeaksMap,
                                                 sampleName=currentSampleName,
                                                 saveImg=True,
                                                 outputDir=outputLoc )
 
-    # Remove small labels
-    cleanNoEdgeCorLabMap = Segment.removeSmallParticles( labMapWithSmallPtcl=noEdgeCorLabMap,
-                                                         voxelCountThreshold=10,
-                                                         sampleName=currentSampleName,
-                                                         saveImg=True,
-                                                         outputDir=outputLoc )
+        # Correction of segmentation errors
+        corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
+                                                     pad=int(2),
+                                                     areaLimit=700,
+                                                     considerEdgeLabels=True,
+                                                     checkForSmallParticles=True,
+                                                     radiusCheck=True,
+                                                     radiusRatioLimit=0.6,
+                                                     sampleName=currentSampleName,
+                                                     saveImg=True,
+                                                     outputDir=outputLoc )
 
-    # Particle size list
-    psList = Measure.getParticleSize( labelledMapForParticleSizeAnalysis=cleanNoEdgeCorLabMap,
-                                      calibrationFactor=subregionCalib,
-                                      sampleName=currentSampleName,
-                                      saveData=True,
-                                      outputDir=outputLoc )
+        # Removal of edge labels
+        noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLabMap,
+                                                    pad=0,
+                                                    sampleName=currentSampleName,
+                                                    saveImg=True,
+                                                    outputDir=outputLoc )
+
+        # Remove small labels
+        cleanNoEdgeCorLabMap = Segment.removeSmallParticles( labMapWithSmallPtcl=noEdgeCorLabMap,
+                                                             voxelCountThreshold=10,
+                                                             sampleName=currentSampleName,
+                                                             saveImg=True,
+                                                             outputDir=outputLoc )
+
+        # Particle size list
+        psList = Measure.getParticleSize( labelledMapForParticleSizeAnalysis=cleanNoEdgeCorLabMap,
+                                          calibrationFactor=subregionCalib,
+                                          sampleName=currentSampleName,
+                                          saveData=True,
+                                          outputDir=outputLoc )
 
 
