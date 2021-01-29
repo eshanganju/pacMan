@@ -95,7 +95,8 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sa
         print('\nSaving particle size list...')
         np.savetxt( outputDir + sampleName + '-particleSizeList.csv',particleSizeDataSummary, delimiter=',')
 
-    return particleSizeDataSummary  # [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
+    # [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
+    return particleSizeDataSummary  
 
 def getEqspDia( labelMap, label ):
 
