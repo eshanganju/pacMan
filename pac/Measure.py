@@ -202,9 +202,9 @@ def getMinMaxFeretDia( labelMap, label, numOrts=400 ):
     Return:
 
     """
-    print('Calculating Feret diameters for label ' + str(np.round(label)))
-    #
+    # Centralize particle so that center of gravity of the particle is at  0 0 0
 
+    # Make numpy array of 
 
 def getGrainSizeDistribution( psSummary, sizeParam=1 ):
     """
