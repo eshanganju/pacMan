@@ -1,13 +1,14 @@
 """
 Measure module
 
-Written by eg
+Written by eganju
 """
 
 import numpy as np
 import math
 import statistics
 import scipy
+from scipy.ndimage import binary_erosion as erode
 import spam.label as slab
 from uncertainties import unumpy as unp
 from uncertainties import ufloat
@@ -39,6 +40,7 @@ def gsdAll( labelledMap , calib = 1.0 ):
     gsd6[:,2] *= calib
 
     return gsd1[:,-2:], gsd2[:,-2:], gsd3[:,-2:], gsd4[:,-2:], gsd5[:,-2:], gsd6[:,-2:]# [ Size(mm), percent passing(%) ]
+
 
 def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sampleName='',saveData=False,outputDir=''):
     """
@@ -85,11 +87,10 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sa
         particleSizeDataSummary[particleNum, 5] = caMin * calibrationFactor
 
         # Feret diameters
-        #feretMax, feretMin = getMinMaxFeretDiaSPAM( labelMap=labelledMapForParticleSizeAnalysis,
-        #                                            label=int(particleNum),
-        #                                             numOrts=100 )
-        #particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
-        #particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
+        feretMin, feretMax = getMinMaxFeretDia( labelMap=labelledMapForParticleSizeAnalysis,
+                                                    label=int(particleNum), numOrts=100, numRots=10)
+        particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
+        particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
 
     if saveData == True:
         print('\nSaving particle size list...')
@@ -97,6 +98,7 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sa
 
     # [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
     return particleSizeDataSummary  
+
 
 def getEqspDia( labelMap, label ):
 
@@ -136,25 +138,24 @@ def getPrincipalAxesLengths( labelMap, label ):
     """
     # Centroidal axes lengths
     # Get z, y, x locations of particle
-    pointCloud = getZYXLocationOfLabel(labelMap,label)
+    zyxofLabel = getZYXLocationOfLabel(labelMap,label)
 
     # Get covariance matrix of particle point cloud
-    covarianceMatrix = np.cov( pointCloud.T )
+    covarianceMatrix = np.cov( zyxofLabel.T )
 
     # Covariance matrix
     eigval, eigvec = np.linalg.eig( covarianceMatrix )
 
-    meanZ = np.average( pointCloud[ :, 0 ] )
-    meanY = np.average( pointCloud[ :, 1 ] )
-    meanX = np.average( pointCloud[ :, 2 ] )
+    # centering
+    meanZ, meanY, meanX = getCenterOfGravityFromZYXLocations( zyxLocationData=zyxofLabel )
 
-    meanMatrix = np.zeros_like( pointCloud )
+    meanMatrix = np.zeros_like( zyxofLabel )
 
     meanMatrix[ :, 0 ] = meanZ
     meanMatrix[ :, 1 ] = meanY
     meanMatrix[ :, 2 ] = meanX
 
-    centeredLocationData = pointCloud - meanMatrix
+    centeredLocationData = zyxofLabel - meanMatrix
 
     rotationMatrix = np.zeros( ( 3, 3 ) )
 
@@ -193,18 +194,166 @@ def getMinMaxFeretDiaSPAM( labelMap, label, numOrts=100 ):
     return feretMax, feretMin
 
 
-def getMinMaxFeretDia( labelMap, label, numOrts=400 ):
+def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
     """
     Description:
+        This gets the minimum and the maximim feret diameters of a particle
+        The voxels of the particle are rotated along different orientations, 
+            and the length of the particles along the 3 axes are measured
+        The minimum and the maximum lengths measured are returned
 
     Parameter:
+        labelMap
+        label
+        numOrts: number of orientations
+        numRots: number of rotation angles each orientation
 
     Return:
+        minFeretDia
+        maxFeretDia
+    """
+    print('Checking feret diameters of ' + str(np.round(label)) + '/' + str( np.round( labelMap.max() ) ) )
+    
+    # Get Z Y X locations of the label in an n x 3 arrangement
+    zyxLocations = getZYXLocationOfLabel(labelMap, label)
+
+    # Get Z Y X locations of the center of gravity (COG) of the label
+    cogZ, cogY, cogX = getCenterOfGravityFromZYXLocations ( zyxLocationData=zyxLocations )
+
+    # Get surface voxels of the label
+    surfaceOnlyLabMap = getSurfaceVoxelsofParticle(labelMap, label, returnWithLabel = True)
+
+    # Get Z Y X locations of the surface voxels of the label in an n x 3 arrangement 
+    zyxSurfaceLocations = getZYXLocationOfLabel(surfaceOnlyLabMap, label)
+
+    # Offset the Z Y X locations of the surface voxels by the COG Z Y X
+    meanMatrix = np.zeros_like(zyxSurfaceLocations)
+    meanMatrix[:,0] = cogZ
+    meanMatrix[:,1] = cogY
+    meanMatrix[:,2] = cogX
+    centeredZYXSurfaceLocations = zyxSurfaceLocations - meanMatrix
+
+    # Make numpy array of unit vectors using Saaf and Kuiklaars method
+    unitVectors = getOrientationUsingSandK( numberOfOrientations=numOrts)
+    anglesInRad = np.arange( 0, math.pi+0.00001, math.pi/numRots )
+
+    minFeretDiameter = 0
+    maxFeretDiameter = 0
+
+    # Rotate the centered Z Y X locations of the surface voxels and measure feret diameters
+    for i in range(0,unitVectors.shape[0]):
+        if VERBOSE: print( 'Checking vector ' + str( round( i+1 ) ) + '/' + str( np.round( unitVectors.shape[0] ) ) )
+        
+        a = unitVectors[ i, 0 ]
+        b = unitVectors[ i, 1 ]
+        c = unitVectors[ i, 2 ]
+        d = ( b**2 + c**2 ) ** 0.5
+        
+        Rz = np.identity(3)
+        Rz[ 1, 1 ] = c/d
+        Rz[ 1, 2 ] = -b/d
+        Rz[ 2, 1 ] = b/d
+        Rz[ 2, 2 ] = c/d
+
+        RzInv = np.identity(3)
+        RzInv[ 1, 1 ] = c/d
+        RzInv[ 1, 2 ] = b/d
+        RzInv[ 2, 1 ] = -b/d
+        RzInv[ 2, 2 ] = c/d
+
+        Ry = np.identity(3)
+        Ry[ 0, 0 ] = d
+        Ry[ 0, 2 ] = -a
+        Ry[ 2, 0 ] = a
+        Ry[ 2, 2 ] = d
+
+        RyInv = np.identity(3)
+        RyInv[ 0, 0 ] = d
+        RyInv[ 0, 2 ] = a
+        RyInv[ 2, 0 ] = d
+        RyInv[ 2, 2 ] = -a
+
+        preRotatedZYXSurfaceLocations = np.matmul( Ry, np.matmul( Rz, centeredZYXSurfaceLocations.T ) )
+
+        for angle in anglesInRad:
+            Rx = np.identity( 3 )
+            Rx[ 0, 0 ] = math.cos( angle )
+            Rx[ 0, 1 ] = -math.sin( angle )
+            Rx[ 1, 0 ] = math.sin( angle )
+            Rx[ 1, 1 ] = math.cos( angle )
+
+            rotatedZYXSurfaceLocations = np.matmul( Rx, preRotatedZYXSurfaceLocations )
+            correctedRotatedZYXSurfaceLocations = np.matmul( RzInv,np.matmul( RyInv, rotatedZYXSurfaceLocations ) )
+
+            sizeRange = np.zeros( ( 3, 1 ) )
+            sizeRange[ 0, 0 ] = max( correctedRotatedZYXSurfaceLocations[ 0,: ] ) - min( correctedRotatedZYXSurfaceLocations[ 0, : ] )
+            sizeRange[ 1, 0 ] = max( correctedRotatedZYXSurfaceLocations[ 1,: ] ) - min( correctedRotatedZYXSurfaceLocations[ 1, : ] )
+            sizeRange[ 2, 0 ] = max( correctedRotatedZYXSurfaceLocations[ 2,: ] ) - min( correctedRotatedZYXSurfaceLocations[ 2, : ] )
+
+            if minFeretDiameter != 0:
+                if minFeretDiameter > sizeRange.min(): minFeretDiameter = sizeRange.min()
+
+            if maxFeretDiameter != 0:
+                if maxFeretDiameter < sizeRange.max(): maxFeretDiameter = sizeRange.max()
+
+            if minFeretDiameter == 0: minFeretDiameter = min( sizeRange )
+            if maxFeretDiameter == 0: maxFeretDiameter = max( sizeRange )
+
+    return minFeretDiameter, MaxFeretDiameter
+
+
+def getCenterOfGravityFromZYXLocations( zyxLocationData ):
+    """
 
     """
-    # Centralize particle so that center of gravity of the particle is at  0 0 0
+    # centering
+    centerOfGravityZ = np.average( zyxLocationData[ :, 0 ] )
+    centerOfGravityY = np.average( zyxLocationData[ :, 1 ] )
+    centerOfGravityX = np.average( zyxLocationData[ :, 2 ] )
 
-    # Make numpy array of 
+    return centerOfGravityZ, centerOfGravityY, centerOfGravityX
+
+
+def getSurfaceVoxelsofParticle( labelMap, label, returnWithLabel = True):
+    """
+
+    """
+    originalParticleMap = np.zeros_like( labelMap )
+    originalParticleMap[np.where(labelMap == label)] = 1
+    erodedParticleMap = erode(originalParticleMap)
+    surfaceMap = originalParticleMap - erodedParticleMap
+
+    if returnWithLabel == False: return surfaceMap
+    if returnWithLabel == True: return surfaceMap*int(label)
+
+
+def getOrientationUsingSandK(numberOfOrientations=100):
+    """
+    Description:
+        Picked from SPAM as is
+        
+    Parameters:
+
+    Return:
+    """
+    M = int(numberOfOrientations)*2
+    s = 3.6 / math.sqrt(M)
+    delta_z = 2 / float(M)
+    z = 1 - delta_z/2
+
+    longitude = 0
+    points = numpy.zeros( (numberOfOrientations,3) )
+
+    for k in range( numberOfOrientations ):
+        r = math.sqrt( 1 - z*z )
+        points[k,2] = math.cos( longitude ) * r     #X
+        points[k,1] = math.sin( longitude ) * r     #Y
+        points[k,0] = z                             #Z
+        z = z - delta_z
+        longitude   = longitude + s/r
+
+    return points
+
 
 def getGrainSizeDistribution( psSummary, sizeParam=1 ):
     """
