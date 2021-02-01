@@ -18,6 +18,7 @@ from pac import Segment
 
 # This is to plot all the text when running the functions
 VERBOSE = True
+TESTING = False
 
 def gsdAll( labelledMap , calib = 1.0 ):
     """
@@ -45,7 +46,7 @@ def gsdAll( labelledMap , calib = 1.0 ):
 def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sampleName='',saveData=False,outputDir=''):
     """
     Description:
-        Computes particle size parameters for all the labels in the data
+        Computes particle size paameters for all the labels in the data
 
     Parameters:
         labelledMapForParticleSizeAnalysis,
@@ -87,8 +88,8 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sa
         particleSizeDataSummary[particleNum, 5] = caMin * calibrationFactor
 
         # Feret diameters
-        feretMin, feretMax = getMinMaxFeretDia( labelMap=labelledMapForParticleSizeAnalysis,
-                                                    label=int(particleNum), numOrts=100, numRots=10)
+        feretMax, feretMin = getMinMaxFeretDia( labelMap=labelledMapForParticleSizeAnalysis,
+                                                label=int(particleNum), numOrts=100, numRots=10)
         particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
         particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
 
@@ -97,7 +98,7 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sa
         np.savetxt( outputDir + sampleName + '-particleSizeList.csv',particleSizeDataSummary, delimiter=',')
 
     # [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
-    return particleSizeDataSummary  
+    return particleSizeDataSummary
 
 
 def getEqspDia( labelMap, label ):
@@ -212,8 +213,8 @@ def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
         minFeretDia
         maxFeretDia
     """
-    print('Checking feret diameters of ' + str(np.round(label)) + '/' + str( np.round( labelMap.max() ) ) )
-    
+    if TESTING: print('\nChecking feret diameters of ' + str(np.round(label)) + '/' + str( np.round( labelMap.max() ) ) )
+
     # Get Z Y X locations of the label in an n x 3 arrangement
     zyxLocations = getZYXLocationOfLabel(labelMap, label)
 
@@ -237,18 +238,21 @@ def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
     unitVectors = getOrientationUsingSandK( numberOfOrientations=numOrts)
     anglesInRad = np.arange( 0, math.pi+0.00001, math.pi/numRots )
 
+    if TESTING:
+        print('Orientaions in radians:')
+        print(anglesInRad)
+
     minFeretDiameter = 0
     maxFeretDiameter = 0
 
     # Rotate the centered Z Y X locations of the surface voxels and measure feret diameters
     for i in range(0,unitVectors.shape[0]):
-        if VERBOSE: print( 'Checking vector ' + str( round( i+1 ) ) + '/' + str( np.round( unitVectors.shape[0] ) ) )
-        
+        if TESTING: print('\tChecking along orientation: ' + str(unitVectors[i]))
         a = unitVectors[ i, 0 ]
         b = unitVectors[ i, 1 ]
         c = unitVectors[ i, 2 ]
         d = ( b**2 + c**2 ) ** 0.5
-        
+
         Rz = np.identity(3)
         Rz[ 1, 1 ] = c/d
         Rz[ 1, 2 ] = -b/d
@@ -276,6 +280,7 @@ def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
         preRotatedZYXSurfaceLocations = np.matmul( Ry, np.matmul( Rz, centeredZYXSurfaceLocations.T ) )
 
         for angle in anglesInRad:
+            if TESTING: print('\t\tChecking at rotation of ' + str(angle) + ' radians')
             Rx = np.identity( 3 )
             Rx[ 0, 0 ] = math.cos( angle )
             Rx[ 0, 1 ] = -math.sin( angle )
@@ -286,20 +291,30 @@ def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
             correctedRotatedZYXSurfaceLocations = np.matmul( RzInv,np.matmul( RyInv, rotatedZYXSurfaceLocations ) )
 
             sizeRange = np.zeros( ( 3, 1 ) )
-            sizeRange[ 0, 0 ] = max( correctedRotatedZYXSurfaceLocations[ 0,: ] ) - min( correctedRotatedZYXSurfaceLocations[ 0, : ] )
-            sizeRange[ 1, 0 ] = max( correctedRotatedZYXSurfaceLocations[ 1,: ] ) - min( correctedRotatedZYXSurfaceLocations[ 1, : ] )
-            sizeRange[ 2, 0 ] = max( correctedRotatedZYXSurfaceLocations[ 2,: ] ) - min( correctedRotatedZYXSurfaceLocations[ 2, : ] )
+            sizeRange[ 0, 0 ] = correctedRotatedZYXSurfaceLocations[ 0,: ].max() - correctedRotatedZYXSurfaceLocations[ 0, : ].min()
+            sizeRange[ 1, 0 ] = correctedRotatedZYXSurfaceLocations[ 1,: ].max() - correctedRotatedZYXSurfaceLocations[ 1, : ].min()
+            sizeRange[ 2, 0 ] = correctedRotatedZYXSurfaceLocations[ 2,: ].max() - correctedRotatedZYXSurfaceLocations[ 2, : ].min()
 
             if minFeretDiameter != 0:
-                if minFeretDiameter > sizeRange.min(): minFeretDiameter = sizeRange.min()
+                if minFeretDiameter > sizeRange.min():
+                    minFeretDiameter = sizeRange.min()
+                    if TESTING: print('\t\t\tUpdated minimum feret diameter to: ' + str(np.round(minFeretDiameter)))
 
             if maxFeretDiameter != 0:
-                if maxFeretDiameter < sizeRange.max(): maxFeretDiameter = sizeRange.max()
+                if maxFeretDiameter < sizeRange.max():
+                    maxFeretDiameter = sizeRange.max()
+                    if TESTING: print('\t\t\tUpdated max feret diameter to: ' + str(np.round(maxFeretDiameter)))
 
-            if minFeretDiameter == 0: minFeretDiameter = min( sizeRange )
-            if maxFeretDiameter == 0: maxFeretDiameter = max( sizeRange )
+            if minFeretDiameter == 0:
+                minFeretDiameter = min( sizeRange )
+                if TESTING: print('\t\t\tInitial minimum feret diameter: ' + str(np.round(minFeretDiameter)))
 
-    return minFeretDiameter, MaxFeretDiameter
+
+            if maxFeretDiameter == 0:
+                maxFeretDiameter = max( sizeRange )
+                if TESTING: print('\t\t\tInitial max feret diameter: ' + str(np.round(maxFeretDiameter)))
+
+    return maxFeretDiameter, minFeretDiameter
 
 
 def getCenterOfGravityFromZYXLocations( zyxLocationData ):
@@ -331,7 +346,7 @@ def getOrientationUsingSandK(numberOfOrientations=100):
     """
     Description:
         Picked from SPAM as is
-        
+
     Parameters:
 
     Return:
@@ -342,7 +357,7 @@ def getOrientationUsingSandK(numberOfOrientations=100):
     z = 1 - delta_z/2
 
     longitude = 0
-    points = numpy.zeros( (numberOfOrientations,3) )
+    points = np.zeros( (numberOfOrientations,3) )
 
     for k in range( numberOfOrientations ):
         r = math.sqrt( 1 - z*z )
