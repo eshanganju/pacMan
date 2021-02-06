@@ -43,7 +43,8 @@ def gsdAll( labelledMap , calib = 1.0 ):
     return gsd1[:,-2:], gsd2[:,-2:], gsd3[:,-2:], gsd4[:,-2:], gsd5[:,-2:], gsd6[:,-2:]# [ Size(mm), percent passing(%) ]
 
 
-def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sampleName='',saveData=False,outputDir=''):
+def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1,
+                     sampleName='',saveData=False,outputDir=''):
     """
     Description:
         Computes particle size paameters for all the labels in the data
@@ -102,7 +103,6 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1, sa
 
 
 def getEqspDia( labelMap, label ):
-
     """
     Description:
         Fuction calculates the equivalent sphere diameter of a volume
