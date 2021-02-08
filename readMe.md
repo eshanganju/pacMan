@@ -1,4 +1,4 @@
-#pacMan
+# pacMan
 (ParticleAnalysisCodeMostlyforAmaturesandNoobs)
 
 This code is for static analysis of XCT. The objectives are:
@@ -21,15 +21,15 @@ There are 5 modules that do these things:
 - Plot
 
 
-##Reader
+## Reader
 
-##Filter
+## Filter
 
-##Segment
+## Segment
 
-##Measure
+## Measure
 
-##Plot
+## Plot
 
 
 
