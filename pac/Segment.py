@@ -10,7 +10,7 @@ from skimage.morphology import local_maxima as localMaxima
 from skimage.morphology import h_maxima as hmax
 from skimage.morphology import watershed as wsd
 from skimage.filters import threshold_otsu
-import skimage.external.tifffile as tiffy
+import tifffile as tiffy
 import matplotlib.pyplot as plt
 import numpy as np
 import spam.label as slab
@@ -307,6 +307,41 @@ def removeSpecks( oldBinaryMapWithSpecks ):
 
 
 def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1), saveImg=False, sampleName='', outputDir=''):
+    """Computes the euclidian distance tranform (EDT) for a binary map
+
+    An EDT or an euclidian distance map (EDM) is an ndarray of the same size as
+    the input binary map. Instead of 1 or 0, as in a binary map, each solid (1)
+    voxel is assigned the distance between it and the nearest void (0) voxel.
+    The resulting map shows how far each voxel is to the nearest void voxel,
+    i.e. from the boundary of paricle.
+
+    Parameters
+    ----------
+    binaryMapForEDM : ndarray
+        binary map of the xct scan
+
+    scaleUp : unsigned integer
+        This is done inorder to artificially increase the zoom of the data. The
+        distance from the voxels increased if a fractional value is needed in
+        the location of peaks.
+
+    saveImg : bool
+        If this is true, the edt is saved in the requested location or at the
+        location whenere the code is run
+
+    sampleName : string
+        name of the sample - used to name the file used to store the edt data
+
+    outputDir : string
+        Location of the the ouput directory. If left empty, the file is saved at
+        the same location as the location of the code.
+
+    Returns
+    -------
+    edMap : ndarray
+        array containing the euclidian distance map of the binary map
+
+    """
     print('\nFinding Euclidian distance map (EDM)')
     print('------------------------------------*')
 
@@ -317,7 +352,7 @@ def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1), saveImg=False, s
 
     if saveImg == True:
         if VERBOSE: print('\nSaving EDM map...')
-        tiffy.imsave(outputDir + sampleName + '-edm.tif',edMap.astype('uint16'))
+        tiffy.imsave(outputDir + sampleName + '-edm.tif',edMap)
 
     return edMap
 
