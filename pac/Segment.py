@@ -21,6 +21,7 @@ from pac import Measure
 
 # This is to plot all the text when running the functions
 VERBOSE = True
+TESTING = True
 
 def _obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, outputLoc=None, edmScaleUp=1, peakEdLimit=5):
     """
@@ -322,34 +323,40 @@ def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1), saveImg=False, s
 
 
 def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5, saveImg=False, sampleName='', outputDir=''):
-    """
-    Description:
-        This function located the local maximas in a Euclidian distance map
+    """Computes the local maximas in the euclidean distance map.
+    it uses skimage.morphology
 
-    Parameters:
-       edMapForPeaks
-       method = 'hlocal'
+    Parameters
+    ----------
+       edMapForPeaks : ndarray containing the euclidian distance map.
+       method : string containing the choice of algorithm
        h=5,
        saveImg=False,
        sampleName='',
        outputDir=''
 
-    Returns:
-        map of peaks in the edm, numbered in an increasing order
+    Returns
+    -------
+    edmPeakMarkers
+        ndArray of the same size as the input array containing map
+        of peaks in the edm, numbered in an increasing order
     """
-    print('\nObtaining peaks of EDM...')
-    print('------------------------------*')
+    if VERBOSE == True:
+        print('\nObtaining peaks of EDM...')
+        print('------------------------------*')
+        print( 'Finding local maxima in EDM' )
 
-    print( 'Finding local maxima in EDM' )
     if method == 'hlocal' :
         if h == None: h = int( input( 'Enter the minimum height for a peak (px): ') )
         edmPeakMarkers = hmax( edMapForPeaks, h ).astype(int)
 
     elif method == 'local' : edmPeakMarkers = localMaxima( edMapForPeaks ).astype(int)
 
-    print( '\tFound local maximas' )
+    if VERBOSE:
+        print( '\tFound local maximas' )
+        print( '\nResetting count of peaks' )
 
-    print( '\nResetting count of peaks' )
+    # Resetting counts such that each peak has a unique integer label
     count=0
     for frame in range( 0, edmPeakMarkers.shape[ 0 ] ):
         for row in range( 0, edmPeakMarkers.shape[ 1 ] ):
@@ -357,10 +364,12 @@ def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5, saveImg=F
                 if edmPeakMarkers[ frame ][ row ][ col ] == 1:
                     edmPeakMarkers[ frame ][ row ][ col ] = count + 1
                     count = count + 1
-        if VERBOSE: print( 'Processed ' + str(frame + 1) + ' out of ' + str(edmPeakMarkers.shape[ 0 ]) + ' slices' )
+        if VERBOSE:
+            print( 'Processed ' + str(frame + 1) + ' out of ' + str(edmPeakMarkers.shape[ 0 ]) + ' slices' )
 
-    print('\tCounts reset')
-    print('\tNumber of peaks: ' + str(round(edmPeakMarkers.max())))
+    if VERBOSE:
+        print('\tCounts reset')
+        print('\tNumber of peaks: ' + str(round(edmPeakMarkers.max())))
 
     if saveImg == True:
         if VERBOSE: print('\nSaving EDM peaks map...')

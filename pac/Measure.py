@@ -199,7 +199,7 @@ def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
     """
     Description:
         This gets the minimum and the maximim feret diameters of a particle
-        The voxels of the particle are rotated along different orientations, 
+        The voxels of the particle are rotated along different unit vectors,
             and the length of the particles along the 3 axes are measured
         The minimum and the maximum lengths measured are returned
 
@@ -215,7 +215,8 @@ def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
     """
     if TESTING: print('\nChecking feret diameters of ' + str(np.round(label)) + '/' + str( np.round( labelMap.max() ) ) )
 
-    # Get Z Y X locations of the label in an n x 3 arrangement
+    # Get Z Y X locations of the label in an n x 3 arrangement (n is number of
+    # labels in the labelMap passed)
     zyxLocations = getZYXLocationOfLabel(labelMap, label)
 
     # Get Z Y X locations of the center of gravity (COG) of the label

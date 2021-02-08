@@ -22,7 +22,9 @@ from pac import Segment
 from pac import Measure
 from pac import Plot
 
-scanList = ['OTC_25_mid','OTC_25_top','2QR_25_mid','2QR_25_top']
+scanList = ['OGF_25_tip',
+            'OGF_25_mid',
+            'OGF_25_top']
 
 numberofSubregionsPerScan=10
 nD50=6
