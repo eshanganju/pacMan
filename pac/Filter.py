@@ -11,6 +11,7 @@ import time
 
 # This is to plot all the text when running the functions
 VERBOSE = True
+TESTING = True
 
 def filterUsingNlm(gli,bitDepth=16,saveImg=False,outputDir='',sampleName='sampleX',pSize=3,pDistance=7,hVal=450):
     """
