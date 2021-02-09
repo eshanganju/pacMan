@@ -69,19 +69,25 @@ def _obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, o
 
 
 def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleName='',saveImg=True,outputDir=''):
-    """
-    Description:
-        Simple function that uses skimage watershed and saves a copy of the segmented image
+    """Simple function that uses skimage watershed and saves a copy of the segmented image
 
-    Parameters:
-        binaryMapToSeg
-        edmMapForTopo
-        edmPeaksForSeed
-        sampleName=''
-        saveImg=True
-        outputDir=''
+    Parameters
+    ----------
+    binaryMapToSeg : ndarray
 
-    Return:
+    edmMapForTopo : ndarray
+
+    edmPeaksForSeed : ndarray
+
+    sampleName : string
+
+    saveImg : bool
+
+    outputDir : string
+
+    Return
+    ------
+    labMap : ndarray
         labelled map with each particle assigned a separate integer value
     """
     print('\nStarting segmentation using watershed')
