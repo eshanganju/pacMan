@@ -538,7 +538,7 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
             correctionLog.write('\nTouching particles radius: ' + str( touchingParticleRadius ) )
             correctionLog.write('\nRadius ratios: ' + str( radiusRatio ) )
 
-            # Merging with radius ratios
+            # Merging with radius ratio limits
             if radiusCheck == True:
                 if len(largeRatioVal) != 0:
                     if VERBOSE: print('\tLabels with large ratios: ' + str( largeRatioLabel ) )
@@ -567,7 +567,7 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
                     if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
                     correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
 
-            # Merging with Areas
+            # Merging with area limits
             else:
                 if len(largeAreaVal) != 0:
                     if VERBOSE: print('\tLabels with large area: ' + str( largeAreaLabel ) )
