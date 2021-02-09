@@ -371,13 +371,35 @@ def getOrientationUsingSandK(numberOfOrientations=100):
     return points
 
 
-def getGrainSizeDistribution( psSummary, sizeParam=1 ):
-    """
-    Description:
+def getGrainSizeDistribution( psSummary, sizeParam='feretMin',
+                              sampleName='', saveData=False, outputDir='' ):
+    """Generates the particle size distribution from list of labels and sizes
 
-    parameter:
+    Parameters
+    ----------
+    psSummary : n by 8 np array
+        This contains the results of the getParticleSize function. The array
+        should have rows equal to the number of particles in the samples,
+        and one column each for (1) Label, (2) Volume, (3) equivalent spere
+        diameter, (4) maximum centroidal axes length, (5) intermediate
+        centroidal axes length, (6) minimum centroidal axes length, (7)
+        maximum feret diameter, and (8) minimum feret diameter.
+    sizeParam : string
+        'eqsp' - for equivalent sphere diameter
+        'caMax' - for max centroidal axes length
+        'caMed' - for intermediate centroidal axes length
+        'caMin' - for minimum centroidal axes length
+        'feretMax' - for max feret diameter
+        'feretMin' - for min feret diameter
+    sampleName : string
+    saveData : bool
+    outputDir : string
 
-    Return:
+    Return
+    ------
+    gsdPP : n by 2 np array
+        x column is the particle size and y column is the percentage passing
+
 
     """
     print('\nGetting GSD for size param #' + str( sizeParam ) )
