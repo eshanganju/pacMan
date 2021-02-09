@@ -419,25 +419,39 @@ def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5, saveImg=F
     return edmPeakMarkers
 
 
-def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, considerEdgeLabels=True,checkForSmallParticles = True, radiusCheck=True, radiusRatioLimit=0.5, sampleName='', saveImg=True, outputDir=''):
-    """
-    Description:
-        Corrects over segmentation caused by incorrect edm peak selection
+def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
+                             considerEdgeLabels=True,checkForSmallParticles = True,
+                             radiusCheck=True, radiusRatioLimit=0.5, sampleName='',
+                             saveImg=True, outputDir=''):
+    """Corrects over segmentation caused by incorrect edm peak selection
+
+    There are two main approaches. One way is to compute the "area of contact"
+    between the two particles suspected of being one, and if the area is larger
+    than an absolute threshold, then the two particles are merged
+
+    The other approach is to compute the contact area and convert it to an
+    equivalent radii (assuming a circular contact area). If the ratio of this
+    radii (of the contact) to the radii of the particles (assuming an equivanent
+    sphere) is greater than a threshold, then the two particles are merged
+
+    The contact are a is determined using spam.contact's contactingLabels
+    function.
 
     Parameters:
-        labelledMapForOSCorr
-        pad=2
-        areaLimit = 700
-        considerEdgeLabels=True
-        checkForSmallParticles = True
-        radiusCheck=True
-        radiusRatioLimit=0.5
-        sampleName=''
-        saveImg=True
-        outputDir=''
+        labelledMapForOSCorr : ndarray
+        pad : unsigned integer
+        areaLimit : unsigned integer
+        considerEdgeLabels : bool
+        checkForSmallParticles : bool
+        radiusCheck : bool
+        radiusRatioLimit : float
+        sampleName : string
+        saveImg : bool
+        outputDir : string
 
     Return:
-        Corrected label map - numpy array
+        correctedCleanedLabelMap : ndarray
+            Corrected label map
     """
 
     print('\nStarting label correction')
@@ -447,18 +461,21 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, consi
     if radiusCheck == True: print('Radius ratio limit is: ' + str( radiusRatioLimit) )
     elif radiusCheck == False: print('Area limit is: ' + str(areaLimit))
 
+    # Apply padding to the data
     if pad > 0: labelledMapForOSCorr = applyPaddingToLabelledMap(labelledMapForOSCorr, pad)
+
     lastLabel = labelledMapForOSCorr.max()
     currentLabel = 1
     correctedLabelMap = labelledMapForOSCorr
     timeStart = time.time()
 
-    print('Currently padding is ' + str(pad) + ' px')
+    if VERBOSE: print('Currently padding is ' + str(pad) + ' px')
 
     # Include the edge labels in the calculation
     if considerEdgeLabels == False:
         if VERBOSE: print('\tOk, not consolidating edge labels\n')
         edgePad = pad
+        # The edgepad adds additional padding to prevent the edge lables from being removed
     else:
         if VERBOSE: print('\tOk, consolidating edge labels\n')
         edgePad = 0
@@ -466,10 +483,10 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, consi
     if outputDir != '' : correctionLog = open(outputDir + sampleName + '-correctionLog.Txt',"a+")
     else: correctionLog = open("correctionLog.txt","a+")
 
-    print('Starting edge label consolidation - This may take 10-20 mins')
+    if VERBOSE:
+        print('Starting edge label consolidation - This may take some time')
 
     correctionLog.write('\n-------------------------------------------------------')
-    correctionLog.write('\nStarting edge label consolidation')
 
     if radiusCheck == False: correctionLog.write('\nArea limit: ' + str( np.round( areaLimit ) ) + '\n\n')
     elif radiusCheck == True: correctionLog.write('\nRadius ratio limit: ' + str( radiusRatioLimit ) + '\n\n')
@@ -744,7 +761,32 @@ def removeEdgeLabels( labelledMapForEdgeLabelRemoval, pad=0, sampleName='', save
     return labMap
 
 
-def checkIfEdgeLabel( labelledMap, label, pad ):
+def checkIfEdgeLabel( labelledMap, label, pad=0 ):
+    """Checks if the particle corresponding to the label  comes in contact
+    with the boundary of the scan
+
+    The locations of the label are extracted from the labelled map. Then the x,
+    y and z values of the locations are checked if they are on the lower edge
+    (0) or on the upper edge of the scan
+
+    If a padding (pad) is passed, it means that the original labelledMap has a
+    padding around it and so, the lower edge is larger than zero and the upper
+    edge is lower than the upper limit of the shape of the array.
+
+    Parameters
+    ----------
+    labelledMap : ndarray
+        Labelled map from in which the label to check exists
+    label : unsigned integer
+        label to check if it is located at the edge
+    pad : unsigned integer
+        padding that currently exists on the labelledMap
+
+    Return
+    ------
+    True if the label exists on the edge and False if it does not
+
+    """
     pointCloudArray = np.where(labelledMap == label)
 
     z = pointCloudArray[0].reshape( 1 , pointCloudArray[ 0 ].shape[ 0 ] )
@@ -762,8 +804,7 @@ def checkIfEdgeLabel( labelledMap, label, pad ):
     lowerEdge = np.any( z == zLower ) + np.any( y == yLower  ) + np.any( x == xLower  )
     upperEdge = np.any( z == zUpper ) + np.any( y == yUpper  ) + np.any( x == xUpper  )
 
-    if lowerEdge + upperEdge > 0:
-        return True
+    if lowerEdge + upperEdge > 0: return True
     else: return False
 
 
