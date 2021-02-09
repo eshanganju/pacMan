@@ -541,33 +541,24 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
             # Merging with radius ratios
             if radiusCheck == True:
                 if len(largeRatioVal) != 0:
-                    if len(largeRatioVal) != 0:
-                        if VERBOSE: print('\tLabels with large ratios: ' + str( largeRatioLabel ) )
-                        if VERBOSE: print('\tRatio for above labels: ' + str( largeRatioVal ) )
+                    if VERBOSE: print('\tLabels with large ratios: ' + str( largeRatioLabel ) )
+                    if VERBOSE: print('\tRatio for above labels: ' + str( largeRatioVal ) )
 
-                        correctionLog.write('\n\tLabels with large ratio: ' + str( largeRatioLabel ) )
-                        correctionLog.write('\n\tRatio for above labels: ' + str( largeRatioVal ) )
+                    correctionLog.write('\n\tLabels with large ratio: ' + str( largeRatioLabel ) )
+                    correctionLog.write('\n\tRatio for above labels: ' + str( largeRatioVal ) )
 
-                        labelToMerge = largeRatioLabel[ largeRatioVal.index( min( largeRatioVal ) ) ]
+                    labelToMerge = largeRatioLabel[ largeRatioVal.index( min( largeRatioVal ) ) ]
+                    smallerLabel = min( labelToMerge, currentLabel )
+                    largerLabel = max( labelToMerge, currentLabel )
+                    correctedLabelMap[np.where(correctedLabelMap == largerLabel)] = int(smallerLabel)
+                    correctedLabelMap = moveLabelsUp( correctedLabelMap,largerLabel )
+                    currentLabel = smallerLabel
+                    lastLabel = correctedLabelMap.max()
 
-                        smallerLabel = min(labelToMerge, currentLabel)
-                        largerLabel = max(labelToMerge, currentLabel)
-
-                        correctedLabelMap[np.where(correctedLabelMap == largerLabel)] = int(smallerLabel)
-                        if VERBOSE: print('\tMerging label %d and %d' %(smallerLabel, largerLabel))
-                        correctionLog.write('\n\tMerging labels' + str(smallerLabel) + ' and ' + str(largerLabel))
-                        correctedLabelMap = moveLabelsUp( correctedLabelMap,largerLabel )
-                        currentLabel = smallerLabel
-                        lastLabel = correctedLabelMap.max()
-                        if VERBOSE: print( 'Checking from label %d again.' % currentLabel )
-                        correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' again.')
-
-                    else:
-                        if VERBOSE: print('Label' + str(currentLabel) + ' is contacting no other label.')
-                        correctionLog.write('\nLabel' + str(currentLabel) + ' is contacting no other label.')
-                        currentLabel = currentLabel + 1
-                        if VERBOSE: print('Moving to next label ' + str(currentLabel) +  ' now.')
-                        correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
+                    if VERBOSE: print('\tMerging label %d and %d' %(smallerLabel, largerLabel))
+                    correctionLog.write('\n\tMerging labels' + str(smallerLabel) + ' and ' + str(largerLabel))
+                    if VERBOSE: print( 'Checking from label %d again.' % currentLabel )
+                    correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' again.')
 
                 else:
                     if VERBOSE: print('Label ' + str(currentLabel) + ' has no large contacts.')
@@ -578,46 +569,25 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
 
             # Merging with Areas
             else:
-                if len(largeAreaVal) != 0: 
-                    if len(largeAreaVal) != 0:
-                        if VERBOSE: print('\tLabels with large area: ' + str( largeAreaLabel ) )
-                        if VERBOSE: print('\tArea for above labels: ' + str( largeAreaVal ) )
+                if len(largeAreaVal) != 0:
+                    if VERBOSE: print('\tLabels with large area: ' + str( largeAreaLabel ) )
+                    if VERBOSE: print('\tArea for above labels: ' + str( largeAreaVal ) )
 
-                        correctionLog.write('\n\tLabels with large area: ' + str( largeAreaLabel ) )
-                        correctionLog.write('\n\tArea for above labels: ' + str( largeAreaVal ) )
+                    correctionLog.write('\n\tLabels with large area: ' + str( largeAreaLabel ) )
+                    correctionLog.write('\n\tArea for above labels: ' + str( largeAreaVal ) )
 
-                        labelToMerge = largeAreaLabel[ largeAreaVal.index( min( largeAreaVal ) ) ]
+                    labelToMerge = largeAreaLabel[ largeAreaVal.index( min( largeAreaVal ) ) ]
+                    smallerLabel = min(labelToMerge,currentLabel)
+                    largerLabel = max(labelToMerge,currentLabel)
+                    correctedLabelMap[np.where(correctedLabelMap == largerLabel)] = int(smallerLabel)
+                    correctedLabelMap = moveLabelsUp( correctedLabelMap , largerLabel )
+                    currentLabel = smallerLabel
+                    lastLabel = correctedLabelMap.max()
 
-                        if currentLabel < labelToMerge:
-                            correctedLabelMap[np.where(correctedLabelMap == labelToMerge)] = int(currentLabel)
-
-                            if VERBOSE: print('\tMerging label %d and %d' %(currentLabel, labelToMerge))
-                            correctionLog.write('\n\tMerging labels ' + str(currentLabel) + ' and ' + str(labelToMerge))
-                            correctedLabelMap = moveLabelsUp( correctedLabelMap , labelToMerge )
-                            lastLabel = correctedLabelMap.max()
-
-                            if VERBOSE: print( 'Checking from label %d again.' % currentLabel )
-                            correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' again.')
-
-
-                        else:
-                            correctedLabelMap[ np.where( correctedLabelMap == currentLabel ) ] = int( labelToMerge )
-
-                            if VERBOSE: print('\tMerging label %d and %d' %( currentLabel, labelToMerge ) )
-                            correctionLog.write('\n\tMerging labels ' + str(currentLabel) + ' and ' + str(labelToMerge))
-                            correctedLabelMap = moveLabelsUp( correctedLabelMap , currentLabel )
-                            lastLabel = correctedLabelMap.max()
-                            currentLabel = labelToMerge
-
-                            if VERBOSE: print( 'Checking from label %d onwards now' % currentLabel )
-                            correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' onwards now.')
-
-                    else:
-                        if VERBOSE: print('Label' + str(currentLabel) + ' is contacting no other label.')
-                        correctionLog.write('\n\nLabel' + str(currentLabel) + ' is contacting no other label.')
-                        currentLabel = currentLabel + 1
-                        if VERBOSE: print('Moving to next label ' + str(currentLabel) +  ' now.')
-                        correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
+                    if VERBOSE: print('\tMerging label %d and %d' %(smallerLabel, largerLabel))
+                    correctionLog.write('\n\tMerging labels ' + str(smallerLabel) + ' and ' + str(largerLabel))
+                    if VERBOSE: print( 'Checking from label %d again.' % currentLabel )
+                    correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' again.')
 
                 else:
                     if VERBOSE: print('Label ' + str(currentLabel) + ' has no large contacts.')
@@ -659,9 +629,34 @@ def removePaddingFromLabelledMap( padLabMap, pad ):
     return cleanLabMap
 
 
-def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 10, saveImg=False, sampleName='', outputDir=''):
-    print('\nRemoving small particles with voxel count smaller than ' + str( np.round( voxelCountThreshold ) ) + ' voxels' )
-    print('--------------------------------------------------------------------*' )
+def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 500, saveImg=False, sampleName='', outputDir=''):
+    """[TODO] can the total volume of particles be calculated - this can be used to modify the 
+    gradation
+
+    Removes particles that have a size smaller than a threshold.
+
+    The idea is that particles that have less than 10 voxels across the
+    diameter cannot be accurately measured for size and contact. Thus,
+    these particles should be removed
+
+    Assuming the diameter as the equivalent sphere diameter, the volume (voxel count)
+    for such a particle will be about 500 voxels.
+
+    Parameters
+    ----------
+    labMapWithSmallPtcl : ndarray
+    voxelCountThreshold : unsigned integer
+    saveImg : bool
+    sampleName : string
+    outputDir : string
+
+    Return
+    ------
+    labMapUpdated : ndarray
+    """
+    if VERBOSE:
+        print('\nRemoving small particles with voxel count smaller than ' + str( np.round( voxelCountThreshold ) ) + ' voxels' )
+        print('--------------------------------------------------------------------*' )
 
     ptclNo = 1
     ptclCount = int( labMapWithSmallPtcl.max() )
@@ -695,6 +690,24 @@ def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 10, saveImg
 
 
 def moveLabelsUp( labelMapToFix, labelStartingWhichMoveUp ):
+    """Moves the labels up - incase a label is deleted or it is merged
+
+    This module is generally used with correction of oversegmentation or 
+    removal of edge labels
+
+    Parameters
+    ----------
+    labelMapToFix : ndarray
+        The labe which needs to be adjusted
+    labelStartingWhichMoveUp : unsigned integer
+        The label such that all labels equal to or larger than this label
+        are moved up in the label map
+
+    Return
+    ------
+    fixedLabelMap : ndarray
+        labelMap with the labels moved up after chosen label value
+    """
     print( '\tUpdating Labels after %d' % labelStartingWhichMoveUp )
     deltaMatrix = np.zeros_like( labelMapToFix )
     deltaMatrix[ np.where( labelMapToFix > labelStartingWhichMoveUp ) ] = 1
