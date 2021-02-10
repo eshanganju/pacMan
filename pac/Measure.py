@@ -375,6 +375,10 @@ def getGrainSizeDistribution( psSummary, sizeParam='feretMin',
                               sampleName='', saveData=False, outputDir='' ):
     """Generates the particle size distribution from list of labels and sizes
 
+    Different size parametres can be used to generate the grain size distribution.
+    The size that most accurately matches the size distribution from the sieve
+    analysis should be used for the assessment of particle size distribution
+
     Parameters
     ----------
     psSummary : n by 8 np array
