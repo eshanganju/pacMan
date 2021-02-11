@@ -7,9 +7,9 @@ This code is for static analysis of XCT. The objectives are:
 - Extract subregions from the XCT data
 - Segment the XCT data (binarization and watershed)
 - compute particle size for segmented data
-- obtain particle size distribution and its parameters
-- obtain relative breakage parameters
-- obtain interparticle contact orientation
+- compute particle size distribution
+- compute relative breakage parameters
+- compute interparticle contact orientation
 - compute fabric tensors
 - generate pretty plots
 
@@ -19,7 +19,6 @@ There are 5 modules that do these things:
 - Segment
 - Measure
 - Plot
-
 
 ## Reader
 This module reads XCT file sequences and extracts subregions from the data
@@ -35,5 +34,18 @@ This module measures the particle size parameters and interparticle contact
 
 ## Plot
 This module plots the data generated from the analysis of the XCT data
+
+## Requirements
+This code uses the following:
+-numpy
+-scipy
+-statistics
+-scikit-image
+-tifffile
+-uncertainties
+-matplotlib
+-spam
+-glob
+
 
 
