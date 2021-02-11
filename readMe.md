@@ -35,17 +35,17 @@ This module measures the particle size parameters and interparticle contact
 ## Plot
 This module plots the data generated from the analysis of the XCT data
 
-## Requirements
+### Requirements
 This code uses the following:
--numpy
--scipy
--statistics
--scikit-image
--tifffile
--uncertainties
--matplotlib
--spam
--glob
+- numpy
+- scipy
+- statistics
+- scikit-image
+- tifffile
+- uncertainties
+- matplotlib
+- spam
+- glob
 
 
 
