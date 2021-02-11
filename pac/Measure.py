@@ -94,8 +94,11 @@ def getParticleSize( labelledMapForParticleSizeAnalysis, calibrationFactor=1,
         particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
         particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
 
+    # Removing the extra zero in the summary (first row)
+    particleSizeDataSummary = np.delete( particleSizeDataSummary, 0, 0 )
+
     if saveData == True:
-        print('\nSaving particle size list...')
+        if VERBOSE: print('\nSaving particle size list...')
         np.savetxt( outputDir + sampleName + '-particleSizeList.csv',particleSizeDataSummary, delimiter=',')
 
     # [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
@@ -372,22 +375,22 @@ def getOrientationUsingSandK(numberOfOrientations=100):
 
 
 def getGrainSizeDistribution( psSummary, sizeParam='feretMin',
-                              sampleName='', saveData=False, outputDir='' ):
+                              sampleName='', saveData=True, outputDir='' ):
     """Generates the particle size distribution from list of labels and sizes
 
     Different size parametres can be used to generate the grain size distribution.
     The size that most accurately matches the size distribution from the sieve
-    analysis should be used for the assessment of particle size distribution
+    analysis should ideally be used for the assessment of particle size distribution
 
     Parameters
     ----------
     psSummary : n by 8 np array
         This contains the results of the getParticleSize function. The array
         should have rows equal to the number of particles in the samples,
-        and one column each for (1) Label, (2) Volume, (3) equivalent spere
-        diameter, (4) maximum centroidal axes length, (5) intermediate
-        centroidal axes length, (6) minimum centroidal axes length, (7)
-        maximum feret diameter, and (8) minimum feret diameter.
+        and one column each for (0) Label, (1) Volume, (2) equivalent spere
+        diameter, (3) maximum centroidal axes length, (4) intermediate
+        centroidal axes length, (5) minimum centroidal axes length, (6)
+        maximum feret diameter, and (7) minimum feret diameter.
     sizeParam : string
         'eqsp' - for equivalent sphere diameter
         'caMax' - for max centroidal axes length
@@ -406,21 +409,37 @@ def getGrainSizeDistribution( psSummary, sizeParam='feretMin',
 
 
     """
-    print('\nGetting GSD for size param #' + str( sizeParam ) )
+    if VERBOSE: print( '\nGetting GSD for assuming ' + str( sizeParam ) )
+
+    if sizeParam == 'eqsp' : sizeCol = int(2)
+    elif sizeParam == 'caMax' : sizeCol = int(3)
+    elif sizeParam == 'caMed' : sizeCol = int(4)
+    elif sizeParam == 'caMin' : sizeCol = int(5)
+    elif sizeParam == 'feretMax' : sizeCol = int(6)
+    elif sizeParam == 'feretMin' : sizeCol = int(7)
+
+    # Extracting relevant columns from particle size summary
     label = psSummary[ : , 0 ].reshape( psSummary.shape[ 0 ] , 1 )
     vol = psSummary[ : , 1 ].reshape( psSummary.shape[ 0 ] , 1 )
-    size = psSummary[: , sizeParam + 1 ].reshape( psSummary.shape[ 0 ] , 1 )
+    size = psSummary[: , sizeCol ].reshape( psSummary.shape[ 0 ] , 1 )
     gss = np.append( label, vol , 1 ).reshape( psSummary.shape[ 0 ] , 2 )
     gss = np.append( gss , size , 1 ).reshape( psSummary.shape[ 0 ] , 3 )
 
-    gss = gss[ gss[ : , 2 ].argsort() ]
+    # Sorting by chosen particle size parameter
+    gss = gss[ np.argsort( gss[ : , 2 ] ]
+
+    # Getting percentage passing for each particle in the list
     totalVol = np.sum( gss[ : , 1 ] )
     pp = ( np.cumsum( gss[ : , 1 ] ) / totalVol * 100 ).reshape( gss.shape[ 0 ] , 1 )
 
+    # Adding percentage passing column to the gss array
     gsdPP = np.append( gss , pp, 1 )
-    gsdPP = np.delete(gsdPP,0,0) # Removes the smallest particle (0) that comes from the getParticleSize code
-    print('Done')
-    return gsdPP # [ Label, Volume(vx), Size(px), percent passing(%) ]
+
+    if saveData == True:
+        if VERBOSE: print('\nSaving particle size distribution...')
+        np.savetxt( outputDir + sampleName + '-particleSizeList.csv', gsdPP, delimiter=',')
+
+    return gsdPP
 
 
 def computeVolumeOfLabel( labelledMap, label ):
