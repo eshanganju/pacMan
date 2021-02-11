@@ -426,7 +426,7 @@ def getGrainSizeDistribution( psSummary, sizeParam='feretMin',
     gss = np.append( gss , size , 1 ).reshape( psSummary.shape[ 0 ] , 3 )
 
     # Sorting by chosen particle size parameter
-    gss = gss[ np.argsort( gss[ : , 2 ] ]
+    gss = gss[ np.argsort( gss[ : , 2 ] ) ]
 
     # Getting percentage passing for each particle in the list
     totalVol = np.sum( gss[ : , 1 ] )
@@ -437,7 +437,7 @@ def getGrainSizeDistribution( psSummary, sizeParam='feretMin',
 
     if saveData == True:
         if VERBOSE: print('\nSaving particle size distribution...')
-        np.savetxt( outputDir + sampleName + '-particleSizeList.csv', gsdPP, delimiter=',')
+        np.savetxt( outputDir + sampleName + '-particleSizeDist.csv', gsdPP, delimiter=',')
 
     return gsdPP
 
@@ -486,6 +486,7 @@ def getRelativeBreakageHardin( gsdOriginal, gsdCurrent, smallSizeLimit=0.075 ):
     brHardin : unsigned float
         The relative breakage parameter according to Hardin (1985)
     """
+
 
 def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=None ):
     """Computes the relative breakage parameter according to the defintion of Einav (2007)
