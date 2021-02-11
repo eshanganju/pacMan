@@ -461,9 +461,55 @@ def getZYXLocationOfLabel( labelledMap, label ):
     zyxLocationData[:,2] = particleLocationArrays[2]
     return zyxLocationData
 
+def getRelativeBreakageHardin( gsdOriginal, gsdCurrent, smallSizeLimit=0.075 ):
+    """Computes the relative breakage parameter according to the defintion by Hardin(1985)
 
-def relBreak( gsdOriginal, gsdCurrent , maxSize=None , fracDim=None ):
+    This assumes that after a particle reaches a certain threshold (sand-silt boundary)
+    according to Hardin (1985). It will not break any furtherdoes not 
+
+    Parameters
+    ----------
+    gsdOriginal : n by 2 numpy array
+        Original grain size distribution with particle size in col 0 and percentage
+        passing in col 1. the largest particle size is controlled by this gradation
+
+    gsdCurrent : n by 2 numpy array
+        Current grain size distribution with particle size in col 0 and percentage
+        passing in col 1. the largest particle size is controlled by this gradation
+
+    smallSizeLimit : unsigned float
+        The smallest size after which more more crushing is expected to take place in
+        the sand particle
+
+    Return
+    ------
+    brHardin : unsigned float
+        The relative breakage parameter according to Hardin (1985)
     """
+
+def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=None ):
+    """Computes the relative breakage parameter according to the defintion of Einav (2007)
+
+    This parameter assumes that the largest particle size does not change with crushing and
+    that the crushed sand follows a fractal gradation curve
+
+    Parameters
+    ----------
+    gsdOriginal : n by 2 numpy array
+        Original grain size distribution with particle size in col 0 and percentage
+        passing in col 1. the largest particle size is controlled by this gradation
+
+    gsdCurrent : n by 2 numpy array
+        Current grain size distribution with particle size in col 0 and percentage
+        passing in col 1. the largest particle size is controlled by this gradation
+
+    fracDim : unsigned float
+        This is the fractal dimension used to compute the ultimate gradation
+
+    Return
+    ------
+    brEinav : unsigned float
+        The relative breakage parameter according to Einav (2007)
     """
     if maxSize == None: maxSize = float(input('Enter max size of particles (mm): '))
     if fracDim == None: fracDim = float(input('Enter fractal dimension to use: '))
