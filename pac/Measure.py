@@ -13,7 +13,6 @@ import spam.label as slab
 from uncertainties import unumpy as unp
 from uncertainties import ufloat
 from uncertainties.umath import *
-
 from pac import Segment
 
 # This is to plot all the text when running the functions
@@ -374,7 +373,7 @@ def getOrientationUsingSandK(numberOfOrientations=100):
     return points
 
 
-def getGrainSizeDistribution( psSummary, sizeParam='feretMin',
+def getParticleSizeDistribution( psSummary, sizeParam='feretMin',
                               sampleName='', saveData=True, outputDir='' ):
     """Generates the particle size distribution from list of labels and sizes
 
@@ -461,34 +460,60 @@ def getZYXLocationOfLabel( labelledMap, label ):
     zyxLocationData[:,2] = particleLocationArrays[2]
     return zyxLocationData
 
-def getRelativeBreakageHardin( gsdOriginal, gsdCurrent, smallSizeLimit=0.075 ):
+
+def getRelativeBreakageHardin( psdOriginal, psdCurrent,
+                               smallSizeLimit=0.075 ):
     """Computes the relative breakage parameter according to the defintion by Hardin(1985)
 
-    This assumes that after a particle reaches a certain threshold (sand-silt boundary)
-    according to Hardin (1985). It will not break any furtherdoes not 
+    This assumes that after a particle reaches a certain threshold size (sand-silt boundary
+    according to Hardin (1985)), it will not break any further
 
     Parameters
     ----------
-    gsdOriginal : n by 2 numpy array
-        Original grain size distribution with particle size in col 0 and percentage
+    psdOriginal : n by 2 numpy array
+        Original particle size distribution with particle size in col 0 and percentage
         passing in col 1. the largest particle size is controlled by this gradation
 
-    gsdCurrent : n by 2 numpy array
-        Current grain size distribution with particle size in col 0 and percentage
+    psdCurrent : n by 2 numpy array
+        Current particle size distribution with particle size in col 0 and percentage
         passing in col 1. the largest particle size is controlled by this gradation
 
     smallSizeLimit : unsigned float
-        The smallest size after which more more crushing is expected to take place in
-        the sand particle
+        Lower limit of integration (mm)
 
     Return
     ------
-    brHardin : unsigned float
+    potentialBreakage : unsigned float
+        Area in mm2 between the ultimate and original gradation
+
+    currentBreakage : unsigned float
+        Area in mm2 between the current and original gradation
+
+    relativeBreakage : unsigned float
         The relative breakage parameter according to Hardin (1985)
     """
+    # The upper limit of integration is determined by the largest particle size
+    # in the original particle size distribution
+    largeSizeLimit = psdOriginal[ :,0 ].max()
+
+    areaUnderOriginalPSD = areaUnderPSDCurve( psdOriginal,
+                                              maxSize=largeSizeLimit )
+
+    areaUnderCurrentPSD = areaUnderPSDCurve( psdCurrent,
+                                             maxSize=largeSizeLimit )
+
+    areaUnderUltimatePSD = ( math.log10( largeSizeLimit ) -
+                             math.log10( smallSizeLimit ) ) * psdOriginal[ :,1 ].max()
+
+    potentialBreakage = areaUnderUltimatePSD - areaUnderOriginalPSD
+    currentBreakage = areaUnderCurrentPSD - areaUnderOriginalPSD
+    relativeBreakage = currentBreakage/potentialBreakage*100
+
+    return potentialBreakage, currentBreakage, relativeBreakage
 
 
-def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=None ):
+def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=2.6,
+                              smallSizeLimit=0.001 ):
     """Computes the relative breakage parameter according to the defintion of Einav (2007)
 
     This parameter assumes that the largest particle size does not change with crushing and
@@ -497,130 +522,139 @@ def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=None ):
     Parameters
     ----------
     gsdOriginal : n by 2 numpy array
-        Original grain size distribution with particle size in col 0 and percentage
+        Original particle size distribution with particle size in col 0 and percentage
         passing in col 1. the largest particle size is controlled by this gradation
 
     gsdCurrent : n by 2 numpy array
-        Current grain size distribution with particle size in col 0 and percentage
-        passing in col 1. the largest particle size is controlled by this gradation
+        Current particle size distribution with particle size in col 0 and percentage
+        passing in col 1.
 
     fracDim : unsigned float
         This is the fractal dimension used to compute the ultimate gradation
 
+    smallSizeLimit : unsigned float
+        Lower limit of integration (mm)
+
     Return
     ------
-    brEinav : unsigned float
+    potentialBreakage : unsigned float
+        Area in mm2 between the ultimate and original gradation
+
+    currentBreakage : unsigned float
+        Area in mm2 between the current and original gradation
+
+    relativeBreakage : unsigned float
         The relative breakage parameter according to Einav (2007)
     """
-    if maxSize == None: maxSize = float(input('Enter max size of particles (mm): '))
-    if fracDim == None: fracDim = float(input('Enter fractal dimension to use: '))
-    gsdOrig, gsdCur, gsdUlt = formatGradationsAndGetUltimate(gsdOriginal,gsdCurrent,maxSize,fracDim)
-    Bp = getAreaBetweenGSDs( gsdUlt , gsdOrig )
-    B = getAreaBetweenGSDs( gsdCur , gsdOrig )
-    print('Bp =' + str(Bp))
-    print('B = ' + str(B))
-    Br = B/Bp * 100
-    if VERBOSE: print('Relative breakage (Br) is: ' + str(np.round(Br,2)) + '%')
-    return gsdOrig, gsdCur, gsdUlt, Br
+    # The upper limit of integration is determined by the largest particle size
+    # in the original particle size distribution
+    largeSizeLimit = psdOriginal[ :,0 ].max()
 
+    areaUnderOriginalPSD = areaUnderPSDCurve( psdOriginal,
+                                              maxSize=largeSizeLimit )
 
-def getAspectRatioSphericity( ):
+    areaUnderCurrentPSD = areaUnderPSDCurve( psdCurrent,
+                                             maxSize=largeSizeLimit )
+
+    psdUltimate = getUltimateFractalParticleSizeDistribution( minSize=smallSizeLimit,
+                                                              maxSize=largeSizeLimit,
+                                                              fractalDimension=fracDim )
+
+    areaUnderUltimatePSD = areaUnderPSDCurve( psdUltimate,
+                                              maxSize=largeSizeLimit)
+
+    potentialBreakage = areaUnderUltimatePSD - areaUnderOriginalPSD
+    currentBreakage = areaUnderCurrentPSD - areaUnderOriginalPSD
+    relativeBreakage = currentBreakage/potentialBreakage*100
+
+    return potentialBreakage, currentBreakage, relativeBreakage
+
+def getUltimateFractalParticleSizeDistribution(minSize=0.0,maxSize=0.0,
+                                               fractalDimension=2.6,num=100):
+    """Gets the ultimate particle size distribution
+
+    The ultimate particle size distribution is obtained following the fractal
+    distribution
+
+    The equation is:
+        P = (d/dMax)^(3-Xi)
+            where p is the percentage by mass smaller than particle size d
+            dMax is the largest particle size in the original sample
+            Xi is the fractal dimension of the PSD in the ultimate state of crushing
+
+    Parameters
+    ----------
+    minSize : unsigned float
+        smallest particle size in the PSD
+
+    maxSize : unsigned float
+        largest particle size in the PSD
+
+    fractalDimension : unsigned float
+        the fractal dimension of the ultimate gradation
+
+    num : integer
+        Number of points in the PSD
+
+    Return
+    ------
+    ultimatePSDFractal : unsigned float array
+        Ultimate particle size distribution with particle size in col 0 and percentage
+        passing in col 1. Col 1 is ascending order.
     """
+    if minSize == 0.0:
+        minSize = float( input( 'Enter the min particle size (mm):' ) )
+    if maxSize == 0.0:
+        maxSize = float( input( 'Enter the max particle size (mm):' ) )
+
+    ultimatePSDFractal = np.zeros((num,2))
+    ultimatePSDFractal[ :, 0 ] = np.linspace( minSize, maxSize, num )
+    ultimatePSDFractal[ :, 1 ] = ( ultimatePSDFractal[ :, 0 ] / maxSize ) ** ( 3-fractalDimension )
+
+    return ultimatePSDFractal
+
+
+def areaUnderPSDCurve( psd, maxSize=0.0 )
+    """Computes the area under the particle size distribution curve passed to it
+
+    Since the GSD curves are plotted on a semi-log graph, the log10 of the x
+    axis (particle size) is taken before computing the area.
+
+    Parameters
+    ----------
+    psd : array of floats
+        Particle size distribution containing particle size (mm) in col 1 and
+        percentage passing (%) in col 2. Col 1 should be in ascending order
+
+    maxSize : unsigned float
+        upper limit of integration in mm
+
+    Return
+    ------
+    areaUnderPSDCurve : unsigned float
+        area under the psd
     """
-    print("Measuring particle morphology...")
+    areaUnderCurve = 0.0
+    numberOfPoints = psd.shape[0]
+
+    if maxSize == 0.0: maxSize = float(input('Enter the max particle size (mm): '))
+
+    # Adding the max size to the array, min is not needed
+    psd = np.append( psd, np.array( [maxSize , 100.0] ).reshape( 1, 2 ), 0 )
+
+    for i in range( 0, numberOfPoints - 1 ):
+        Y = psd[ i, 1 ]
+        deltaX = np.log10( psd[ i+1, 0 ] ) - np.log10( psd[ i, 0 ] )
+        deltaY = psd[ i+1, 1 ] - psd[ i, 1 ]
+        areaRectangle = Y * deltaX
+        areaTriangle = 0.5 * ( deltaX * deltaY )
+        areaTotal = areaRectangle + areaTriangle
+        areaUnderCurve = areaUnderCurve + areaTotal
+
+    return areaUnderPSDCurve
 
 
-def getAreaBetweenGSDs( gsdUp,gsdDown,bins=1000 ):
-    """
-    """
-    x1 = gsdUp[ : , 0 ]
-    y1 = gsdUp[ : , 1 ]
-    x2 = gsdDown[ : , 0 ]
-    y2 = gsdDown[ : , 1 ]
-
-    logX1 = np.log10( x1 )
-    logX2 = np.log10( x2 )
-
-    incrLogX = ( logX1.max() - logX1.min() ) / bins
-    logXInterp = np.arange( logX1.min() , logX1.max() , incrLogX )
-    y1Interp = np.zeros_like( logXInterp )
-    y2Interp = np.zeros_like( logXInterp )
-    area = np.zeros_like( logXInterp )
-
-    for i in range( 0 , bins ):
-        y1Interp[ i ] = np.interp( logXInterp[ i ] , logX1 , y1 )
-        y2Interp[ i ] = np.interp( logXInterp[ i ] , logX2 , y2 )
-
-        if i == 0:
-            area[ i ] = ( y1Interp[ i ] - y2Interp[ i ] ) * incrLogX / 2
-
-        elif i == bins - 1:
-            area[ i ] = ( y1Interp[ i ] - y2Interp[ i ] ) * incrLogX / 2
-
-        else:
-            area[ i ] = ( y1Interp[ i ] - y2Interp[ i ] ) * incrLogX
-
-    totalArea = np.sum( area )
-
-    return totalArea
-
-
-def formatGradationsAndGetUltimate( gsdOriginal,gsdCurrent,maxSize,fracDim ):
-    """
-    """
-    xmax = float( maxSize )
-    xmin = float( getStartOfUltimateGradation( xmax , fracDim ) )
-    ymax = float( 100 )
-    ymin = float( 0 )
-
-    gsdCurrent = gsdCurrent.astype( float )
-    gsdOriginal = gsdOriginal.astype( float )
-
-    top = np.array( [ xmin , ymin ] ).reshape( 1 , 2 )
-    bottom = np.array( [ xmax , ymax ] ).reshape( 1 , 2 )
-
-    top = top.astype( float )
-    bottom = bottom.astype( float )
-
-    corGsdCurr = np.append( np.append( top , gsdCurrent , axis = 0 ), bottom, axis=0)
-    corGsdOrig = np.append( np.append( top , gsdOriginal, axis = 0 ), bottom, axis=0)
-    corGSDUlt = getUltimateGradation( xmax , xmin , fracDim )
-
-    return corGsdOrig, corGsdCurr, corGSDUlt
-
-
-def getStartOfUltimateGradation( dm , fracDim ):
-    """
-    """
-    if VERBOSE: print( '\nGetting minimum size of ultimate gradation.' )
-    d = dm
-    small = False
-
-    while small != True:
-        pp = ( d / dm ) ** ( 3 - fracDim )
-        if VERBOSE: print( '\tParticle size is: ' + str( np.round( d , 8 ) ) + 'mm')
-        if VERBOSE: print( '\tPercentage passing is: ' + str( np.round( pp * 100 , 2 ) ) + '%\n' )
-        if pp > ( 0.1 / 100 ) : d *= 0.5
-        else: small = True
-
-    return d
-
-
-def getUltimateGradation( xmax , xmin , fracDim ):
-    """
-    """
-    logIncr = float(( np.log10( xmax ) - np.log10( xmin ) ) / 100)
-    logx = np.arange( np.log10( xmin ) , np.log10( xmax ) + logIncr , logIncr ).astype(float)
-    x = 10**logx
-    if x[-1]>xmax: x[-1]=xmax
-    y = ( ( x / xmax ) ** ( 3 - fracDim ) ) * 100
-    x = x.reshape( x.shape[ 0 ] , 1 )
-    y = y.reshape( y.shape[ 0 ] , 1 )
-    ultimateGradation = np.append( x , y , axis=1 )
-    return ultimateGradation.astype( float )
-
-
-def contactNormalsSpam( labelledMap, method=None ):
+def contactNormalsSPAM( labelledMap, method=None ):
     """
     """
     print( "\nMeasuring contact normals using SPAM library\n" )
@@ -754,4 +788,5 @@ def getCoordinationNumberList(labelledMap):
     # labelledMap = Segment.removePaddingFromLabelledMap(padLabMap, 2)
 
     return coordinationNumberArray
+
 

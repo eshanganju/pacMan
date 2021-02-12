@@ -1,7 +1,8 @@
 # pacMan
-(ParticleAnalysisCodeMostlyforAmaturesandNoobs)
+(ParticleAnalysisCodeMadebyAmatureNoob)
 
-This code is for static analysis of XCT. The objectives are:
+This code is for the analysis of XCT data.
+The main functionalities are:
 - Read the XCT files
 - Filter the XCT data
 - Extract subregions from the XCT data
