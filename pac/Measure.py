@@ -655,9 +655,18 @@ def areaUnderPSDCurve( psd, maxSize=0.0 )
 
 
 def contactNormalsSPAM( labelledMap, method=None ):
+    """This computes the orientations of the inter particle contacts
+    between particles in the scanned data
+
+    Parameters
+    ----------
+
+    Return
+    ------
+
     """
-    """
-    print( "\nMeasuring contact normals using SPAM library\n" )
+    if VERBOSE:
+        print( "\nMeasuring contact normals using SPAM library\n" )
 
     labelledData = labelledMap
     binaryData = np.zeros_like( labelledData )
@@ -690,7 +699,8 @@ def contactNormalsSPAM( labelledMap, method=None ):
         contactTableRW = tempOrtsRW[ 0 : j , : ]
 
     else :
-        print( "\tMeasuring contact using ITK watershed\n" )
+        if VERBOSE:
+            print( "\tMeasuring contact using ITK watershed\n" )
         ortTabSandITK = slab.contacts.contactOrientationsAssembly( labelledData , binaryData , contactingLabels , watershed="ITK" )
         tempOrtsITK = np.zeros_like( ortTabSandITK )
         ortOnlySandITK = ortTabSandITK[ : , 2 : 5 ]
@@ -702,7 +712,8 @@ def contactNormalsSPAM( labelledMap, method=None ):
                 ortOnlySandITK[ i ] *= -1
 
             if ( ortOnlySandITK[ i ] ** 2 ).sum() <= 0.999:
-                print( "Contact deleted - small contact" )
+                if VERBOSE:
+                    print( "Contact deleted - small contact" )
 
             else:
                 tempOrtsITK[ j ] = ortTabSandITK[ i ]
@@ -717,7 +728,14 @@ def contactNormalsSPAM( labelledMap, method=None ):
 
 
 def fabricVariablesSpam( contactTable ):
-    """
+    """Computes the fabric tensors using the SPAM library
+
+    Parameter
+    ---------
+
+    Return
+    ------
+
     """
     orts = contactTable[ :, 2:5]
     F1, F2, F3 = slab.fabricTensor( orts )

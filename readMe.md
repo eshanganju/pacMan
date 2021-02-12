@@ -2,8 +2,8 @@
 (ParticleAnalysisCodeMadebyAmatureNoob)
 
 This code is for the analysis of XCT data.
-The main functionalities are:
-- Read the XCT files
+The main functionalities include:
+- Read the XCT data
 - Filter the XCT data
 - Extract subregions from the XCT data
 - Segment the XCT data (binarization and watershed)
