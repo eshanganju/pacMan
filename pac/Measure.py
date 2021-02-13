@@ -102,7 +102,7 @@ def getPSDAll( labelledMap , calibrationFactor=1.0, getEqsp=True, getCaMax=True,
                                                saveData=saveData,
                                                outputDir=outputDir )
 
-    psdFeretMin = getParticleSizeDistribution( psArray, sizeParam='feretMin')
+    psdFeretMin = getParticleSizeDistribution( psArray, sizeParam='feretMin',
                                                sampleName=sampleName,
                                                saveData=saveData,
                                                outputDir=outputDir )
@@ -138,7 +138,7 @@ def getParticleSizeArray( labelledMapForParticleSizeAnalysis, calibrationFactor=
     print( '------------------------------------*' )
 
     for particleNum in range( 1, numberOfParticles + 1 ):
-        print( "Computing size of", particleNum, "/", numberOfParticl es, "particle" )
+        print( "Computing size of", particleNum, "/", numberOfParticles, "particle" )
         particleSizeDataSummary[particleNum, 0] = particleNum
 
         # Equivalent sphere diameter
@@ -590,8 +590,25 @@ def getRelativeBreakageHardin( psdOriginal, psdCurrent,
                                smallSizeLimit=0.075 ):
     """Computes the relative breakage parameter according to the defintion by Hardin(1985)
 
-    This assumes that after a particle reaches a certain threshold size (sand-silt boundary
-    according to Hardin (1985)), it will not break any further
+    Hardin proposes that after a particle reaches a certain threshold size
+    (sand-silt boundary), it will not break any further
+
+    This function computes a relative breakage parameter that follows
+    Hardin's proposal. Relative breakage parameters assume that the sand has an
+    inital and an ultimate particle size distribution. In its uncrushed state the sand
+    is in its intial particle size distribution and after undergoing the maximum
+    curshing possible, it reaches its ultimate particle size distribution. When the
+    sand is at its inital PSD, the relative breakage parameter is 0 and when
+    it is at its ultimate PSD, the relative breakage parameter is 1 (or 100%).
+
+    The relative breakage parameters is computed as a ratio of the "Current
+    Breakage" of the sand to the "Potential Breakage" of the sand. The current
+    breakage is computed as the area between the current PSD and the original
+    PSD. The potential breakage is computed as the area between the ultimate PSD
+    and the original PSD.
+
+    In case of Hardin's assumption, the ultimate PSD is a vertical line at the
+    sand-silt boundary.
 
     Parameters
     ----------
@@ -617,8 +634,6 @@ def getRelativeBreakageHardin( psdOriginal, psdCurrent,
     relativeBreakage : unsigned float
         The relative breakage parameter according to Hardin (1985)
     """
-    # The upper limit of integration is determined by the largest particle size
-    # in the original particle size distribution
     largeSizeLimit = psdOriginal[ :,0 ].max()
 
     areaUnderOriginalPSD = areaUnderPSDCurve( psdOriginal,
@@ -640,9 +655,25 @@ def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=2.6,
                               smallSizeLimit=0.001 ):
     """Computes the relative breakage parameter according to the defintion of Einav (2007)
 
-    This parameter assumes that the largest particle size does not change with crushing and
-    that the crushed sand follows a fractal gradation curve
+    Einav proposes that the largest particle size does not change with crushing and
+    that ultimately, the crushed sand follows a fractal gradation curve
 
+    This function  computes a relative breakage parameter that follows
+    Einav's proposal. Relative breakage parameters assume that the sand has an
+    inital and an ultimate particle size distribution. In its uncrushed state the sand
+    is in its intial particle size distribution and after undergoing the maximum
+    curshing possible, it reaches its ultimate particle size distribution. When the
+    sand is at its inital PSD, the relative breakage parameter is 0 and when
+    it is at its ultimate PSD, the relative breakage parameter is 1 (or 100%).
+
+    The relative breakage parameters is computed as a ratio of the "Current
+    Breakage" of the sand to the "Potential Breakage" of the sand. The current
+    breakage is computed as the area between the current PSD and the original
+    PSD. The potential breakage is computed as the area between the ultimate PSD
+    and the original PSD.
+
+    In case of Einav's assumption, the ultimate PSD is a fractal gradation that
+    has a fractal dimension of 2.5-2.6
     Parameters
     ----------
     gsdOriginal : n by 2 numpy array
@@ -670,8 +701,6 @@ def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=2.6,
     relativeBreakage : unsigned float
         The relative breakage parameter according to Einav (2007)
     """
-    # The upper limit of integration is determined by the largest particle size
-    # in the original particle size distribution
     largeSizeLimit = psdOriginal[ :,0 ].max()
 
     areaUnderOriginalPSD = areaUnderPSDCurve( psdOriginal,
@@ -732,12 +761,13 @@ def getUltimateFractalParticleSizeDistribution(minSize=0.0,maxSize=0.0,
         maxSize = float( input( 'Enter the max particle size (mm):' ) )
 
     ultimatePSDFractal = np.zeros((num,2))
-    ultimatePSDFractal[ :, 0 ] = np.linspace( minSize, maxSize, num )
-    ultimatePSDFractal[ :, 1 ] = ( ultimatePSDFractal[ :, 0 ] / maxSize ) ** ( 3-fractalDimension )
+    ultimatePSDFractal[ :, 0 ] = np.linspace( np.log10( minSize), np.log10( maxSize ), num )
+    ultimatePSDFractal[ :, 0 ] = 10**ultimatePSDFractal[ :, 0 ]
+    ultimatePSDFractal[ :, 1 ] = (( ultimatePSDFractal[ :, 0 ] / maxSize ) **( 3-fractalDimension ))*100
 
     return ultimatePSDFractal
 
-def areaUnderPSDCurve( psd, maxSize=0.0 )
+def areaUnderPSDCurve( psd, maxSize=0.0 ):
     """Computes the area under the particle size distribution curve passed to it
 
     Since the GSD curves are plotted on a semi-log graph, the log10 of the x
@@ -746,8 +776,8 @@ def areaUnderPSDCurve( psd, maxSize=0.0 )
     Parameters
     ----------
     psd : array of floats
-        Particle size distribution containing particle size (mm) in col 1 and
-        percentage passing (%) in col 2. Col 1 should be in ascending order
+        Particle size distribution containing particle size (mm) in col 0 and
+        percentage passing (%) in col 1. Col 0 should be in ascending order
 
     maxSize : unsigned float
         upper limit of integration in mm
@@ -758,23 +788,22 @@ def areaUnderPSDCurve( psd, maxSize=0.0 )
         area under the psd
     """
     areaUnderCurve = 0.0
-    numberOfPoints = psd.shape[0]
 
     if maxSize == 0.0: maxSize = float(input('Enter the max particle size (mm): '))
 
-    # Adding the max size to the array, min is not needed
     psd = np.append( psd, np.array( [maxSize , 100.0] ).reshape( 1, 2 ), 0 )
+    numberOfPoints = psd.shape[0]
 
     for i in range( 0, numberOfPoints - 1 ):
         Y = psd[ i, 1 ]
-        deltaX = np.log10( psd[ i+1, 0 ] ) - np.log10( psd[ i, 0 ] )
-        deltaY = psd[ i+1, 1 ] - psd[ i, 1 ]
+        deltaX = np.log10( psd[ i + 1, 0 ] ) - np.log10( psd[ i, 0 ] )
+        deltaY = psd[ i + 1, 1 ] - psd[ i, 1 ]
         areaRectangle = Y * deltaX
         areaTriangle = 0.5 * ( deltaX * deltaY )
         areaTotal = areaRectangle + areaTriangle
         areaUnderCurve = areaUnderCurve + areaTotal
 
-    return areaUnderPSDCurve
+    return areaUnderCurve
 
 def contactNormalsSPAM( labelledMap, method=None ):
     """This computes the orientations of the inter particle contacts
