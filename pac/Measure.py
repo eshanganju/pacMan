@@ -636,11 +636,11 @@ def getRelativeBreakageHardin( psdOriginal, psdCurrent,
     """
     largeSizeLimit = psdOriginal[ :,0 ].max()
 
-    areaUnderOriginalPSD = areaUnderPSDCurve( psdOriginal,
-                                              maxSize=largeSizeLimit )
+    areaUnderOriginalPSD = getAreaUnderPSDCurve( psdOriginal,
+                                                 maxSize=largeSizeLimit )
 
-    areaUnderCurrentPSD = areaUnderPSDCurve( psdCurrent,
-                                             maxSize=largeSizeLimit )
+    areaUnderCurrentPSD = getAreaUnderPSDCurve( psdCurrent,
+                                                maxSize=largeSizeLimit )
 
     areaUnderUltimatePSD = ( math.log10( largeSizeLimit ) -
                              math.log10( smallSizeLimit ) ) * psdOriginal[ :,1 ].max()
@@ -703,18 +703,18 @@ def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=2.6,
     """
     largeSizeLimit = psdOriginal[ :,0 ].max()
 
-    areaUnderOriginalPSD = areaUnderPSDCurve( psdOriginal,
-                                              maxSize=largeSizeLimit )
+    areaUnderOriginalPSD = getAreaUnderPSDCurve( psdOriginal,
+                                                 maxSize=largeSizeLimit )
 
-    areaUnderCurrentPSD = areaUnderPSDCurve( psdCurrent,
-                                             maxSize=largeSizeLimit )
+    areaUnderCurrentPSD = getAreaUnderPSDCurve( psdCurrent,
+                                                maxSize=largeSizeLimit )
 
     psdUltimate = getUltimateFractalParticleSizeDistribution( minSize=smallSizeLimit,
                                                               maxSize=largeSizeLimit,
                                                               fractalDimension=fracDim )
 
-    areaUnderUltimatePSD = areaUnderPSDCurve( psdUltimate,
-                                              maxSize=largeSizeLimit)
+    areaUnderUltimatePSD = getAreaUnderPSDCurve( psdUltimate,
+                                                 maxSize=largeSizeLimit)
 
     potentialBreakage = areaUnderUltimatePSD - areaUnderOriginalPSD
     currentBreakage = areaUnderCurrentPSD - areaUnderOriginalPSD
@@ -767,7 +767,7 @@ def getUltimateFractalParticleSizeDistribution(minSize=0.0,maxSize=0.0,
 
     return ultimatePSDFractal
 
-def areaUnderPSDCurve( psd, maxSize=0.0 ):
+def getAreaUnderPSDCurve( psd, maxSize=0.0 ):
     """Computes the area under the particle size distribution curve passed to it
 
     Since the GSD curves are plotted on a semi-log graph, the log10 of the x
@@ -787,12 +787,11 @@ def areaUnderPSDCurve( psd, maxSize=0.0 ):
     areaUnderPSDCurve : unsigned float
         area under the psd
     """
-    areaUnderCurve = 0.0
-
     if maxSize == 0.0: maxSize = float(input('Enter the max particle size (mm): '))
 
     psd = np.append( psd, np.array( [maxSize , 100.0] ).reshape( 1, 2 ), 0 )
     numberOfPoints = psd.shape[0]
+    areaUnderCurve = 0.0
 
     for i in range( 0, numberOfPoints - 1 ):
         Y = psd[ i, 1 ]
@@ -805,21 +804,34 @@ def areaUnderPSDCurve( psd, maxSize=0.0 ):
 
     return areaUnderCurve
 
-def contactNormalsSPAM( labelledMap, method=None ):
-    """This computes the orientations of the inter particle contacts
-    between particles in the scanned data
+#These need to be checked
+def getContactNormalsSPAM( labelMap, method='randomWalker',
+                         saveData=True, sampleName='', outputDir='' ):
+    """Computes the orientations of the inter-particle contacts
+    in the scanned data using the spam libraries. This is a loose wrapper.
+
+    The interparticle contacts can be obtained using one of two methods. The
+    first method is the itk watershed method. The second method is the random
+    walker method. The random walker method is supposed to be more accurate.
 
     Parameters
     ----------
+    labelMap : unsigned integer ndarray
+        This contains the labelled data
+
+    method : string
+        This can be either randomWalker or itkWatershed
 
     Return
     ------
+    contTable : float ndarray
+        contains details about the interparticle contact orientations.
 
     """
     if VERBOSE:
         print( "\nMeasuring contact normals using SPAM library\n" )
 
-    labelledData = labelledMap
+    labelledData = labelMap
     binaryData = np.zeros_like( labelledData )
     binaryData[ np.where( labelledData != 0 ) ] = int( 1 )
 
@@ -828,7 +840,7 @@ def contactNormalsSPAM( labelledMap, method=None ):
     if method == None:
         method = input('Enter the method to use (itk or rw): ')
 
-    if method == 'rw':
+    if method == 'randomWalker':
         print("\tMeasuring contact using Random Walker\n")
         ortTabSandRW = slab.contacts.contactOrientationsAssembly( labelledData , binaryData , contactingLabels , watershed = "RW" )
         tempOrtsRW = np.zeros_like( ortTabSandRW )
@@ -849,22 +861,21 @@ def contactNormalsSPAM( labelledMap, method=None ):
 
         contactTableRW = tempOrtsRW[ 0 : j , : ]
 
-    else :
-        if VERBOSE:
-            print( "\tMeasuring contact using ITK watershed\n" )
-        ortTabSandITK = slab.contacts.contactOrientationsAssembly( labelledData , binaryData , contactingLabels , watershed="ITK" )
+    elif method == 'itkWatershed':
+        if VERBOSE: print( "\tMeasuring contact using ITK watershed\n" )
+
+        ortTabSandITK = slab.contacts.contactOrientationsAssembly( labelledData ,
+                                                                   binaryData ,
+                                                                   contactingLabels ,
+                                                                   watershed="ITK" )
         tempOrtsITK = np.zeros_like( ortTabSandITK )
         ortOnlySandITK = ortTabSandITK[ : , 2 : 5 ]
 
         j = 0
         for i in range( 0 , ortTabSandITK.shape[ 0 ] ):
-
-            if ortOnlySandITK[ i , 0 ] < 0:
-                ortOnlySandITK[ i ] *= -1
-
-            if ( ortOnlySandITK[ i ] ** 2 ).sum() <= 0.999:
-                if VERBOSE:
-                    print( "Contact deleted - small contact" )
+            if ortOnlySandITK[ i , 0 ] < 0 : ortOnlySandITK[ i ] *= -1
+            if ( ortOnlySandITK[ i ] ** 2 ).sum() <= 0.999 :
+                if VERBOSE: print( "Contact deleted - small contact" )
 
             else:
                 tempOrtsITK[ j ] = ortTabSandITK[ i ]
@@ -872,10 +883,33 @@ def contactNormalsSPAM( labelledMap, method=None ):
 
         contactTableITK = tempOrtsITK[ 0 : j , : ]
 
-    if method == 'rw' : contTable = contactTableRW
-    elif method == 'itk' : contTable = contactTableITK
+    if method == 'randomWalker' : contTable = contactTableRW
+    elif method == 'itkWatershed' : contTable = contactTableITK
 
     return contTable
+
+def getContactNormals( labelMap, saveData=True, sampleName='', outputDir='' ):
+    """This is a simple implementation that computes the contact normals using
+    the random walker algorigthm.
+
+    Parameters
+    ----------
+    labelMap : unsigned int ndarray
+
+    saveData : bool
+
+    sampleName : string
+
+    outputDir : string
+
+    Return
+    ------
+    contactTable : float ndarray
+        This table has rows equal to the number of contacts in the sample
+        Each contact has columns that contain [0] Particle 1, [1] Particle 2,
+        [3] z component of contact normal, [4] y component of contact normal,
+        [5] x component of contact normal
+    """
 
 def fabricVariablesSpam( contactTable ):
     """Computes the fabric tensors using the SPAM library
