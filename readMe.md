@@ -1,18 +1,17 @@
 # pacMan
-(ParticleAnalysisCodeMadebyAmatureNoob)
+(ParticleAnalysisCodeMadebyanAmatureNoob)
 
 This code is for the analysis of XCT data.
 The main functionalities include:
-- Read the XCT data
-- Filter the XCT data
-- Extract subregions from the XCT data
-- Segment the XCT data (binarization and watershed)
-- compute particle size for segmented data
-- compute particle size distribution
-- compute relative breakage parameters
-- compute interparticle contact orientation
-- compute fabric tensors
-- generate pretty plots
+- Reading and cropping XCT data
+- Filtering the XCT data
+- Segmenting the XCT data (binarization and watershed)
+- Computing particle size from segmented data
+- Computing particle size distribution
+- Computing relative breakage parameters
+- Computing interparticle contact orientations
+- Computing fabric tensors
+- Generating pretty plots
 
 There are 5 modules that do these things:
 - Reader
@@ -22,22 +21,22 @@ There are 5 modules that do these things:
 - Plot
 
 ## Reader
-This module reads XCT file sequences and extracts subregions from the data
+This module reads XCT file data and extracts cubical subregions for analysis.
 
 ## Filter
-This module filters the XCT data
+This module iteratively filters the XCT data using non-local means filter.
 
 ## Segment
-This module segments the data using WS and also corrects over segmentation
+This module segments the XCT data using a watershed algo and corrects over segmentation.
 
 ## Measure
-This module measures the particle size parameters and interparticle contact
+This module measures the particle size parameters and interparticle contacts.
 
 ## Plot
 This module plots the data generated from the analysis of the XCT data
 
 ### Requirements
-This code uses the following:
+pacMan uses the following libraries:
 - numpy
 - scipy
 - statistics
