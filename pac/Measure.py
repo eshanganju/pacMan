@@ -544,7 +544,7 @@ def getParticleSizeDistribution( psSummary, sizeParam='feretMin',
 
     if saveData == True:
         if VERBOSE: print('\nSaving particle size distribution...')
-        np.savetxt( outputDir + sampleName + '-particleSizeDist.csv', gsdPP, delimiter=',')
+        np.savetxt( outputDir + sampleName + '-'+ sizeParam +'-particleSizeDist.csv', gsdPP, delimiter=',')
 
     return gsdPP
 
@@ -586,8 +586,8 @@ def getZYXLocationOfLabel( labelMap, label ):
     zyxLocationData[:,2] = particleLocationArray[2]
     return zyxLocationData
 
-def getRelativeBreakageHardin( psdOriginal, psdCurrent,
-                               smallSizeLimit=0.075 ):
+def getRelativeBreakageHardin( psdOriginal, psdCurrent,smallSizeLimit=0.075,
+                               saveData=True, sampleName='', outputDir='' ):
     """Computes the relative breakage parameter according to the defintion by Hardin(1985)
 
     Hardin proposes that after a particle reaches a certain threshold size
@@ -648,6 +648,15 @@ def getRelativeBreakageHardin( psdOriginal, psdCurrent,
     potentialBreakage = areaUnderUltimatePSD - areaUnderOriginalPSD
     currentBreakage = areaUnderCurrentPSD - areaUnderOriginalPSD
     relativeBreakage = currentBreakage/potentialBreakage*100
+
+
+    if saveData==True:
+        fileNameToSave = outputDir + sampleName + '-hrdRelBreakParams.csv'
+        dataToSave = np.array( [ potentialBreakage,
+                                 currentBreakage,
+                                 relativeBreakage ] ).reshape(3,1)
+
+        np.saveText( fileNameToSave, dataToSave, delimiter=',')
 
     return potentialBreakage, currentBreakage, relativeBreakage
 

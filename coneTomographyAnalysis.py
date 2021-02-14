@@ -22,16 +22,22 @@ from pac import Segment
 from pac import Measure
 from pac import Plot
 
-scanList = ['OGF_25_tip',
-            'OGF_25_mid',
-            'OGF_25_top']
+v=0
+
+if v==0:
+    scanList = ['2QR_25_mid']
+    originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv'
+    psdOrig = Reader.readDataFromCsv( originalPSDLoc,
+                                      maxRows=10,
+                                      dataForm='array').reshape(10,2)
 
 numberofSubregionsPerScan=10
 nD50=6
 
 for scan in scanList:
     mainInput = '/home/eg/codes/pacInput/'
-    mainOutput = '/home/eg/codes/pacOutput/cone/'
+    mainOutput = '/home/eg/codes/pacOutput/cone/testEntire/'
+
 
     # Locations of data
     scanInputLoc = mainInput + scan + '/'
@@ -97,7 +103,7 @@ for scan in scanList:
                                                   outputDir=outputLoc )
         # EDM peaks
         edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
-                                                        h=int(3),
+                                                        h=int(1),
                                                         sampleName=currentSampleName,
                                                         saveImg=True,
                                                         outputDir=outputLoc )
@@ -129,18 +135,24 @@ for scan in scanList:
                                                     saveImg=True,
                                                     outputDir=outputLoc )
 
-        # Remove small labels
-        cleanNoEdgeCorLabMap = Segment.removeSmallParticles( labMapWithSmallPtcl=noEdgeCorLabMap,
-                                                             voxelCountThreshold=10,
-                                                             sampleName=currentSampleName,
-                                                             saveImg=True,
-                                                             outputDir=outputLoc )
-
         # Particle size list
-        psList = Measure.getParticleSize( labelledMapForParticleSizeAnalysis=cleanNoEdgeCorLabMap,
-                                          calibrationFactor=subregionCalib,
-                                          sampleName=currentSampleName,
-                                          saveData=True,
-                                          outputDir=outputLoc )
+        pss = Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis=noEdgeCorLabMap,
+                                            calibrationFactor=subregionCalib,
+                                            saveData=True,
+                                            sampleName=currentSampleName,
+                                            outputDir=outputLoc )
 
+        # Particle size distribution
+        psdFeret = Measure.getParticleSizeDistribution( psSummary=pss,
+                                                        sizeParam='feretMin',
+                                                        saveData=True,
+                                                        sampleName=currentSampleName,
+                                                        outputDir=outputLoc )
 
+        # Relative breakage
+        brHardin = Measure.getRelativeBreakageHardin( psdOriginal=psdOrig,
+                                                      psdCurrent=psdFeret,
+                                                      smallSizeLimit=0.075,
+                                                      saveData=True,
+                                                      sampleName=currentSampleName,
+                                                      outputDir=outpurLoc )
