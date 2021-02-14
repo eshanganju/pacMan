@@ -16,6 +16,7 @@ import numpy as np
 import spam.label as slab
 import time
 import math
+from numba import jit
 
 from pac import Measure
 
@@ -67,7 +68,6 @@ def _obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, o
 
     return binMask, binThresh, edMap, edPeaksMap, labelledMap
 
-
 def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleName='',saveImg=True,outputDir=''):
     """Simple function that uses skimage watershed and saves a copy of the segmented image
 
@@ -99,7 +99,6 @@ def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleNam
         tiffy.imsave(outputDir+sampleName+'-labMap.tif',labMap.astype('uint16'))
 
     return labMap.astype('uint16')
-
 
 def binarizeAccordingToOtsu( gliMapToBinarize, sampleName='', saveImg=False, outputDir='', returnThresholdVal=False):
     """
@@ -151,7 +150,6 @@ def binarizeAccordingToOtsu( gliMapToBinarize, sampleName='', saveImg=False, out
 
     elif returnThresholdVal == False: return binaryMap
 
-
 def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold = None, returnThresholdVal=False ):
     """
     Description:
@@ -187,7 +185,6 @@ def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold = None, re
 
     if returnThresholdVal == True: return userThreshold, binaryMap
     if returnThresholdVal == False: return binaryMap
-
 
 def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
     print('\nRunning density-based threshold...')
@@ -275,7 +272,6 @@ def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
 
     return currentThreshold, currentBinaryMap
 
-
 def calcVoidRatio( binaryMapforVoidRatioCalc ):
     '''
     Description:
@@ -295,13 +291,11 @@ def calcVoidRatio( binaryMapforVoidRatioCalc ):
     currentVoidRatio = ( volTotal - volSolids ) / volSolids
     return currentVoidRatio
 
-
 def fillHoles( oldBinaryMapWithHoles ):
     allOk = False
     newNoHoleBinaryMap=oldBinaryMapWithHoles
     newNoHoleBinaryMap = binary_fill_holes( newNoHoleBinaryMap )
     return newNoHoleBinaryMap.astype(int)
-
 
 def removeSpecks( oldBinaryMapWithSpecks ):
     remSpecksCheck = 'y'
@@ -310,7 +304,6 @@ def removeSpecks( oldBinaryMapWithSpecks ):
     else: newNoSpekBinaryMap = oldBinaryMapWithSpecks
 
     return newNoSpekBinaryMap.astype(int)
-
 
 def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1), saveImg=False, sampleName='', outputDir=''):
     """Computes the euclidian distance tranform (EDT) for a binary map
@@ -361,7 +354,6 @@ def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1), saveImg=False, s
         tiffy.imsave(outputDir + sampleName + '-edm.tif',edMap)
 
     return edMap
-
 
 def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5, saveImg=False, sampleName='', outputDir=''):
     """Computes the local maximas in the euclidean distance map.
@@ -418,9 +410,210 @@ def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5, saveImg=F
 
     return edmPeakMarkers
 
+@jit(nopython=True)
+def fixErrorsInSegmentationWithNumba( labelledMapForOSCorr, pad=2, areaLimit = 700,
+                                      conside rEdgeLabels=True,checkForSmallParticles = True,
+                                      radiusCheck=True, radiusRatioLimit=0.5, sampleName='',
+                                      saveImg=True, outputDir=''):
+    """Corrects over segmentation caused by incorrect edm peak selection
+
+    There are two main approaches. One way is to compute the "area of contact"
+    between the two particles suspected of being one, and if the area is larger
+    than an absolute threshold, then the two particles are merged
+
+    The other approach is to compute the contact area and convert it to an
+    equivalent radii (assuming a circular contact area). If the ratio of this
+    radii (of the contact) to the radii of the particles (assuming an equivanent
+    sphere) is greater than a threshold, then the two particles are merged
+
+    The contact are a is determined using spam.contact's contactingLabels
+    function.
+
+    Parameters:
+        labelledMapForOSCorr : ndarray
+        pad : unsigned integer
+        areaLimit : unsigned integer
+        considerEdgeLabels : bool
+        checkForSmallParticles : bool
+        radiusCheck : bool
+        radiusRatioLimit : float
+        sampleName : string
+        saveImg : bool
+        outputDir : string
+
+    Return:
+        correctedCleanedLabelMap : ndarray
+            Corrected label map
+    """
+
+    print('\nStarting label correction')
+    print('---------------------------*')
+    #if areaLimit != None : print('Area limit is : ' + str( np.round( areaLimit) ) )
+
+    if radiusCheck == True: print('Radius ratio limit is: ' + str( radiusRatioLimit) )
+    elif radiusCheck == False: print('Area limit is: ' + str(areaLimit))
+
+    # Apply padding to the data
+    if pad > 0:
+        labelledMap = labelledMapForOSCorr
+        padLabMap = np.zeros( ( labelledMap.shape[0]+2*pad, labelledMap.shape[0]+2*pad, labelledMap.shape[0]+2*pad ) )
+        padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ] = labelledMap
+        labelledMapForOSCorr = padLabMap
+
+    lastLabel = labelledMapForOSCorr.max()
+    currentLabel = 1
+    correctedLabelMap = labelledMapForOSCorr
+    timeStart = time.time()
+
+    if VERBOSE: print('Currently padding is ' + str(pad) + ' px')
+
+    # Include the edge labels in the calculation
+    if considerEdgeLabels == False:
+        if VERBOSE: print('\tOk, not consolidating edge labels\n')
+        edgePad = pad
+        # The edgepad adds additional padding to prevent the edge lables from being removed
+    else:
+        if VERBOSE: print('\tOk, consolidating edge labels\n')
+        edgePad = 0
+
+    if outputDir != '' : correctionLog = open(outputDir + sampleName + '-correctionLog.Txt',"a+")
+    else: correctionLog = open("correctionLog.txt","a+")
+
+    if VERBOSE:
+        print('Starting edge label consolidation - This may take some time')
+
+    correctionLog.write('\n-------------------------------------------------------')
+
+    if radiusCheck == False: correctionLog.write('\nArea limit: ' + str( np.round( areaLimit ) ) + '\n\n')
+    elif radiusCheck == True: correctionLog.write('\nRadius ratio limit: ' + str( radiusRatioLimit ) + '\n\n')
+
+    # Loop through labels till all OS labels are merged
+    while currentLabel <= lastLabel:
+        isEdgeLabel = checkIfEdgeLabel( correctedLabelMap, currentLabel, edgePad )
+
+        # If edge label, move to next label
+        if isEdgeLabel == True:
+            if VERBOSE: print('Label %d is an edge label, moving to next label' % currentLabel)
+            correctionLog.write('\n\nLabel ' + str(currentLabel) + ' is an edge label, moving to next label')
+            currentLabel += 1
+
+        # If not edge label, check contacting labels
+        else:
+            contactLabel, contactArea = slab.contactingLabels(correctedLabelMap, currentLabel, areas=True)
+            if VERBOSE: print('\n')
+
+            currentLabelRadius = Measure.getEqspDia(correctedLabelMap,currentLabel)[1]/2
+            touchingParticleRadius = []
+            contactRadius = []
+            radiusRatio =[]
+
+            for touchingLabel in contactLabel:
+                touchingParticleRadius.append((Measure.getEqspDia(correctedLabelMap,touchingLabel)[1])/2 )
+
+            for touchingArea in contactArea:
+                contactAreaRadiusVal = 0.5 * ( 4 * touchingArea / math.pi ) ** 0.5
+                contactRadius.append(contactAreaRadiusVal)
+
+            for contact in range( 0 , len(contactLabel) ):
+                minR = min( currentLabelRadius,touchingParticleRadius[contact])
+                r = contactRadius[contact]
+                radiusRatio.append(r/minR)
+
+            largeAreaVal = [contactArea[location] for location, val in enumerate(contactArea) if val >= areaLimit]
+            largeAreaLabel = [contactLabel[location] for location, val in enumerate(contactArea) if val >= areaLimit]
+
+            largeRatioVal = [radiusRatio[location] for location, ratio in enumerate(radiusRatio) if ratio >= radiusRatioLimit]
+            largeRatioLabel = [contactLabel[location] for location, ratio in enumerate(radiusRatio) if ratio >= radiusRatioLimit]
+
+            if VERBOSE: print('\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
+            if VERBOSE: print('With radius Ratios: ' + str( radiusRatio ) )
+
+            correctionLog.write('\n\nLabel ' + str( currentLabel ) + ' is contacting ' + str( contactLabel ) )
+            correctionLog.write('\nWith areas: ' + str( contactArea ) )
+            correctionLog.write('\nCurrent particle radius: ' + str( currentLabelRadius ) )
+            correctionLog.write('\nTouching particles radius: ' + str( touchingParticleRadius ) )
+            correctionLog.write('\nRadius ratios: ' + str( radiusRatio ) )
+
+            # Merging with radius ratio limits
+            if radiusCheck == True:
+                if len(largeRatioVal) != 0:
+                    if VERBOSE: print('\tLabels with large ratios: ' + str( largeRatioLabel ) )
+                    if VERBOSE: print('\tRatio for above labels: ' + str( largeRatioVal ) )
+
+                    correctionLog.write('\n\tLabels with large ratio: ' + str( largeRatioLabel ) )
+                    correctionLog.write('\n\tRatio for above labels: ' + str( largeRatioVal ) )
+
+                    labelToMerge = largeRatioLabel[ largeRatioVal.index( min( largeRatioVal ) ) ]
+                    smallerLabel = min( labelToMerge, currentLabel )
+                    largerLabel = max( labelToMerge, currentLabel )
+                    correctedLabelMap[np.where(correctedLabelMap == largerLabel)] = int(smallerLabel)
+                    correctedLabelMap = moveLabelsUp( correctedLabelMap,largerLabel )
+                    currentLabel = smallerLabel
+                    lastLabel = correctedLabelMap.max()
+
+                    if VERBOSE: print('\tMerging label %d and %d' %(smallerLabel, largerLabel))
+                    correctionLog.write('\n\tMerging labels' + str(smallerLabel) + ' and ' + str(largerLabel))
+                    if VERBOSE: print( 'Checking from label %d again.' % currentLabel )
+                    correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' again.')
+
+                else:
+                    if VERBOSE: print('Label ' + str(currentLabel) + ' has no large contacts.')
+                    correctionLog.write('\nLabel ' + str(currentLabel) + ' has no large contacts.')
+                    currentLabel = currentLabel + 1
+                    if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
+                    correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
+
+            # Merging with area limits
+            else:
+                if len(largeAreaVal) != 0:
+                    if VERBOSE: print('\tLabels with large area: ' + str( largeAreaLabel ) )
+                    if VERBOSE: print('\tArea for above labels: ' + str( largeAreaVal ) )
+
+                    correctionLog.write('\n\tLabels with large area: ' + str( largeAreaLabel ) )
+                    correctionLog.write('\n\tArea for above labels: ' + str( largeAreaVal ) )
+
+                    labelToMerge = largeAreaLabel[ largeAreaVal.index( min( largeAreaVal ) ) ]
+                    smallerLabel = min(labelToMerge,currentLabel)
+                    largerLabel = max(labelToMerge,currentLabel)
+                    correctedLabelMap[np.where(correctedLabelMap == largerLabel)] = int(smallerLabel)
+                    correctedLabelMap = moveLabelsUp( correctedLabelMap , largerLabel )
+                    currentLabel = smallerLabel
+                    lastLabel = correctedLabelMap.max()
+
+                    if VERBOSE: print('\tMerging label %d and %d' %(smallerLabel, largerLabel))
+                    correctionLog.write('\n\tMerging labels ' + str(smallerLabel) + ' and ' + str(largerLabel))
+                    if VERBOSE: print( 'Checking from label %d again.' % currentLabel )
+                    correctionLog.write('\nChecking from label ' + str(currentLabel ) + ' again.')
+
+                else:
+                    if VERBOSE: print('Label ' + str(currentLabel) + ' has no large contacts.')
+                    correctionLog.write('\n\nLabel ' + str(currentLabel) + ' has no large contacts.')
+                    currentLabel = currentLabel + 1
+                    if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
+                    correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
+
+    if pad > 0: correctedLabelMap = removePaddingFromLabelledMap(correctedLabelMap, pad)
+
+    timeEnd = time.time()
+    timeTaken = (timeEnd - timeStart)//60
+
+    print( '\nTime taken for correction loop: ' + str( np.round(timeTaken) ) + ' mins' )
+    correctionLog.write('\nTime taken for correction loop: ' + str( np.round(timeTaken) ) + ' mins\n\n')
+
+    correctionLog.close()
+
+    if checkForSmallParticles == True:
+        correctedCleanedLabelMap = removeSmallParticles( correctedLabelMap )
+    else : correctedCleanedLabelMap = correctedLabelMap
+
+    if saveImg == True:
+        print('\nSaving corrected labelled map...')
+        tiffy.imsave(outputDir+sampleName+'-correctedLabelMap.tif',correctedCleanedLabelMap.astype('uint16'))
+
+    return correctedCleanedLabelMap
 
 def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
-                             considerEdgeLabels=True,checkForSmallParticles = True,
+                             conside rEdgeLabels=True,checkForSmallParticles = True,
                              radiusCheck=True, radiusRatioLimit=0.5, sampleName='',
                              saveImg=True, outputDir=''):
     """Corrects over segmentation caused by incorrect edm peak selection
@@ -616,18 +809,15 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
 
     return correctedCleanedLabelMap
 
-
 def applyPaddingToLabelledMap( labelledMap, pad ):
     paddedMap = labelledMap
     padLabMap = np.zeros( ( labelledMap.shape[0]+2*pad, labelledMap.shape[0]+2*pad, labelledMap.shape[0]+2*pad ) )
     padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ] = labelledMap
     return padLabMap.astype(int)
 
-
 def removePaddingFromLabelledMap( padLabMap, pad ):
     cleanLabMap = padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ].astype(int)
     return cleanLabMap
-
 
 def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 500, saveImg=False, sampleName='', outputDir=''):
     """[TODO] can the total volume of particles be calculated - this can be used to modify the 
@@ -688,7 +878,6 @@ def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 500, saveIm
 
     return labMapUpdated
 
-
 def moveLabelsUp( labelMapToFix, labelStartingWhichMoveUp ):
     """Moves the labels up - incase a label is deleted or it is merged
 
@@ -713,7 +902,6 @@ def moveLabelsUp( labelMapToFix, labelStartingWhichMoveUp ):
     deltaMatrix[ np.where( labelMapToFix > labelStartingWhichMoveUp ) ] = 1
     fixedLabelMap = labelMapToFix - deltaMatrix
     return fixedLabelMap
-
 
 def removeEdgeLabels( labelledMapForEdgeLabelRemoval, pad=0, sampleName='', saveImg=False, outputDir='' ):
     """
@@ -766,7 +954,6 @@ def removeEdgeLabels( labelledMapForEdgeLabelRemoval, pad=0, sampleName='', save
 
     return labMap
 
-
 def checkIfEdgeLabel( labelledMap, label, pad=0 ):
     """Checks if the particle corresponding to the label  comes in contact
     with the boundary of the scan
@@ -813,7 +1000,6 @@ def checkIfEdgeLabel( labelledMap, label, pad=0 ):
     if lowerEdge + upperEdge > 0: return True
     else: return False
 
-
 def countEdgeLabels( labelledMap ):
     countTrue = 0
     countFalse = 0
@@ -829,7 +1015,6 @@ def countEdgeLabels( labelledMap ):
     print('Total Number of labels: ' + str( labelledMap.max() ) )
     print('Edge labels: ' + str( countTrue ) )
     print('Non-edge labels: ' + str( countFalse ) )
-
 
 def removeLabelAndUpdate( labMap,label ):
     labMap[np.where(labMap == label)] = 0

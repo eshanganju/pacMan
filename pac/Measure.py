@@ -7,6 +7,7 @@ import numpy as np
 import math
 import statistics
 import scipy
+from numba import jit
 from scipy.ndimage import binary_erosion as erode
 import spam.label as slab
 from uncertainties import unumpy as unp
@@ -269,6 +270,7 @@ def _getMinMaxFeretDiaSPAM( labelMap, label, numOrts=100 ):
     feretMin = feretDims[1,1] # ^^
     return feretMax, feretMin
 
+@jit(nopython=True)
 def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
     """Computes the minimum and the maximim feret diameters of a particle
 

@@ -36,7 +36,7 @@ nD50=6
 
 for scan in scanList:
     mainInput = '/home/eg/codes/pacInput/'
-    mainOutput = '/home/eg/codes/pacOutput/cone/testEntire/'
+    mainOutput = '/home/eg/codes/pacOutput/cone/testEntireNumba/'
 
 
     # Locations of data
