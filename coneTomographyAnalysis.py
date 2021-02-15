@@ -42,7 +42,7 @@ nD50=6
 
 for scan in scanList:
     mainInput = '/home/eg/codes/pacInput/'
-    mainOutput = '/home/eg/codes/pacOutput/cone/testEntireNumba/'
+    mainOutput = '/home/eg/codes/pacOutput/cone/testEntire/'
 
 
     # Locations of data
@@ -123,16 +123,16 @@ for scan in scanList:
                                                 outputDir=outputLoc )
 
         # Correction of segmentation errors
-        corLabMap = Segment.fixErrorsInSegmentationWithNumba( labelledMapForOSCorr=labMap,
-                                                              pad=int(2),
-                                                              areaLimit=700,
-                                                              considerEdgeLabels=True,
-                                                              checkForSmallParticles=True,
-                                                              radiusCheck=True,
-                                                              radiusRatioLimit=0.6,
-                                                              sampleName=currentSampleName,
-                                                              saveImg=True,
-                                                              outputDir=outputLoc )
+        corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
+                                                     pad=int(2),
+                                                     areaLimit=700,
+                                                     considerEdgeLabels=True,
+                                                     checkForSmallParticles=True,
+                                                     radiusCheck=True,
+                                                     radiusRatioLimit=0.6,
+                                                     sampleName=currentSampleName,
+                                                     saveImg=True,
+                                                     outputDir=outputLoc )
 
         # Removal of edge labels
         noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLabMap,
