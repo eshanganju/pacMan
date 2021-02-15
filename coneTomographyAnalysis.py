@@ -25,12 +25,18 @@ from pac import Plot
 v=0
 
 if v==0:
-    scanList = ['2QR_25_mid']
+    scanList = ['2QR_25_tip','2QR_25_mid','2QR_25_top']
     originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv'
     psdOrig = Reader.readDataFromCsv( originalPSDLoc,
                                       maxRows=10,
                                       dataForm='array').reshape(10,2)
 
+if v==7:
+    scanList = ['OTC_25_tip','OTC_25_mid','OTC_25_top']
+    originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv'
+    psdOrig = Reader.readDataFromCsv( originalPSDLoc,
+                                      maxRows=10,
+                                      dataForm='array').reshape(10,2)
 numberofSubregionsPerScan=10
 nD50=6
 
@@ -117,16 +123,16 @@ for scan in scanList:
                                                 outputDir=outputLoc )
 
         # Correction of segmentation errors
-        corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
-                                                     pad=int(2),
-                                                     areaLimit=700,
-                                                     considerEdgeLabels=True,
-                                                     checkForSmallParticles=True,
-                                                     radiusCheck=True,
-                                                     radiusRatioLimit=0.6,
-                                                     sampleName=currentSampleName,
-                                                     saveImg=True,
-                                                     outputDir=outputLoc )
+        corLabMap = Segment.fixErrorsInSegmentationWithNumba( labelledMapForOSCorr=labMap,
+                                                              pad=int(2),
+                                                              areaLimit=700,
+                                                              considerEdgeLabels=True,
+                                                              checkForSmallParticles=True,
+                                                              radiusCheck=True,
+                                                              radiusRatioLimit=0.6,
+                                                              sampleName=currentSampleName,
+                                                              saveImg=True,
+                                                              outputDir=outputLoc )
 
         # Removal of edge labels
         noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLabMap,
