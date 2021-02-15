@@ -1,12 +1,4 @@
-"""
-Plotting module
-Objectives are
-    0. Cross-section plots
-    1. Plot GSD
-    2. Contact vector representations
-        2.1 2D rose plots
-        2.2 3D rose plots - blob plots
-        2.3 Equal area projection plots
+""" Potting module
 """
 
 import spam
@@ -34,7 +26,7 @@ def centerCrossSection( volumeMap, colorMap = 'gray'):
     plt.show()
 
 
-def grainSizeDistribution (gsd0, gsd1, gsd2=np.zeros((1,2)), gsd3=np.zeros((1,2)), gsd4=np.zeros((1,2)), gsd5=np.zeros((1,2)), gsd6=np.zeros((1,2)), xmax = 10, xmin = 0.001):
+def plotPSD(gsd0, gsd1, gsd2=np.zeros((1,2)), gsd3=np.zeros((1,2)), gsd4=np.zeros((1,2)), gsd5=np.zeros((1,2)), gsd6=np.zeros((1,2)), xmax = 10, xmin = 0.001):
     """
     plots semilogx grain size distribution
     add additional  gradations if passed

@@ -1,7 +1,5 @@
-'''
-Description:
-    Segment module of PAC.
-'''
+"""Segment module carries out the setmentation of the XCT data
+"""
 
 from scipy.ndimage.morphology import distance_transform_edt as edt
 from scipy.ndimage.morphology import binary_fill_holes
@@ -16,7 +14,6 @@ import numpy as np
 import spam.label as slab
 import time
 import math
-from numba import jit
 
 from pac import Measure
 
@@ -24,65 +21,16 @@ from pac import Measure
 VERBOSE = True
 TESTING = True
 
-def _obtLabMapITKWS( gliMap , knownThreshold = None, measuredVoidRatio = None, outputLoc=None, edmScaleUp=1, peakEdLimit=5):
-    """
-    Description:
-
-    Parameters:
-
-    Return:
-    """
-    print( '\nSegmenting particles by ITK topological watershed' )
-
-    if knownThreshold == None:
-        if measuredVoidRatio == None:
-            binMethod=input('Which binarization method to use (1) OTSU; (2) User; [3] Density?: ')
-        else:
-            binMethod = '3'
-        if binMethod == '1': binThresh, binMask = binarizeAccordingToOtsu( gliMap )
-        elif binMethod == '2': binThresh, binMask = binarizeAccordingToUserThreshold( gliMap  )
-        else : binThresh, binMask = binarizeAccordingToDensity( gliMap , measuredVoidRatio )
-
-    else :
-        print('User threshold with :' + str(round(knownThreshold)))
-        binThresh, binMask = binarizeAccordingToUserThreshold( gliMap, knownThreshold )
-
-    voidRatio = calcVoidRatio( binMask )
-
-    if outputLoc != None:
-        threshFile = open(outputLoc + 'binaryThreshold.txt',"a+")
-        threshFile.write( "Bin Threshold = " + str( binThresh ) )
-        threshFile.write( "\nVoid ratio = " + str( voidRatio ) + '\n\n')
-        threshFile.close()
-
-    # Simple Euclidean distance
-    edMap = obtainEuclidDistanceMap( binMask , scaleUp=edmScaleUp)
-
-    # Peaks in EDM
-    edPeaksMap = obtainLocalMaximaMarkers( edMap , h=peakEdLimit)
-
-    print('\n\nStarting ITK WS')
-    print( '--------------------------*' )
-    labelledMap = wsd( -edMap, markers = edPeaksMap, mask = binMask )
-    print( 'Watershed segmentation complete' )
-
-    return binMask, binThresh, edMap, edPeaksMap, labelledMap
-
 def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleName='',saveImg=True,outputDir=''):
     """Simple function that uses skimage watershed and saves a copy of the segmented image
 
     Parameters
     ----------
     binaryMapToSeg : ndarray
-
     edmMapForTopo : ndarray
-
     edmPeaksForSeed : ndarray
-
     sampleName : string
-
     saveImg : bool
-
     outputDir : string
 
     Return
@@ -90,8 +38,10 @@ def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleNam
     labMap : ndarray
         labelled map with each particle assigned a separate integer value
     """
-    print('\nStarting segmentation using watershed')
-    print('-----------------------------------------*')
+    if VERBOSE:
+        print('\nStarting segmentation using watershed')
+        print('-----------------------------------------*')
+
     labMap = wsd(-edmMapForTopo,markers=edmPeaksForSeed,mask=binaryMapToSeg)
 
     if saveImg == True:
@@ -100,25 +50,29 @@ def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleNam
 
     return labMap.astype('uint16')
 
-def binarizeAccordingToOtsu( gliMapToBinarize, sampleName='', saveImg=False, outputDir='', returnThresholdVal=False):
+def binarizeAccordingToOtsu( gliMapToBinarize, returnThresholdVal=True, 
+                             sampleName='', saveImg=True, saveData=True, outputDir='' ):
+    """Function to binarize GLI map according to OTSUs algorithm
+    Uses the skimage.filter module threshold_otsu
+
+    Parameters
+    ----------
+    gliMapToBinarize : unsigned integer
+    returnThresholdVal : bool
+    sampleName : string 
+    saveImg : bool
+    saveData : bool 
+    outputDir : string 
+
+    Return
+    ------
+    otsuThreshold : float
+    binaryMap : unsigned ndarray
     """
-    Description:
-        Function to binarize GLI map according to OTSUs algorithm
-        Uses the skimage.filter module threshold_otsu
+    if VERBOSE:
+        print('\nRunning Otsu Binarization')
+        print('----------------------------*')
 
-    Parameters:
-        gliMapToBinarize (nd array): (preferably) filtered GLI Map
-        fileName (str): name of the sample
-        saveImg (bool): Should we save the image or not
-        outputLic (str): Location of the output image
-
-    Returns:
-        otsuThreshold (float): duh
-        binaryMap (nd array): Array binarized.
-
-    """
-    print('\nRunning Otsu Binarization')
-    print('----------------------------*')
     otsuThreshold = threshold_otsu( gliMapToBinarize )
     binaryMap = np.zeros_like( gliMapToBinarize )
 
@@ -140,29 +94,36 @@ def binarizeAccordingToOtsu( gliMapToBinarize, sampleName='', saveImg=False, out
     if saveImg == True:
         if VERBOSE: print('\nSaving binary map...')
         tiffy.imsave( outputDir + sampleName + '-binaryMap.tif', binaryMap.astype('uint16'))
-    otsuThresholdFileName = outputDir+sampleName+'-otsuThreshold.txt'
 
-    f = open( otsuThresholdFileName,"w+" )
-    f.write( 'Otsus threshold = %f' % otsuThreshold )
-    f.close()
+    if saveData == True:
+        otsuThresholdFileName = outputDir+sampleName+'-otsuThreshold.txt'
+        f = open( otsuThresholdFileName,"w+" )
+        f.write( 'Otsus threshold = %f' % otsuThreshold )
+        f.close()
 
     if returnThresholdVal == True: return otsuThreshold, binaryMap
-
     elif returnThresholdVal == False: return binaryMap
 
-def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold = None, returnThresholdVal=False ):
-    """
-    Description:
-        Binarize according to user supplied threshold
+def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold=0.0, returnThresholdVal=True,
+                                      saveImg=True, saveData=True, sampleName='', outputDir=''):
+    """Binarize according to user supplied threshold
 
-    Parameters:
-        gliMapToBinarize
-        userThreshold
-
-    Return:
-        Binarized map and user threshold
+    Parameters
+    ----------
+    gliMapToBinarize : unsigned integer
+    userThreshold : unsigned integer
+    returnThresholdVal : bool 
+    saveImg : bool
+    saveData : bool 
+    sampleName : string
+    outputDir : string
+    
+    Return
+    ------
+    userThreshold : float
+    binaryMap : unsigned ndarray
     """
-    if userThreshold == None:
+    if userThreshold == 0.0:
         userThreshold = int( input( 'Enter user threshold: ' ) )
 
     binaryMap = np.zeros_like( gliMapToBinarize )
@@ -183,16 +144,50 @@ def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold = None, re
     print( 'Void ratio after filling holes = %f' % e2 )
     print( 'Void ratio after removing specks = %f' % e3 )
 
+    if saveImg == True:
+        if VERBOSE: print('\nSaving binary map...')
+        tiffy.imsave( outputDir + sampleName + '-binaryMap.tif', binaryMap.astype('uint16'))
+
+    if saveData == True:
+        utFileName = outputDir + sampleName + '-userThreshold.txt'
+        f = open( utFileName,"w+" )
+        f.write( 'User threshold = %f' % userThreshold )
+        f.close()
+
     if returnThresholdVal == True: return userThreshold, binaryMap
     if returnThresholdVal == False: return binaryMap
 
-def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
+def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = 0.0, returnThresholdVal=True,
+                                maxIterations=100, saveImg=True, saveData=True, sampleName='', outputDir='' ):
+    """Binarizes the XCT data according to the known density
+
+    The density or void ratio of the sample is computed after binarization and then
+    the threshold is iteratively updated till the computed void ratio in the sample 
+    matches the measured void ratio
+
+    Parameters
+    ----------
+    gliMapToBinarize : unsigned integer ndarray
+    measuredVoidRatio : float
+    returnThresholdVal : bool
+    maxIterations : unsigned int
+    saveImg : bool
+    saveData : bool
+    sampleName : string
+    outputDir : string
+
+    Return
+    ------
+    currentThreshold : float 
+    currentBinaryMap : unsigned integer ndarray
+    """
     print('\nRunning density-based threshold...')
     print('Running Otsu first to get inital guess: ')
-    otsuThreshold, otsuBinMap = binarizeAccordingToOtsu( gliMapToBinarize )
+    otsuThreshold, otsuBinMap = binarizeAccordingToOtsu( gliMapToBinarize, saveImg=False,
+                                                         saveData=False, returnThresholdVal=True )
     currentThreshold = otsuThreshold
 
-    if measuredVoidRatio == None: measuredVoidRatio = int( input('Input the known void ratio: ') )
+    if measuredVoidRatio == 0.0: measuredVoidRatio = int( input('Input the known void ratio: ') )
 
     currentVoidRatio = calcVoidRatio( otsuBinMap )
     targetVoidRatio = measuredVoidRatio
@@ -205,7 +200,6 @@ def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
     maxAbsDeltaThreshold = 500
 
     iterationNum = 1
-    maxIterations = 50
 
     print('\nRunning iterations to compute threshold corresponding to target void ratio...')
     print('Target void ratio = ' + str( targetVoidRatio ) )
@@ -251,38 +245,36 @@ def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = None):
         print( 'Target void ratio: %0.5f' % round( targetVoidRatio,5 ) )
         print( 'Target - Current void ratio: %0.5f' % round( deltaVoidRatio, 5 ) )
 
-        #f = open( userThresholdStepsTextFileName, 'a' )
-        #f.write( "\nIteration %d:\n" % iterationNum)
-        #f.write( "Current threshold: %d\n" % round( currentThreshold ) )
-        #f.write( "Otsu Threshold: %d\n" %  round( otsuThreshold ) )
-        #f.write( "Current void ratio:  %0.5f\n" % round( currentVoidRatio,5 ) )
-        #f.write( "Target void ratio: %0.5f\n" % round( targetVoidRatio,5 ) )
-        #f.write( "Target - Current void ratio: %0.5f\n" % round( deltaVoidRatio, 5 ) )
-        #f.close()
-
         iterationNum = iterationNum + 1
 
-    #densityBasedThresholdTextFileName = outputLoc +  sampleName + '-userThresholdDensityBased.txt'
-    #f = open( densityBasedThresholdTextFileName, "w+" )
-    #f.write( "Global density based threshold = %f\n" % currentThreshold )
-    #f.close()
+    if saveImg == True:
+        if VERBOSE: print('\nSaving binary map...')
+        tiffy.imsave( outputDir + sampleName + '-binaryMap.tif',currentBinaryMap.astype('uint16'))
 
-    print('\nThreshold corresponding to measured density = ' + str( np.round( currentThreshold ) ) )
-    print('-------------------------------------------------------------*')
+    if saveData == True:
+        densityBasedThresholdTextFileName = outputDir +  sampleName + '-densityBasedThreshold.txt'
+        f = open( densityBasedThresholdTextFileName, "w+" )
+        f.write( "Global density based threshold = %f\n" % currentThreshold )
+        f.close()
 
-    return currentThreshold, currentBinaryMap
+    if VERBOSE:
+        print('\nThreshold corresponding to measured density = ' + str( np.round( currentThreshold ) ) )
+        print('-------------------------------------------------------------*')
+
+    if returnThresholdVal == True: return currentThreshold, currentBinaryMap
+    else: return currentBinaryMap
 
 def calcVoidRatio( binaryMapforVoidRatioCalc ):
-    '''
-    Description:
-        Caculated void ratio from binary map
+    """Calculates void ratio from binary map
 
-    Parameters:
-        binaryMap (int array): numpy array with 1 and 0
+    Parameters
+    ----------
+    binaryMapforVoidRatioCalc : unsigned int array
 
-    Returns
-        void ratio of the binary map assumin 1 is particle
-    '''
+    Return
+    ------
+    currentVoidRatio : float
+    """
     volSolids = binaryMapforVoidRatioCalc.sum()
     lenZ = binaryMapforVoidRatioCalc.shape[ 0 ]
     lenY = binaryMapforVoidRatioCalc.shape[ 1 ]
@@ -291,21 +283,45 @@ def calcVoidRatio( binaryMapforVoidRatioCalc ):
     currentVoidRatio = ( volTotal - volSolids ) / volSolids
     return currentVoidRatio
 
-def fillHoles( oldBinaryMapWithHoles ):
-    allOk = False
+def fillHoles( oldBinaryMapWithHoles, fillHoleCheck=True ):
+    """Fills holes in binary map
+
+    Parameters
+    ----------
+    oldBinaryMapWithHoles : unsigned integer ndarray
+
+    Return
+    ------
+    newNoHoleBinaryMap : unsigned integer ndarray
+    """
     newNoHoleBinaryMap=oldBinaryMapWithHoles
-    newNoHoleBinaryMap = binary_fill_holes( newNoHoleBinaryMap )
+
+    if fillHoleCheck==True:
+        newNoHoleBinaryMap = binary_fill_holes( newNoHoleBinaryMap )
+
     return newNoHoleBinaryMap.astype(int)
 
-def removeSpecks( oldBinaryMapWithSpecks ):
-    remSpecksCheck = 'y'
+def removeSpecks( oldBinaryMapWithSpecks, remSpecksCheck=True ):
+    """Removes specks in binary map
 
-    if remSpecksCheck == 'y':newNoSpekBinaryMap = binary_opening( oldBinaryMapWithSpecks )
-    else: newNoSpekBinaryMap = oldBinaryMapWithSpecks
+    Parameters
+    ----------
+    oldBinaryMapWithSpecks : unsigned integer ndarray
+    remSpecksCheck : bool
+
+    Return
+    ------
+    newNoSpekBinaryMap : unsigned integer ndarray
+    """
+    newNoSpekBinaryMap = oldBinaryMapWithSpecks
+    
+    if remSpecksCheck == True:
+        newNoSpekBinaryMap = binary_opening( newNoSpekBinaryMap )
 
     return newNoSpekBinaryMap.astype(int)
 
-def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1), saveImg=False, sampleName='', outputDir=''):
+def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1),
+                             saveImg=False, sampleName='', outputDir='' ):
     """Computes the euclidian distance tranform (EDT) for a binary map
 
     An EDT or an euclidian distance map (EDM) is an ndarray of the same size as
@@ -341,11 +357,14 @@ def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1), saveImg=False, s
         array containing the euclidian distance map of the binary map
 
     """
-    print('\nFinding Euclidian distance map (EDM)')
-    print('------------------------------------*')
+    if VERBOSE:
+        print('\nFinding Euclidian distance map (EDM)')
+        print('------------------------------------*')
 
     edMap = edt( binaryMapForEDM )
-    if scaleUp!=0 : edMap =  edMap * scaleUp
+
+    if scaleUp!=0 :
+        edMap =  edMap * scaleUp
 
     print( "EDM Created" )
 
@@ -355,22 +374,25 @@ def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1), saveImg=False, s
 
     return edMap
 
-def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5, saveImg=False, sampleName='', outputDir=''):
-    """Computes the local maximas in the euclidean distance map.
+def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5,
+                              saveImg=False, sampleName='', outputDir='' ):
+    """Computes the local maxima in the euclidean distance map.
     it uses skimage.morphology
 
     Parameters
     ----------
-       edMapForPeaks : ndarray containing the euclidian distance map.
-       method : string containing the choice of algorithm
-       h=5,
-       saveImg=False,
-       sampleName='',
-       outputDir=''
+    edMapForPeaks : unsigned float ndarray
+        ndarray containing the euclidian distance map.
+    method : string
+        string containing the choice of algorithm
+    h : integer
+    saveImg : bool
+    sampleName : string
+    outputDir : string
 
     Returns
     -------
-    edmPeakMarkers
+    edmPeakMarkers : unsigned integer array
         ndArray of the same size as the input array containing map
         of peaks in the edm, numbered in an increasing order
     """
@@ -389,7 +411,6 @@ def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5, saveImg=F
         print( '\tFound local maximas' )
         print( '\nResetting count of peaks' )
 
-    # Resetting counts such that each peak has a unique integer label
     count=0
     for frame in range( 0, edmPeakMarkers.shape[ 0 ] ):
         for row in range( 0, edmPeakMarkers.shape[ 1 ] ):
@@ -425,34 +446,33 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
     radii (of the contact) to the radii of the particles (assuming an equivanent
     sphere) is greater than a threshold, then the two particles are merged
 
-    The contact are a is determined using spam.contact's contactingLabels
+    The contact area is determined using spam.contact's contactingLabels
     function.
 
-    Parameters:
-        labelledMapForOSCorr : ndarray
-        pad : unsigned integer
-        areaLimit : unsigned integer
-        considerEdgeLabels : bool
-        checkForSmallParticles : bool
-        radiusCheck : bool
-        radiusRatioLimit : float
-        sampleName : string
-        saveImg : bool
-        outputDir : string
+    Parameters
+    ----------
+    labelledMapForOSCorr : ndarray
+    pad : unsigned integer
+    areaLimit : unsigned integer
+    considerEdgeLabels : bool
+    checkForSmallParticles : bool
+    radiusCheck : bool
+    radiusRatioLimit : float
+    sampleName : string
+    saveImg : bool
+    outputDir : string
 
     Return:
-        correctedCleanedLabelMap : ndarray
-            Corrected label map
+    correctedCleanedLabelMap : ndarray
+        Corrected label map
     """
 
     print('\nStarting label correction')
     print('---------------------------*')
-    #if areaLimit != None : print('Area limit is : ' + str( np.round( areaLimit) ) )
 
     if radiusCheck == True: print('Radius ratio limit is: ' + str( radiusRatioLimit) )
     elif radiusCheck == False: print('Area limit is: ' + str(areaLimit))
 
-    # Apply padding to the data
     if pad > 0: labelledMapForOSCorr = applyPaddingToLabelledMap(labelledMapForOSCorr, pad)
 
     lastLabel = labelledMapForOSCorr.max()
@@ -462,11 +482,9 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
 
     if VERBOSE: print('Currently padding is ' + str(pad) + ' px')
 
-    # Include the edge labels in the calculation
     if considerEdgeLabels == False:
         if VERBOSE: print('\tOk, not consolidating edge labels\n')
         edgePad = pad
-        # The edgepad adds additional padding to prevent the edge lables from being removed
     else:
         if VERBOSE: print('\tOk, consolidating edge labels\n')
         edgePad = 0
@@ -482,17 +500,14 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
     if radiusCheck == False: correctionLog.write('\nArea limit: ' + str( np.round( areaLimit ) ) + '\n\n')
     elif radiusCheck == True: correctionLog.write('\nRadius ratio limit: ' + str( radiusRatioLimit ) + '\n\n')
 
-    # Loop through labels till all OS labels are merged
     while currentLabel <= lastLabel:
         isEdgeLabel = checkIfEdgeLabel( correctedLabelMap, currentLabel, edgePad )
 
-        # If edge label, move to next label
         if isEdgeLabel == True:
             if VERBOSE: print('Label %d is an edge label, moving to next label' % currentLabel)
             correctionLog.write('\n\nLabel ' + str(currentLabel) + ' is an edge label, moving to next label')
             currentLabel += 1
 
-        # If not edge label, check contacting labels
         else:
             contactLabel, contactArea = slab.contactingLabels(correctedLabelMap, currentLabel, areas=True)
             if VERBOSE: print('\n')
@@ -529,7 +544,6 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
             correctionLog.write('\nTouching particles radius: ' + str( touchingParticleRadius ) )
             correctionLog.write('\nRadius ratios: ' + str( radiusRatio ) )
 
-            # Merging with radius ratio limits
             if radiusCheck == True:
                 if len(largeRatioVal) != 0:
                     if VERBOSE: print('\tLabels with large ratios: ' + str( largeRatioLabel ) )
@@ -558,7 +572,6 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
                     if VERBOSE: print( 'Moving to next label ' + str(currentLabel) +  ' now.')
                     correctionLog.write('\nMoving to next label ' + str(currentLabel) +  ' now.')
 
-            # Merging with area limits
             else:
                 if len(largeAreaVal) != 0:
                     if VERBOSE: print('\tLabels with large area: ' + str( largeAreaLabel ) )
@@ -667,8 +680,9 @@ def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 500, saveIm
             labMapUpdated = moveLabelsUp( labMapUpdated , ptclNo )
             ptclCount = ptclCount - 1
 
-    print('-------------')
-    print('Complete')
+    if VERBOSE:
+        print('-------------')
+        print('Complete')
 
     if saveImg == True:
         print('\nSaving labelled map with small particles removed')
@@ -686,6 +700,7 @@ def moveLabelsUp( labelMapToFix, labelStartingWhichMoveUp ):
     ----------
     labelMapToFix : ndarray
         The labe which needs to be adjusted
+
     labelStartingWhichMoveUp : unsigned integer
         The label such that all labels equal to or larger than this label
         are moved up in the label map
@@ -701,17 +716,21 @@ def moveLabelsUp( labelMapToFix, labelStartingWhichMoveUp ):
     fixedLabelMap = labelMapToFix - deltaMatrix
     return fixedLabelMap
 
-def removeEdgeLabels( labelledMapForEdgeLabelRemoval, pad=0, sampleName='', saveImg=False, outputDir='' ):
-    """
-    Description:
-        Removes edge labels that may be cut due to the subregion boundary
+def removeEdgeLabels( labelledMapForEdgeLabelRemoval, pad=0,
+                      sampleName='', saveImg=False, outputDir='' ):
+    """Removes edge labels that may be cut due to the subregion boundary
 
-    Parameters:
-        labelledMapForEdgeRemoval
-        pad (default set to 0)
+    Parameters
+    ----------
+    labelledMapForEdgeLabelRemoval : unsigned integer ndarray
+    pad : integer
+    sampleName : string
+    saveImg : bool
+    outputDir : string
 
-    Return:
-        labelled map with edge labels removed.
+    Return
+    ------
+    labMap : unsigned integer ndarray
     """
     labMap = labelledMapForEdgeLabelRemoval
     numberOfLabels = labMap.max()
@@ -799,6 +818,16 @@ def checkIfEdgeLabel( labelledMap, label, pad=0 ):
     else: return False
 
 def countEdgeLabels( labelledMap ):
+    """Counts the number of edge labels
+
+    Parameters
+    ---------
+    labelledMap : unsigned integer ndarray
+
+    Return
+    ------
+    none 
+    """
     countTrue = 0
     countFalse = 0
     for i in range(1,labelledMap.max() + 1):
@@ -815,6 +844,18 @@ def countEdgeLabels( labelledMap ):
     print('Non-edge labels: ' + str( countFalse ) )
 
 def removeLabelAndUpdate( labMap,label ):
+    """removes label and updates the labels larger than the removed label
+
+    Parameters
+    ----------
+    labMap : unsigned integer ndarray
+    label : unsigned integer ndarray
+
+    Return
+    ------
+    updatedLabMap : unsigned integer ndarray
+    """
     labMap[np.where(labMap == label)] = 0
     updatedLabMap = moveLabelsUp(labMap,label)
     return updatedLabMap
+

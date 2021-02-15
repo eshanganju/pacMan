@@ -1,6 +1,4 @@
 """Measure module: carries out measurements on the segmented data
-
-Written by eganju
 """
 
 import numpy as np
@@ -174,7 +172,7 @@ def getEqspDia( labelMap, label ):
     """Calculates the equivalent sphere diameter of a particle in px units
 
     The equivalent sphere diameter is the diameter of the sphere with
-    the sample volume as the partcle
+    the same volume as the partcle
 
     Parameters
     ----------
@@ -271,7 +269,7 @@ def _getMinMaxFeretDiaSPAM( labelMap, label, numOrts=100 ):
     return feretMax, feretMin
 
 def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
-    """Computes the minimum and the maximim feret diameters of a particle
+    """Computes the minimum and the maximum feret diameters of a particle
 
     The voxels of the particle are rotated along different unit vectors,
     which are obtained from the method proposed by Saff and Kuijlaar.
@@ -608,8 +606,7 @@ def getRelativeBreakageHardin( psdOriginal, psdCurrent,smallSizeLimit=0.075,
     PSD. The potential breakage is computed as the area between the ultimate PSD
     and the original PSD.
 
-    In case of Hardin's assumption, the ultimate PSD is a vertical line at the
-    sand-silt boundary.
+    According to Hardin, the ultimate PSD is a vertical line at the sand-silt boundary.
 
     Parameters
     ----------
@@ -682,8 +679,9 @@ def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=2.6,
     PSD. The potential breakage is computed as the area between the ultimate PSD
     and the original PSD.
 
-    In case of Einav's assumption, the ultimate PSD is a fractal gradation that
-    has a fractal dimension of 2.5-2.6
+    According to Einav, the ultimate PSD is a fractal gradation that has a fractal
+    dimension of 2.5-2.6
+    
     Parameters
     ----------
     gsdOriginal : n by 2 numpy array
@@ -734,9 +732,7 @@ def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=2.6,
 
 def getUltimateFractalParticleSizeDistribution(minSize=0.0,maxSize=0.0,
                                                fractalDimension=2.6,num=100):
-    """Gets the ultimate particle size distribution
-
-    The ultimate particle size distribution is obtained following the fractal
+    """Gets the ultimate particle size distribution following the fractal
     distribution
 
     The equation is:
@@ -763,7 +759,7 @@ def getUltimateFractalParticleSizeDistribution(minSize=0.0,maxSize=0.0,
     ------
     ultimatePSDFractal : unsigned float array
         Ultimate particle size distribution with particle size in col 0 and percentage
-        passing in col 1. Col 1 is ascending order.
+        passing in col 1. Col 0 is ascending order.
     """
     if minSize == 0.0:
         minSize = float( input( 'Enter the min particle size (mm):' ) )

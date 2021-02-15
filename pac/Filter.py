@@ -1,6 +1,4 @@
-'''
-Filter modulte, runs a loop to clearn out the image.
-    Currently using the NLM filter as it preserves the edges of the image.
+'''Filter module: runs a loop to clean out the image.
 '''
 
 import tifffile as tiffy
@@ -13,47 +11,57 @@ import time
 VERBOSE = True
 TESTING = True
 
-def filterUsingNlm(gli,bitDepth=16,saveImg=False,outputDir='',sampleName='sampleX',pSize=3,pDistance=7,hVal=450):
-    """
-    Description
-        This function takes in a unfiltered grey level and filters it using non-local means (nlm) filter
-        This function loops over nlm parameters till user accepts the filtered image.
-        The nlm filter removes noise with minimal effect on grey-level edges.
+def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=450,
+                   saveImg=False,outputDir='',sampleName='sampleX'):
+    """This function takes in a unfiltered grey level and filters it using non-local means (nlm) filter
+    This function loops over nlm parameters till user accepts the filtered image.
+    The nlm filter removes noise with minimal effect on grey-level edges.
 
     Parameters
-        gli (np array): the ct scan data in the form of a NP array
-        gliMax (int): the maximum integer value in the plot. (can be set to the max of the image or max of the dtype)
-        saveImg (bool): Save image in outputDir?
-        outputDir (str): path to storage of the filtered image
-        sampleName (str): name of the sample used for the analysis, default to sampleX
-        pSize (int): patch size for application of nlm filter
-        pDist (int): edge of volume over which the image is seacherd for mean
-        hVal (int): cut off value for filter GLI
+    ----------
+    gli : unsigned integer ndarray
+        The XCT data in the form of a NP array
 
-    Returns
-        filtered image in the form of a numpy array.
-        Saves filtered slices in the ouput directory.
+    bitDepth : int
+        The bit depth of the XCT data
+
+    pSize : unsigned integer 
+        patch size for application of nlm filter
+
+    pDist : integer
+        Edge of volume over which the image is seacherd for mean
+
+    hVal : integer
+        cut off value for filter GLI
+
+    saveImg : bool
+        Should the fileterd image be saved?
+    
+    outputDir : string
+        Location of output directory
+
+    sampleName : string 
+        Name of the sample used for the analysis, default to sampleX
+
+    Return
+    ------
+    filteredMap : unsigned integer ndarray
+        Filtered image in the form of a numpy array.
     """
-    # Calculting the maximum gli value from bit depth passed to the func.
     gliMax = 2**bitDepth-1
 
-    # Filteration is tried on the center slice to save time.
-    # After the center slice filteration is acceptable, then the entire image is filtered with the chosen params.
     inputImage = gli[ gli.shape[ 0 ] // 2 ]
     filteredImage = np.zeros_like( inputImage )
     noiseRemoved = np.zeros_like( filteredImage )
 
-    # Local variables for the entire map
     inputMap = gli
     filteredMap = np.zeros_like( inputMap )
 
-    # Histograms
     numHistPts = inputImage.shape[ 0 ] * inputImage.shape[ 1 ]
     numHistPtsMap = inputMap.shape[ 0 ] * inputMap.shape[ 1 ] * inputMap.shape[ 2 ]
     his_x = np.arange( 0, gliMax + 1, 1 )
 
 
-    # The standard deviation of the input noisy image
     sigmaEstimateImage = restoration.estimate_sigma(inputImage, multichannel=False)
     sigmaEstimateMap = restoration.estimate_sigma(inputMap, multichannel=False)
 
@@ -61,7 +69,6 @@ def filterUsingNlm(gli,bitDepth=16,saveImg=False,outputDir='',sampleName='sample
     print('Gaussian noise Map: ' + str(sigmaEstimateMap) + '\n')
 
 
-    # File containing image noise details
     noiseParameterFileName = outputDir+sampleName+'-gaussianNoise.txt'
     f = open(noiseParameterFileName,"w+")
     f.write("Noise-------*\n")
@@ -69,7 +76,6 @@ def filterUsingNlm(gli,bitDepth=16,saveImg=False,outputDir='',sampleName='sample
     f.write("Gaussian noise map: %f\n" %sigmaEstimateMap)
     f.close()
 
-    # Loop for checking filtering parameters; run on CS of data
     print('\n\nIntial parameters for filter----------------------*\n')
     print('Patch size: ', pSize)
     print('Patch distance: ', pDistance)
@@ -81,23 +87,19 @@ def filterUsingNlm(gli,bitDepth=16,saveImg=False,outputDir='',sampleName='sample
         print('\n\nNew filtering loop started on central cross-section--------*\n')
         start_time = time.time()
 
-        # Using skimage.restoration to apply the nlm filter on a single slige
-        filteredImage = restoration.denoise_nl_means(inputImage,
-                patch_size=pSize,
-                patch_distance=pDistance,
-                h=hVal,
-                multichannel=False,
-                fast_mode=True,
-                sigma=sigmaEstimateImage)
+        filteredImage = restoration.denoise_nl_means( inputImage,
+                                                      patch_size=pSize,
+                                                      patch_distance=pDistance,
+                                                      h=hVal,
+                                                      multichannel=False,
+                                                      fast_mode=True,
+                                                      sigma=sigmaEstimateImage )
 
         noiseRemoved = abs( inputImage - filteredImage )
 
-        # Creating a list of the gli of the images
-        # This will be used to make a histogram
         listNoisy = inputImage.reshape( ( numHistPts, 1 ) )
         listClean = filteredImage.reshape( ( numHistPts, 1 ) )
 
-        # Histogram
         histNoisy = np.histogram(listNoisy, bins = gliMax + 1, range = ( 0, gliMax ) )
         histClean = np.histogram(listClean, bins = gliMax + 1, range = ( 0, gliMax ) )
         histNoisy = histNoisy / ( histNoisy[0].sum() ) * 100
@@ -105,7 +107,6 @@ def filterUsingNlm(gli,bitDepth=16,saveImg=False,outputDir='',sampleName='sample
         np.savetxt(outputDir+sampleName+'-histSliceNoisy.csv',histNoisy[0],delimiter=',',header='%')
         np.savetxt(outputDir+sampleName+'-histSliceClean.csv',histClean[0],delimiter=',',header='%')
 
-        # Center slice of original image
         plt.figure()
         plt.imshow(inputImage, cmap= 'Greys_r' )
         plt.draw() # draw the plot
@@ -114,7 +115,6 @@ def filterUsingNlm(gli,bitDepth=16,saveImg=False,outputDir='',sampleName='sample
         plt.pause( 1 ) # show it for 1 seconds
         plt.close()
 
-        # Center slice of filtered image
         plt.figure()
         plt.imshow(filteredImage, cmap= 'Greys_r' )
         plt.draw() # draw the plot
@@ -123,7 +123,6 @@ def filterUsingNlm(gli,bitDepth=16,saveImg=False,outputDir='',sampleName='sample
         plt.pause( 1 ) # show it for 5 seconds
         plt.close()
 
-        # Center slice of noise
         plt.figure()
         plt.imshow(noiseRemoved, cmap= 'Greys_r' )
         plt.draw() # draw the plot
@@ -132,7 +131,6 @@ def filterUsingNlm(gli,bitDepth=16,saveImg=False,outputDir='',sampleName='sample
         plt.pause( 1 ) # show it for 5 seconds
         plt.close()
 
-        # Figures - Histogram
         plt.figure()
         plt.plot(his_x, histNoisy[ 0 ])
         plt.plot(his_x, histClean[ 0 ])
@@ -156,23 +154,21 @@ def filterUsingNlm(gli,bitDepth=16,saveImg=False,outputDir='',sampleName='sample
             runSliceFilter = False
 
 
-    # Filtering entire grey level map with chosen parameters
     print( '\n\nFilter for entire grey level map started--------*' )
     print( 'This take a lot of time...' )
     start_time = time.time()
 
     filteredMap = restoration.denoise_nl_means(inputMap,
-            patch_size=pSize,
-            patch_distance=pDistance,
-            h=hVal,
-            multichannel=False,
-            fast_mode=True,
-            sigma=sigmaEstimateMap)
+                                               patch_size=pSize,
+                                               patch_distance=pDistance,
+                                               h=hVal,
+                                               multichannel=False,
+                                               fast_mode=True,
+                                               sigma=sigmaEstimateMap)
 
     listNoisy = inputMap.reshape( ( numHistPtsMap, 1 ) )
     listClean = filteredMap.reshape( ( numHistPtsMap, 1 ) )
 
-    # Histogram
     histNoisy = np.histogram( listNoisy, bins = gliMax + 1, range = ( 0, gliMax ) )
     histClean = np.histogram( listClean, bins = gliMax + 1, range = ( 0, gliMax ) )
     histNoisy = histNoisy / ( histNoisy[ 0 ].sum() ) * 100
@@ -180,7 +176,6 @@ def filterUsingNlm(gli,bitDepth=16,saveImg=False,outputDir='',sampleName='sample
     np.savetxt(outputDir+sampleName+'-histNoisy.csv',histNoisy[0],delimiter=',',header='%')
     np.savetxt(outputDir+sampleName+'-histClean.csv',histClean[0],delimiter=',',header='%')
 
-    # Figures - Histogram
     plt.figure()
 
     plt.plot(his_x,histNoisy[ 0 ])
@@ -192,11 +187,12 @@ def filterUsingNlm(gli,bitDepth=16,saveImg=False,outputDir='',sampleName='sample
     plt.pause( 5 ) # show it for 5 seconds
     plt.close()
 
-    print( '.\n.\n.\nFilter for entire grey level map completed--------*' )
     timeTakenThisLoop = ( time.time() - start_time )
-    print( "\n--- Time taken: %s minutes ---\n" % round( timeTakenThisLoop // 60 ) )
 
-    # Updating filtered parameters
+    if VERBOSE: 
+        print( '.\n.\n.\nFilter for entire grey level map completed--------*' )
+        print( "\n--- Time taken: %s minutes ---\n" % round( timeTakenThisLoop // 60 ) )
+
     filterParameterFileName = outputDir+sampleName+'-NLMParameters.txt'
     f = open(filterParameterFileName,"w+")
     f.write("NLM filter parameters---------------------*\n")
@@ -208,9 +204,6 @@ def filterUsingNlm(gli,bitDepth=16,saveImg=False,outputDir='',sampleName='sample
     f.write("Time taken for filter (s) = %f\n" % round(timeTakenThisLoop))
     f.close()
 
-    # Save a copy of the filtered image
     if saveImg == True: tiffy.imsave(outputDir+sampleName+'-filteredGLIMap.tif',filteredMap.astype('uint16'))
 
     return filteredMap
-
-
