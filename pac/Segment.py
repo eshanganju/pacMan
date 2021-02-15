@@ -412,7 +412,7 @@ def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5, saveImg=F
 
 @jit(nopython=True)
 def fixErrorsInSegmentationWithNumba( labelledMapForOSCorr, pad=2, areaLimit = 700,
-                                      conside rEdgeLabels=True,checkForSmallParticles = True,
+                                      considerEdgeLabels=True,checkForSmallParticles = True,
                                       radiusCheck=True, radiusRatioLimit=0.5, sampleName='',
                                       saveImg=True, outputDir=''):
     """Corrects over segmentation caused by incorrect edm peak selection
@@ -613,7 +613,7 @@ def fixErrorsInSegmentationWithNumba( labelledMapForOSCorr, pad=2, areaLimit = 7
     return correctedCleanedLabelMap
 
 def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
-                             conside rEdgeLabels=True,checkForSmallParticles = True,
+                             considerEdgeLabels=True,checkForSmallParticles = True,
                              radiusCheck=True, radiusRatioLimit=0.5, sampleName='',
                              saveImg=True, outputDir=''):
     """Corrects over segmentation caused by incorrect edm peak selection

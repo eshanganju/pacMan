@@ -270,7 +270,6 @@ def _getMinMaxFeretDiaSPAM( labelMap, label, numOrts=100 ):
     feretMin = feretDims[1,1] # ^^
     return feretMax, feretMin
 
-@jit(nopython=True)
 def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
     """Computes the minimum and the maximim feret diameters of a particle
 
@@ -658,7 +657,7 @@ def getRelativeBreakageHardin( psdOriginal, psdCurrent,smallSizeLimit=0.075,
                                  currentBreakage,
                                  relativeBreakage ] ).reshape(3,1)
 
-        np.saveText( fileNameToSave, dataToSave, delimiter=',')
+        np.savetxt( fileNameToSave, dataToSave, delimiter=',')
 
     return potentialBreakage, currentBreakage, relativeBreakage
 

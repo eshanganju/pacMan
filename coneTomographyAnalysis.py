@@ -151,8 +151,8 @@ for scan in scanList:
 
         # Relative breakage
         brHardin = Measure.getRelativeBreakageHardin( psdOriginal=psdOrig,
-                                                      psdCurrent=psdFeret,
+                                                      psdCurrent=psdFeret[:,2:],
                                                       smallSizeLimit=0.075,
                                                       saveData=True,
                                                       sampleName=currentSampleName,
-                                                      outputDir=outpurLoc )
+                                                      outputDir=outputLoc )
