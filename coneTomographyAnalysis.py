@@ -22,7 +22,7 @@ from pac import Segment
 from pac import Measure
 from pac import Plot
 
-v=0
+v=int(input('Enter number: '))
 
 if v==0:
     scanList = ['2QR_25_tip','2QR_25_mid','2QR_25_top']
