@@ -44,8 +44,8 @@ def readDataFromCsv(fileLocation,skipHeader=0,maxRows=0,delim=',',fmt='float',da
         elif fmt == 'int':
             return int(data)
 
-def extractSubregionFromTiffSequence(folderDir, centerZ, topLeftY, topLeftX, lngt, calib, invImg=False,
-                                     saveImg=False, outputDir='', sampleName='XXX'):
+def extractSubregionFromTiffSequence( folderDir, reference='topLeft', Z, Y, X, lngt, calib,
+                                      invImg=False, saveImg=False, outputDir='', sampleName='XXX'):
     """This function reads data from sequence of tiff images from XCT
     The entire image is read and a cubic subregion specified by the user is returned
 
@@ -53,12 +53,17 @@ def extractSubregionFromTiffSequence(folderDir, centerZ, topLeftY, topLeftX, lng
     ----------
     folderDir : str
         location of the image sequences
-    centerZ : int
+    reference : str
+        topLeft - the ZYX locations are of the top left
+        center - the ZYX locations are of the the center
+    Z : int
         slice number of center of the subregion
-    topLeftY : int
-        Y (vertical) location in pixel units of the lop left corner of the subregion (in correct orientation)
-    topLeftX : int
-        X (horizontal) location in pixel units of the lop left corner of the subregion (in correct orientation)
+    Y : int
+        Y (vertical) location in pixel units of the subregion
+         (in correct orientation)
+    X : int
+        X (horizontal) location in pixel units of the subregion
+        (in correct orientation)
     lngt : float
         length in mm of the subregion volume
     calib : float
@@ -77,14 +82,20 @@ def extractSubregionFromTiffSequence(folderDir, centerZ, topLeftY, topLeftX, lng
     subregion : unsigned integer ndarray
         3D numpy array of extracted subregion.
     """
-    upperSlice = centerZ + int( ( lngt / 2 ) / calib)
-    lowerSlice = centerZ - int( ( lngt / 2 ) / calib )
+    upperSlice = Z + int( ( lngt / 2 ) / calib)
+    lowerSlice = Z - int( ( lngt / 2 ) / calib )
 
-    topRow = int(topLeftY)
-    bottomRow = int(topLeftY) + int(lngt/calib)
+    if reference == 'topLeft':
+        topRow = int(Y)
+        bottomRow = int(Y) + int(lngt/calib)
+        leftCol = int(X)
+        rightCol = int(X) + int(lngt/calib)
 
-    leftCol = int(topLeftX)
-    rightCol = int(topLeftX) + int(lngt/calib)
+    elif reference == 'center':
+        topRow = int(Y) - int(lngt/calib)//2
+        bottomRow = int(Y) + int(lngt/calib)//2
+        leftCol = int(X) - int(lngt/calib)//2
+        rightCol = int(X) + int(lngt/calib)//2
 
     print( '\n\nReading files from: ' + folderDir )
     searchString = folderDir + '/*tif'
@@ -126,5 +137,5 @@ def extractSubregionFromTiffSequence(folderDir, centerZ, topLeftY, topLeftX, lng
         if VERBOSE: print('\nSaving gli subregion map...')
         tiffy.imsave( outputDir + sampleName + '-gliMap.tif',croppedGLIMap.astype('uint16') )
 
-    return croppedGLIMap
+     return croppedGLIMap
 
