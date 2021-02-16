@@ -111,9 +111,10 @@ for scan in scanList:
 
         # Extraction of the subregion from the complete scan
         subregionGLIMap = Reader.extractSubregionFromTiffSequence( folderDir=scanInputLoc,
-                                                                   centerZ=subregionZ,
-                                                                   topLeftY=subregionYXArray[currentSubregion,0],
-                                                                   topLeftX=subregionYXArray[currentSubregion,1],
+                                                                   reference='topLeft',
+                                                                   Z=subregionZ,
+                                                                   Y=subregionYXArray[currentSubregion,0],
+                                                                   X=subregionYXArray[currentSubregion,1],
                                                                    lngt=nD50*subregionD50,
                                                                    calib=subregionCalib,
                                                                    invImg=False,
