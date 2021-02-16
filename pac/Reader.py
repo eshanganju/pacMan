@@ -44,7 +44,7 @@ def readDataFromCsv(fileLocation,skipHeader=0,maxRows=0,delim=',',fmt='float',da
         elif fmt == 'int':
             return int(data)
 
-def extractSubregionFromTiffSequence( folderDir, reference='topLeft', Z, Y, X, lngt, calib,
+def extractSubregionFromTiffSequence( folderDir, Z, Y, X, lngt, calib, reference='topLeft',
                                       invImg=False, saveImg=False, outputDir='', sampleName='XXX'):
     """This function reads data from sequence of tiff images from XCT
     The entire image is read and a cubic subregion specified by the user is returned
@@ -137,5 +137,5 @@ def extractSubregionFromTiffSequence( folderDir, reference='topLeft', Z, Y, X, l
         if VERBOSE: print('\nSaving gli subregion map...')
         tiffy.imsave( outputDir + sampleName + '-gliMap.tif',croppedGLIMap.astype('uint16') )
 
-     return croppedGLIMap
+    return croppedGLIMap
 
