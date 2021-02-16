@@ -24,19 +24,46 @@ from pac import Plot
 
 v=int(input('Enter number: '))
 
-if v==0:
+# 2QR 25
+if v==1:
     scanList = ['2QR_25_tip','2QR_25_mid','2QR_25_top']
     originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv'
     psdOrig = Reader.readDataFromCsv( originalPSDLoc,
                                       maxRows=10,
                                       dataForm='array').reshape(10,2)
+# 2QR 50
+#if v==2:
 
+# 2QR 90
+#if v==3:
+
+# OGF 25
+if v==4:
+    scanList = ['OGF_25_tip','OGF_25_mid','OGF_25_top']
+    originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv'
+    psdOrig = Reader.readDataFromCsv( originalPSDLoc,
+                                      maxRows=10,
+                                      dataForm='array').reshape(10,2)
+
+# OGF 50
+#if v==5:
+
+# OGF 90
+#if v==6:
+
+# OTC 25
 if v==7:
     scanList = ['OTC_25_tip','OTC_25_mid','OTC_25_top']
     originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv'
     psdOrig = Reader.readDataFromCsv( originalPSDLoc,
                                       maxRows=10,
                                       dataForm='array').reshape(10,2)
+# OTC 50
+#if v==8:
+
+# OTC 90
+#if v==9:
+
 numberofSubregionsPerScan=10
 nD50=6
 
@@ -90,28 +117,28 @@ for scan in scanList:
                                                                    lngt=nD50*subregionD50,
                                                                    calib=subregionCalib,
                                                                    invImg=False,
-                                                                   saveImg=True,
+                                                                   saveImg=False,
                                                                    outputDir=outputLoc,
                                                                    sampleName=currentSampleName )
 
         # Binarization using Otsu
         binMap = Segment.binarizeAccordingToOtsu( gliMapToBinarize=subregionGLIMap,
                                                   sampleName=currentSampleName,
-                                                  saveImg=True,
+                                                  saveImg=False,
                                                   outputDir=outputLoc,
                                                   returnThresholdVal=False)
 
         # EDM and particle centers
         edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
                                                   scaleUp = int(1),
-                                                  saveImg=True,
+                                                  saveImg=False,
                                                   sampleName=currentSampleName,
                                                   outputDir=outputLoc )
         # EDM peaks
         edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
                                                         h=int(1),
                                                         sampleName=currentSampleName,
-                                                        saveImg=True,
+                                                        saveImg=False,
                                                         outputDir=outputLoc )
 
         # Watershed segmentation
@@ -119,7 +146,7 @@ for scan in scanList:
                                                 edmMapForTopo=edmMap,
                                                 edmPeaksForSeed=edmPeaksMap,
                                                 sampleName=currentSampleName,
-                                                saveImg=True,
+                                                saveImg=False,
                                                 outputDir=outputLoc )
 
         # Correction of segmentation errors
