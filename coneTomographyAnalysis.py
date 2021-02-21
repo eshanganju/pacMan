@@ -25,7 +25,11 @@ from pac import Plot
 v=int(input('Enter number: '))
 userH=int(1)
 userRR=0.6
+numberofSubregionsPerScan=10
+nD50=6
+
 mainInput = '/home/eg/codes/pacInput/'
+subregionInput = '/home/eg/pacMan/subregionInfo/'
 mainOutput = '/home/eg/codes/pacOutput/cone/finalFolder/'
 
 # 2QR 25
@@ -98,14 +102,13 @@ if v==9:
                                     maxRows=10,
                                     dataForm='array').reshape(10,2)
 
-numberofSubregionsPerScan=10
-nD50=6
+
 
 for scan in scanList:
 
     # Locations of data
     scanInputLoc = mainInput + scan + '/'
-    subregionInfo = mainInput + scan + '/' + 'subregionInfo.csv'
+    subregionInfo = subregionInput + 'subregionInfo-' + scan +'.csv'
     outputLoc = mainOutput + scan + '/'
 
     # Reading subregion data saved in the subregionInfo location.

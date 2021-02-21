@@ -15,6 +15,8 @@ outputLoc='/home/eg/codes/pacOutput/cone/testForOversegmentationCorrection/testO
 
 labMap = tiffy.imread('/home/eg/codes/pacOutput/cone/testForOversegmentationCorrection/testOfPeaksAndRr/test-1-0.6-labMap.tif')
 
+subregionCalib = 0.0123007
+
 corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
                                              pad=int(2),
                                              areaLimit=700,
