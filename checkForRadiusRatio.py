@@ -8,6 +8,7 @@ import tifffile as tiffy
 
 from pac import Segment
 from pac import Measure
+from pac import Read
 
 userRR=float(input('Enter rr: '))
 currentSampleName='test-1-' + str(userRR)
@@ -16,6 +17,10 @@ outputLoc='/home/eg/codes/pacOutput/cone/testForOversegmentationCorrection/testO
 labMap = tiffy.imread('/home/eg/codes/pacOutput/cone/testForOversegmentationCorrection/testOfPeaksAndRr/test-1-0.6-labMap.tif')
 
 subregionCalib = 0.0123007
+originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv'
+psdOrig = Read.readDataFromCsv( originalPSDLoc,
+                                maxRows=10,
+                                dataForm='array').reshape(10,2)
 
 corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
                                              pad=int(2),
