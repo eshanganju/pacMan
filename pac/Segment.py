@@ -6,7 +6,7 @@ from scipy.ndimage.morphology import binary_fill_holes
 from scipy.ndimage.morphology import binary_opening
 from skimage.morphology import local_maxima as localMaxima
 from skimage.morphology import h_maxima as hmax
-from skimage.morphology import watershed as wsd
+from skimage.segmentation import watershed as wsd
 from skimage.filters import threshold_otsu
 import tifffile as tiffy
 import matplotlib.pyplot as plt
