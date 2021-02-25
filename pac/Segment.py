@@ -622,7 +622,7 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
 
 def applyPaddingToLabelledMap( labelledMap, pad ):
     paddedMap = labelledMap
-    padLabMap = np.zeros( ( labelledMap.shape[0]+2*pad, labelledMap.shape[0]+2*pad, labelledMap.shape[0]+2*pad ) )
+    padLabMap = np.zeros( ( labelledMap.shape[0]+2*pad, labelledMap.shape[1]+2*pad, labelledMap.shape[2]+2*pad ) )
     padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ] = labelledMap
     return padLabMap.astype(int)
 
