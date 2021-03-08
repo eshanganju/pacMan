@@ -47,5 +47,7 @@ pacMan uses the following libraries:
 - spam
 - glob
 
+# Speeding up the code
+- Numba for numpy manipulations
 
 
