@@ -45,6 +45,8 @@ totalTimeStart=time.time()
 # 1499 and 1501 (top and bottom of the 150s0N sample)
 i = int(input('Enter the number you want:'))
 
+
+#0-------------------------
 if i == -1 :
     inputFolderLocation = '/home/eg/codes/pacInput/2QR-0N/'
     ofl = '/home/eg/codes/pacOutput/2QR-0N-Top/'
@@ -63,12 +65,12 @@ if i == -1 :
 
 if i == 0 :
     inputFolderLocation = '/home/eg/codes/pacInput/2QR-0N/'
-    ofl = '/home/eg/codes/pacOutput/2QR-0N/'
+    ofl = '/home/eg/codes/pacOutput/2QR-0N-Middle/'
     originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv' # Original GSD location
 
 
     # Data details 0N:
-    dataName = '2qr-0N'
+    dataName = '2QR-0N-Middle'
     measVoidRatio = 0.734                                     # Void ratio measured from 1D compression experiment
     d50 = 0.73                                                          # D50 in mm - original gradation
     cal = 0.011932                                                      # calibration from CT mm/voxel
@@ -77,6 +79,24 @@ if i == 0 :
     xCenter = 504                                                       # Voxel units - horizontal center
     origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )         # Original GSD
 
+if i == 1 :
+    inputFolderLocation = '/home/eg/codes/pacInput/2QR-0N/'
+    ofl = '/home/eg/codes/pacOutput/2QR-0N-Bottom/'
+    originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv' # Original GSD location
+
+
+    # Data details 0N:
+    dataName = '2qr-0N-Bottom'
+    measVoidRatio = 0.734                                     # Void ratio measured from 1D compression experiment
+    d50 = 0.73                                                          # D50 in mm - original gradation
+    cal = 0.011932                                                      # calibration from CT mm/voxel
+    zCenter = 513                                                       # Voxel units - center of slice
+    yCenter = 274                                                       # Voxel units - vertical center
+    xCenter = 504                                                       # Voxel units - horizontal center
+    origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )         # Original GSD
+#0-------------------------
+
+#50-------------------------
 if i == 50 :
     inputFolderLocation = '/home/eg/codes/pacInput/2QR-50N/'
     ofl = '/home/eg/codes/pacOutput/2QR-50N/'
@@ -92,7 +112,9 @@ if i == 50 :
     yCenter = 433                                                       # Voxel units - vertical center
     xCenter = 512                                                       # Voxel units - horizontal center
     origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )         # Original GSD
+#50-------------------------
 
+#100-------------------------
 if i == 100 :
     inputFolderLocation = '/home/eg/codes/pacInput/2QR-100N/'
     ofl = '/home/eg/codes/pacOutput/2QR-100N/'
@@ -108,11 +130,13 @@ if i == 100 :
     yCenter = 432                                                       # Voxel units - vertical center
     xCenter = 510                                                       # Voxel units - horizontal center
     origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )         # Original GSD
+#100-------------------------
 
+#500-------------------------
 if i == 500 :
     inputFolderLocation = '/home/eg/codes/pacInput/2QR-500N/'
     ofl = '/home/eg/codes/pacOutput/2QR-500N-2/'
-    originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/2qrOrig10Mpa.csv' # Original GSD location
+    originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv' # Original GSD location
 
 
     # Data details 0N:
@@ -124,15 +148,33 @@ if i == 500 :
     yCenter = 438                                                       # Voxel units - vertical center
     xCenter = 511                                                       # Voxel units - horizontal center
     origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )         # Original GSD
+#500-------------------------
 
-if i == 1500 :
+#1500----------------------
+if i == 1499 :
     inputFolderLocation = '/home/eg/codes/pacInput/2QR-1500N/'
-    ofl = '/home/eg/codes/pacOutput/2QR-1500N-2/'
-    originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/2qrOrig30Mpa.csv' # Original GSD location
+    ofl = '/home/eg/codes/pacOutput/2QR-1500N-2-Top/'
+    originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv' # Original GSD location
 
 
     # Data details 0N:
-    dataName = '2qr-1500N-2'
+    dataName = '2qr-1500N-2-Top'
+    measVoidRatio = 0.591                                     # Void ratio measured from 1D compression experiment
+    d50 = 0.73                                                          # D50 in mm - original gradation
+    cal = 0.011931                                                      # calibration from CT mm/voxel
+    zCenter = 513                                                       # Voxel units - center of slice
+    yCenter = 576                                                       # Voxel units - vertical center
+    xCenter = 507                                                       # Voxel units - horizontal center
+    origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )         # Original GSD
+
+if i == 1500 :
+    inputFolderLocation = '/home/eg/codes/pacInput/2QR-1500N/'
+    ofl = '/home/eg/codes/pacOutput/2QR-1500N-2-Middle/'
+    originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv' # Original GSD location
+
+
+    # Data details 0N:
+    dataName = '2qr-1500N-2-Middle'
     measVoidRatio = 0.591                                     # Void ratio measured from 1D compression experiment
     d50 = 0.73                                                          # D50 in mm - original gradation
     cal = 0.011931                                                      # calibration from CT mm/voxel
@@ -140,74 +182,108 @@ if i == 1500 :
     yCenter = 450                                                       # Voxel units - vertical center
     xCenter = 507                                                       # Voxel units - horizontal center
     origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )         # Original GSD
-    print('Analysing 2QR - 1500')
 
+if i == 1501 :
+    inputFolderLocation = '/home/eg/codes/pacInput/2QR-1500N/'
+    ofl = '/home/eg/codes/pacOutput/2QR-1500N-2-Bottom/'
+    originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv' # Original GSD location
+
+
+    # Data details 0N:
+    dataName = '2qr-1500N-2-Bottom'
+    measVoidRatio = 0.591                                     # Void ratio measured from 1D compression experiment
+    d50 = 0.73                                                          # D50 in mm - original gradation
+    cal = 0.011931                                                      # calibration from CT mm/voxel
+    zCenter = 513                                                       # Voxel units - center of slice
+    yCenter = 326                                                       # Voxel units - vertical center
+    xCenter = 507                                                       # Voxel units - horizontal center
+    origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )         # Original GSD
+#1500----------------------
 eLen = 6*d50          # Edge length in mm
 
+totalTimeStart = time.time()
+
 # Reading and cropping the data file
-gliMap = Read.extractSubregionFromTiffSequence( inputFolderLocation,
-                                                Z=zCenter,
-                                                Y=yCenter,
-                                                X=xCenter,
-                                                lngt=eLen,
-                                                calib=cal,
-                                                reference='center',
-                                                invImg=False,
-                                                saveImg=True, 
-                                                outputDir=ofl, 
-                                                sampleName=dataName)
-gsdOK = False
+subregionGLIMap = Read.extractSubregionFromTiffSequence(inputFolderLocation,
+                                                        Z=zCenter,
+                                                        Y=yCenter,
+                                                        X=xCenter,
+                                                        lngt=eLen,
+                                                        calib=cal,
+                                                        reference='center',
+                                                        invImg=False,
+                                                        saveImg=True, 
+                                                        outputDir=ofl, 
+                                                        sampleName=dataName)
 
-# Naming tifffiles:
-gliName = ofl + 'gliMap.tiff'
-binName = ofl + 'binMap.tiff'
-edName = ofl + 'edMap.tiff'
-labName = ofl + 'labMap.tiff'
-corLabName = ofl + 'corLabMap.tiff'
-noEdgeCorLabName = ofl + 'noEdgeCorLabMap.tiff'
+# Binarization using Otsu
+binMap = Segment.binarizeAccordingToDensity( gliMapToBinarize=subregionGLIMap,
+                                             measuredVoidRatio=measVoidRatio,
+                                             returnThresholdVal=False,
+                                             saveImg=True,
+                                             saveData=True,
+                                             sampleName=dataName,
+                                             outputDir=ofl)
 
-while gsdOK == False:
-    dmScaleUpFactor = int(input('Enter scaling for EDM: '))
-    thresholdEdForPeak = int(input('Enter threshold of ED for peaks: '))
+# EDM and particle centers
+edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
+                                          scaleUp = int(1),
+                                          saveImg=False,
+                                          sampleName=dataName,
+                                          outputDir=ofl )
 
-    binMap, binThresh, edMap, edPeakMap, labMap = Segment.obtLabMapITKWS( gliMap ,
-                                                                          measuredVoidRatio=measVoidRatio ,
-                                                                          outputLocation=ofl,
-                                                                          edmScaleUp=edmScaleUpFactor,    # this represents how much the EDMs must be scaled up
-                                                                          peakEdLimit=thresholdEdForPeak) # this represents what euclid distance should be considered for a peak
+# EDM peaks
+edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
+                                                h=3,
+                                                sampleName=dataName,
+                                                saveImg=False,
+                                                outputDir=ofl )
 
-    labMap = tf.imread('/home/eg/codes/pacOutput/2QR-1500N/labMap.tiff').astype('uint32')
-    corLabMap = Segment.fixErrSeg( labMap , pad=2, outputLocation=ofl , radiusRatioLimit=0.7)
+# Watershed segmentation
+labMap = Segment.segmentUsingWatershed( binaryMapToSeg=binMap,
+                                        edmMapForTopo=edmMap,
+                                        edmPeaksForSeed=edmPeaksMap,
+                                        sampleName=dataName,
+                                        saveImg=True,
+                                        outputDir=ofl )
 
-    noEdgeCorLabMap = Segment.removeEdgeLabels( corLabMap )
-    gsd1, gsd2, gsd3, gsd4, gsd5, gsd6= Measure.gsdAll( noEdgeCorLabMap , calib=cal )
+# Correction of segmentation errors
+corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
+                                             pad=int(2),
+                                             areaLimit=700,
+                                             considerEdgeLabels=True,
+                                             checkForSmallParticles=False,
+                                             radiusCheck=True,
+                                             radiusRatioLimit=0.7,
+                                             sampleName=dataName,
+                                             saveImg=True,
+                                             outputDir=ofl )
 
-    Plot.grainSizeDistribution(origGSD,gsd1,gsd2,gsd3,gsd4,gsd5,gsd6)
+# Removal of edge labels
+noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLabMap,
+                                            pad=0,
+                                            sampleName=dataName,
+                                            saveImg=True,
+                                            outputDir=ofl )
 
-    tf.imsave( gliName, gliMap.astype( 'uint32' ) )
-    tf.imsave( binName, binMap.astype( 'uint32' ) )
-    tf.imsave( edName, edMap.astype( 'uint32' ) )
-    tf.imsave( labName, labMap.astype( 'uint32' ) )
-    tf.imsave( corLabName , corLabMap.astype( 'uint32'))
-    tf.imsave( noEdgeCorLabName , noEdgeCorLabMap.astype('uint32'))
+# Particle size list
+pss = Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis=noEdgeCorLabMap,
+                                    calibrationFactor=cal,
+                                    saveData=True,
+                                    sampleName=dataName,
+                                    outputDir=ofl )
 
-    #exitLoop = input('\nIs any gsd ok(y/[n])?')
-    exitLoop = 'y'
+# Particle size distribution
+psdFeret = Measure.getParticleSizeDistribution( psSummary=pss,
+                                                sizeParam='feretMin',
+                                                saveData=True,
+                                                sampleName=dataName,
+                                                outputDir=ofl )
 
-    if exitLoop == 'y': gsdOK=True
-    else: print('\n\nCheck the output file for (1) threshold error, (2) marker error')
-
-
-contactTableRW = Measure.contactNormalsSpam(corLabMap, method = 'rw')
+#-Fabric-
+contactTableRW = Measure.getContactNormalsSPAM(corLabMap, method = 'randomWalker')
 N, F, Fq = Measure.fabricVariablesWithUncertainity( contactTableRW, vectUncert = 0.26 )
 
-# Save files as csv
-np.savetxt((ofl+ str(eLen/d50) +'D50-gsd1.csv'), gsd1, delimiter=',')                        # Eqsp
-np.savetxt((ofl+ str(eLen/d50) +'D50-gsd2.csv'), gsd2, delimiter=',')                        # CA max
-np.savetxt((ofl+ str(eLen/d50) +'D50-gsd3.csv'), gsd3, delimiter=',')                        # CA med
-np.savetxt((ofl+ str(eLen/d50) +'D50-gsd4.csv'), gsd4, delimiter=',')                        # CA min
-np.savetxt((ofl+ str(eLen/d50) +'D50-gsd5.csv'), gsd5, delimiter=',')                        # Feret max
-np.savetxt((ofl+ str(eLen/d50) +'D50-gsd6.csv'), gsd6, delimiter=',')                        # Feret min
 np.savetxt((ofl+ str(eLen/d50) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
 np.savetxt((ofl+ str(eLen/d50) +'N.txt'), N, fmt='%r')                                       # Fabric tensor
 np.savetxt((ofl+ str(eLen/d50) +'F.txt'), F, fmt='%r')                                       # Deviatoric fabric tensor
