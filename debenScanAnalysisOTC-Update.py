@@ -37,8 +37,6 @@ Plotting orientations in rose and EAP diagrams
 totalTimeStart=time.time()
 
 # 0 (0 MPa), 500 (10 MPa), 1500 (30 MPa), 4500 (90 MPa)
-data = np.array([4500])
-
 for i in [0,500,1500]:
     print('Running i = ' + str(i))
 

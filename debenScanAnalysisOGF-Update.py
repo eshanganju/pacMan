@@ -10,17 +10,17 @@ The objective of this code is to assemble the codes in pac directory to:
         3.5 Fabric tensor
     4. Distribution of rel. breakage and fabric tensor
 '''
-# Importing files
-from pac import Read                     	# Reads files, cuts into smaller pieces
-from pac import Filter                      	# Filters files using NLM filter
-from pac import Segment                     	# Binarizatio and WS
-from pac import Measure                     	# Calculates particle size, mprphology, contact, breakage
-from pac import Plot                        	# Plotting functions
 
-import time                                						# The fourth dimension
-import matplotlib.pyplot as plt            					 	# matplotlib
-import skimage.external.tifffile as tf      					# scikit-image
-import numpy as np                          					# numpy
+# Importing files
+from pac import Read                        # Reads files, cuts into smaller pieces
+from pac import Filter                      # Filters files using NLM filter
+from pac import Segment                     # Binarizatio and WS
+from pac import Measure                     # Calculates particle size, mprphology, contact, breakage
+from pac import Plot                        # Plotting functions
+import time                                 # The fourth dimension
+import matplotlib.pyplot as plt             # matplotlib
+import skimage.external.tifffile as tf      # scikit-image
+import numpy as np                          # numpy
 from uncertainties import unumpy as unp
 from uncertainties import ufloat
 from uncertainties.umath import *
@@ -33,78 +33,73 @@ Relative breakage according to Einav
 Contact according to ITK and RW
 Plotting orientations in rose and EAP diagrams
 '''
-
 totalTimeStart=time.time()
 
-# 0 (0 MPa), 500 (10 MPa), 1500 (30 MPa), 4500 (90 MPa)
-data = np.array([4500])
+# 0 (0 MPa), 100 (2 MPa), 500 (10 MPa), 1500 (30 MPa), 4500 (90 MPa)
 
-for i in [0,500,1500]:
+for i in [0,100,500,1500]:
+    
     print('Running i = ' + str(i))
-
+    
     if i == 0 :
-        inputFolderLocation = '/home/eg/codes/pacInput/OTC-0N/'
-        ofl = '/home/eg/codes/pacOutput/OTC-0N/'
-        originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
+        inputFolderLocation = '/home/eg/codes/pacInput/OGF-0N/'
+        ofl = '/home/eg/codes/pacOutput/OGF-0N/' # output folder location ofl
+        originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv' # Original GSD location
 
         # Data details 0N:
-        dataName = 'otc-0N'
-        measVoidRatio = 0.541                                           # Void ratio measured from 1D compression experiment
-        d50 = 0.72                                                          # D50 in mm - original gradation
+        dataName = 'ogf-0N'
+        measVoidRatio = 0.635                                     # Void ratio measured from 1D compression experiment
+        d50 = 0.62                                                          # D50 in mm - original gradation
         cal = 0.01193                                                       # calibration from CT mm/voxel
-        zCenter = 513                                                       # Voxel units - center of slice
-        yCenter = 457                                                       # Voxel units - vertical center
-        xCenter = 507                                                       # Voxel units - horizontal center
-        origGSD= np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
+        zCenter = 508                                                       # Voxel units - center of slice
+        yCenter = 437                                                       # Voxel units - vertical center
+        xCenter = 490                                                       # Voxel units - horizontal center
+        origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )         # Original GSD
+
+    if i == 100 :
+        inputFolderLocation = '/home/eg/codes/pacInput/OGF-100N/'
+        ofl = '/home/eg/codes/pacOutput/OGF-100N/'
+        originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv' # Original GSD location
+
+        # Data details 0N:
+        dataName = 'ogf-100N'
+        measVoidRatio = 0.625                                     # Void ratio measured from 1D compression experiment
+        d50 = 0.62                                                          # D50 in mm - original gradation
+        cal = 0.01193                                                       # calibration from CT mm/voxel
+        zCenter = 508                                                       # Voxel units - center of slice
+        yCenter = 447                                                       # Voxel units - vertical center
+        xCenter = 490                                                       # Voxel units - horizontal center
+        origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )         # Original GSD
 
     if i == 500 :
-        inputFolderLocation = '/home/eg/codes/pacInput/OTC-500N/'
-        ofl = '/home/eg/codes/pacOutput/OTC-500N/'
-        originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
+        inputFolderLocation = '/home/eg/codes/pacInput/OGF-500N/'
+        ofl = '/home/eg/codes/pacOutput/OGF-500N/'
+        originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv' # Original GSD location
 
-        # Data details:
-        dataName = 'otc-500N'
-        measVoidRatio = 0.517                                           # Void ratio measured from 1D compression experiment
-
-        d50 = 0.72                                                          # D50 in mm - original gradation
+        # Data details 0N:
+        dataName = 'ogf-500N'
+        measVoidRatio = 0.615                                     # Void ratio measured from 1D compression experiment
+        d50 = 0.62                                                          # D50 in mm - original gradation
         cal = 0.01193                                                       # calibration from CT mm/voxel
-        zCenter = 513                                                       # Voxel units - center of slice
-        yCenter = 455                                                       # Voxel units - vertical center
-        xCenter = 507                                                       # Voxel units - horizontal center
-        origGSD= np.loadtxt( originalGSDLocation , delimiter=',' )     # Original GSD
+        zCenter = 508                                                       # Voxel units - center of slice
+        yCenter = 458                                                       # Voxel units - vertical center
+        xCenter = 490                                                       # Voxel units - horizontal center
+        origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )         # Original GSD
 
     if i == 1500 :
-        inputFolderLocation = '/home/eg/codes/pacInput/OTC-1500N/'
-        ofl = '/home/eg/codes/pacOutput/OTC-1500N/'
-        originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
+        inputFolderLocation = '/home/eg/codes/pacInput/OGF-1500N/'
+        ofl = '/home/eg/codes/pacOutput/OGF-1500N/'
+        originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogf30MPa.csv' # Original GSD location
 
-        # Data details:
-        dataName = 'otc-1500N'
-        measVoidRatio = 0.499                                           # Void ratio measured from 1D compression experiment
-
-        d50 = 0.72                                                          # D50 in mm - original gradation
+        # Data details 0N:
+        dataName = 'ogf-1500N'
+        measVoidRatio = 0.571  #0.565                             # Void ratio measured from 1D compression experiment
+        d50 = 0.62                                                          # D50 in mm - original gradation
         cal = 0.01193                                                       # calibration from CT mm/voxel
-        zCenter = 513                                                       # Voxel units - center of slice
-        yCenter = 462                                                       # Voxel units - vertical center
-        xCenter = 507                                                       # Voxel units - horizontal center
-        origGSD= np.loadtxt( originalGSDLocation , delimiter=',' )     		# Original GSD
-
-    if i == 4500 :
-        inputFolderLocation = '/home/eg/codes/pacInput/OTC-4500N/'
-        ofl = '/home/eg/codes/pacOutput/1D/OTC-4500N/'
-        originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
-
-        # Data details:
-        dataName = 'otc-4500N'
-        measVoidRatio = 0.359                                     # Void ratio measured from 1D compression experiment
-
-        d50 = 0.72                                                          # D50 in mm - original gradation
-        cal = 0.01193                                                       # calibration from CT mm/voxel
-        zCenter = 513                                                       # Voxel units - center of slice
-        yCenter = 480                                                       # Voxel units - vertical center
-        xCenter = 507                                                       # Voxel units - horizontal center
-        origGSD= np.loadtxt( originalGSDLocation , delimiter=',' )     		# Original GSD
-
+        zCenter = 508                                                       # Voxel units - center of slice
+        yCenter = 437                                                       # Voxel units - vertical center
+        xCenter = 490                                                       # Voxel units - horizontal center
+        origGSD = np.loadtxt( originalGSDLocation , delimiter=',' )         # Original GSD
 
     eLen = 6*d50          # Edge length in mm
 
@@ -204,4 +199,4 @@ totalTimeEnd = time.time()
 totalTimeTaken = totalTimeEnd - totalTimeStart
 
 print('\n\n--------------------------------------**')
-print('Total time taken to analyze(mins): ~' + str(totalTimeTaken//60))    
+print('Total time taken to analyze(mins): ~' + str(totalTimeTaken//60))
