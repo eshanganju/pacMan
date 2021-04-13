@@ -984,6 +984,7 @@ def getCoordinationNumberList(labelledMap):
 
     labelledMap = Segment.applyPaddingToLabelledMap(labelledMap, 2)
 
+    # TODO: Not sure why this starts from 2. Check and corret this if error (20210402)
     for currentLabel in range(2, numberOfLabels + 1):
         print('\nChecking for label ' + str(np.round(currentLabel)))
         contactLabels = slab.contactingLabels( labelledMap, currentLabel, areas=False)

@@ -37,13 +37,13 @@ totalTimeStart=time.time()
 
 # 0 (0 MPa), 100 (2 MPa), 500 (10 MPa), 1500 (30 MPa), 4500 (90 MPa)
 
-for i in [1500]:
+for i in [0,100,500,1500]:
     
     print('Running i = ' + str(i))
     
     if i == 0 :
         inputFolderLocation = '/home/eg/codes/pacInput/OGF-0N/'
-        ofl = '/home/eg/codes/pacOutput/OGF-0N/' # output folder location ofl
+        ofl = '/home/eg/codes/pacOutput/1DAnalysisFinal20210415/OGF-0N/' # output folder location ofl
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv' # Original GSD location
 
         # Data details 0N:
@@ -58,7 +58,7 @@ for i in [1500]:
 
     if i == 100 :
         inputFolderLocation = '/home/eg/codes/pacInput/OGF-100N/'
-        ofl = '/home/eg/codes/pacOutput/OGF-100N/'
+        ofl = '/home/eg/codes/pacOutput/1DAnalysisFinal20210415/OGF-100N/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv' # Original GSD location
 
         # Data details 0N:
@@ -73,7 +73,7 @@ for i in [1500]:
 
     if i == 500 :
         inputFolderLocation = '/home/eg/codes/pacInput/OGF-500N/'
-        ofl = '/home/eg/codes/pacOutput/OGF-500N/'
+        ofl = '/home/eg/codes/pacOutput/1DAnalysisFinal20210415/OGF-500N/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv' # Original GSD location
 
         # Data details 0N:
@@ -89,7 +89,7 @@ for i in [1500]:
     if i == 1500 :
         print('1500!!!!')
         inputFolderLocation = '/home/eg/codes/pacInput/OGF-1500N/'
-        ofl = '/home/eg/codes/pacOutput/OGF-1500N/'
+        ofl = '/home/eg/codes/pacOutput/1DAnalysisFinal20210415/OGF-1500N/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv' # Original GSD location
 
         # Data details 0N:
@@ -135,7 +135,7 @@ for i in [1500]:
 
     # EDM peaks
     edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
-                                                    h=3,
+                                                    h=1,
                                                     sampleName=dataName,
                                                     saveImg=False,
                                                     outputDir=ofl )
@@ -155,7 +155,7 @@ for i in [1500]:
                                                  considerEdgeLabels=True,
                                                  checkForSmallParticles=False,
                                                  radiusCheck=True,
-                                                 radiusRatioLimit=0.7,
+                                                 radiusRatioLimit=0.8,
                                                  sampleName=dataName,
                                                  saveImg=True,
                                                  outputDir=ofl )
@@ -181,20 +181,18 @@ for i in [1500]:
                                                     sampleName=dataName,
                                                     outputDir=ofl )
 
-    psdEqsp = Measure.getParticleSizeDistribution( psSummary=pss,
-                                                    sizeParam='eqsp',
-                                                    saveData=True,
-                                                    sampleName=dataName,
-                                                    outputDir=ofl )
-
     #-Fabric-
     contactTableRW = Measure.getContactNormalsSPAM(corLabMap, method = 'randomWalker')
     N, F, Fq = Measure.fabricVariablesWithUncertainity( contactTableRW, vectUncert = 0.26 )
+
+    # Coordination number
+    coordinationNumberList = Measure.getCoordinationNumberList( corLabMap )
 
     np.savetxt((ofl+ dataName + '-' + str(eLen/d50) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
     np.savetxt((ofl+ dataName + '-' + 'N.txt'), N, fmt='%r')                                       # Fabric tensor
     np.savetxt((ofl+ dataName + '-' + 'F.txt'), F, fmt='%r')                                       # Deviatoric fabric tensor
     np.savetxt((ofl+ dataName + '-' + 'Fq.txt'), Fq, fmt='%r')                                     # Ansiotropy factor
+    np.savetxt( (ofl+ dataName + 'cnList.txt'), coordinationNumberList, delimiter=',')
 
 totalTimeEnd = time.time()
 totalTimeTaken = totalTimeEnd - totalTimeStart
