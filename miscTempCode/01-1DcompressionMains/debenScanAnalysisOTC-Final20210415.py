@@ -10,7 +10,7 @@ The objective of this code is to assemble the codes in pac directory to:
         3.5 Fabric tensor
     4. Distribution of rel. breakage and fabric tensor
 '''
-# Importing files
+# Importing files!
 from pac import Read                     	# Reads files, cuts into smaller pieces
 from pac import Filter                      	# Filters files using NLM filter
 from pac import Segment                     	# Binarizatio and WS
@@ -37,14 +37,12 @@ Plotting orientations in rose and EAP diagrams
 totalTimeStart=time.time()
 
 # 0 (0 MPa), 500 (10 MPa), 1500 (30 MPa), 4500 (90 MPa)
-data = np.array([4500])
-
 for i in [0,500,1500]:
     print('Running i = ' + str(i))
 
     if i == 0 :
         inputFolderLocation = '/home/eg/codes/pacInput/OTC-0N/'
-        ofl = '/home/eg/codes/pacOutput/OTC-0N/'
+        ofl = '/home/eg/codes/pacOutput/1DAnalysisFinal20210415/OTC-0N/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
 
         # Data details 0N:
@@ -59,7 +57,7 @@ for i in [0,500,1500]:
 
     if i == 500 :
         inputFolderLocation = '/home/eg/codes/pacInput/OTC-500N/'
-        ofl = '/home/eg/codes/pacOutput/OTC-500N/'
+        ofl = '/home/eg/codes/pacOutput/1DAnalysisFinal20210415/OTC-500N/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
 
         # Data details:
@@ -75,7 +73,7 @@ for i in [0,500,1500]:
 
     if i == 1500 :
         inputFolderLocation = '/home/eg/codes/pacInput/OTC-1500N/'
-        ofl = '/home/eg/codes/pacOutput/OTC-1500N/'
+        ofl = '/home/eg/codes/pacOutput/1DAnalysisFinal20210415/OTC-1500N/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
 
         # Data details:
@@ -91,7 +89,7 @@ for i in [0,500,1500]:
 
     if i == 4500 :
         inputFolderLocation = '/home/eg/codes/pacInput/OTC-4500N/'
-        ofl = '/home/eg/codes/pacOutput/1D/OTC-4500N/'
+        ofl = '/home/eg/codes/pacOutput/1DAnalysisFinal20210415/1D/OTC-4500N/'
         originalGSDLocation = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv' # Original GSD location
 
         # Data details:
@@ -104,7 +102,6 @@ for i in [0,500,1500]:
         yCenter = 480                                                       # Voxel units - vertical center
         xCenter = 507                                                       # Voxel units - horizontal center
         origGSD= np.loadtxt( originalGSDLocation , delimiter=',' )     		# Original GSD
-
 
     eLen = 6*d50          # Edge length in mm
 
@@ -139,7 +136,7 @@ for i in [0,500,1500]:
 
     # EDM peaks
     edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
-                                                    h=3,
+                                                    h=1,
                                                     sampleName=dataName,
                                                     saveImg=False,
                                                     outputDir=ofl )
@@ -159,7 +156,7 @@ for i in [0,500,1500]:
                                                  considerEdgeLabels=True,
                                                  checkForSmallParticles=False,
                                                  radiusCheck=True,
-                                                 radiusRatioLimit=0.7,
+                                                 radiusRatioLimit=0.8,
                                                  sampleName=dataName,
                                                  saveImg=True,
                                                  outputDir=ofl )
@@ -185,23 +182,21 @@ for i in [0,500,1500]:
                                                     sampleName=dataName,
                                                     outputDir=ofl )
 
-    psdEqsp = Measure.getParticleSizeDistribution( psSummary=pss,
-                                                    sizeParam='eqsp',
-                                                    saveData=True,
-                                                    sampleName=dataName,
-                                                    outputDir=ofl )
-
     #-Fabric-
     contactTableRW = Measure.getContactNormalsSPAM(corLabMap, method = 'randomWalker')
     N, F, Fq = Measure.fabricVariablesWithUncertainity( contactTableRW, vectUncert = 0.26 )
+
+    # Coordination number
+    coordinationNumberList = Measure.getCoordinationNumberList( corLabMap )
 
     np.savetxt((ofl+ dataName + '-' + str(eLen/d50) +'D50-contactTableRW.csv'), contactTableRW, delimiter=',')    # Contact table RW
     np.savetxt((ofl+ dataName + '-' + 'N.txt'), N, fmt='%r')                                       # Fabric tensor
     np.savetxt((ofl+ dataName + '-' + 'F.txt'), F, fmt='%r')                                       # Deviatoric fabric tensor
     np.savetxt((ofl+ dataName + '-' + 'Fq.txt'), Fq, fmt='%r')                                     # Ansiotropy factor
+    np.savetxt( (ofl+ dataName + 'cnList.txt'), coordinationNumberList, delimiter=',')
 
 totalTimeEnd = time.time()
 totalTimeTaken = totalTimeEnd - totalTimeStart
 
 print('\n\n--------------------------------------**')
-print('Total time taken to analyze(mins): ~' + str(totalTimeTaken//60))    
+print('Total time taken to analyze(mins): ~' + str(totalTimeTaken//60))
