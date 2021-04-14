@@ -42,6 +42,7 @@ def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleNam
         print('\nStarting segmentation using watershed')
         print('-----------------------------------------*')
 
+    # This is using the skimage.segmentation watershed algorithm. There is no watershed line as the default is set to false.
     labMap = wsd(-edmMapForTopo,markers=edmPeaksForSeed,mask=binaryMapToSeg)
 
     if saveImg == True:
@@ -612,6 +613,27 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
 
     if checkForSmallParticles == True:
         correctedCleanedLabelMap = removeSmallParticles( correctedLabelMap )
+        
+        binMapWithSmallParticles = np.zeros_like(correctedLabelMap)
+        binMapWithoutSmallParticles = np.zeros_like(correctedCleanedLabelMap)
+
+        binMapWithSmallParticles[ np.where( correctedLabelMap > 0 ) ] = 1
+        binMapWithoutSmallParticles[ np.where( correctedCleanedLabelMap > 0 ) ] = 1
+
+        solidVolumeWithSmallParticles = np.sum(binMapWithSmallParticles)
+        solidVolumeWithoutSmallParticles = np.sum(binMapWithoutSmallParticles)
+
+        volumeLoss = solidVolumeWithSmallParticles - solidVolumeWithoutSmallParticles
+        percentLoss = (volumeLoss/solidVolumeWithSmallParticles * 100)
+
+        volumeLossFileName = outputDir +  sampleName + '-volumeLossSmallPtcl.txt'
+        f = open( volumeLossFileName, "w+" )
+        f.write( "Solid voxel count with small particles = %f\n" % solidVolumeWithSmallParticles )
+        f.write( "Solid voxel count without small particles =  %f\n" % solidVolumeWithoutSmallParticles )
+        f.write( "Volume loss = %f\n" % volumeLoss )
+        f.write( "Percent volume loss = %f\n" % percentLoss )
+        f.close()
+    
     else : correctedCleanedLabelMap = correctedLabelMap
 
     if saveImg == True:
@@ -630,7 +652,7 @@ def removePaddingFromLabelledMap( padLabMap, pad ):
     cleanLabMap = padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ].astype(int)
     return cleanLabMap
 
-def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 500, saveImg=False, sampleName='', outputDir=''):
+def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 1000, saveImg=False, sampleName='', outputDir=''):
     """[TODO] can the total volume of particles be calculated - this can be used to modify the 
     gradation
 
@@ -641,7 +663,7 @@ def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 500, saveIm
     these particles should be removed
 
     Assuming the diameter as the equivalent sphere diameter, the volume (voxel count)
-    for such a particle will be about 500 voxels.
+    for such a particle will be about 1000 voxels - This is 10X10X10 pixel size
 
     Parameters
     ----------
