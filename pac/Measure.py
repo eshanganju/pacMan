@@ -16,9 +16,7 @@ from pac import Segment
 VERBOSE = True      # Show all the text when running the functions
 TESTING = True      # Set to False before release
 
-def getPSDAll( labelledMap , calibrationFactor=1.0, getEqsp=True, getCaMax=True,
-               getCaMed=True, getCaMin=True, getFeretMax=True, getFeretMin=True,
-               saveData=True, sampleName='', outputDir=''  ):
+def getPSDAll( labelledMap , calibrationFactor=1.0, getEqsp=True, getCaMax=True, getCaMed=True, getCaMin=True, getFeretMax=True, getFeretMin=True, saveData=True, sampleName='', outputDir=''):
     """This module returns the paricle size distribution for the 6 size
     parameters commonly used to quantify particle size.
 
@@ -108,8 +106,7 @@ def getPSDAll( labelledMap , calibrationFactor=1.0, getEqsp=True, getCaMax=True,
 
     return psdEqsp, psdCaMax, psdCaMed, psdCaMin, psdFeretMax, psdFeretMin
 
-def getParticleSizeArray( labelledMapForParticleSizeAnalysis, calibrationFactor=1,
-                          saveData=False, sampleName='', outputDir=''):
+def getParticleSizeArray( labelledMapForParticleSizeAnalysis, calibrationFactor=1, saveData=False, sampleName='', outputDir=''):
     """Computes particle size parameters for all the labels in the segmented data
 
     Parameters
@@ -484,8 +481,7 @@ def getOrientationUsingSandK(numberOfOrientations=100):
 
     return points
 
-def getParticleSizeDistribution( psSummary, sizeParam='feretMin',
-                                 sampleName='', saveData=True, outputDir='' ):
+def getParticleSizeDistribution( psSummary, sizeParam='feretMin', sampleName='', saveData=True, outputDir='' ):
     """Generates the particle size distribution from list of labels and sizes
 
     Different size parametres can be used to generate the grain size distribution.
@@ -585,8 +581,7 @@ def getZYXLocationOfLabel( labelMap, label ):
     zyxLocationData[:,2] = particleLocationArray[2]
     return zyxLocationData
 
-def getRelativeBreakageHardin( psdOriginal, psdCurrent,smallSizeLimit=0.075,
-                               saveData=True, sampleName='', outputDir='' ):
+def getRelativeBreakageHardin( psdOriginal, psdCurrent,smallSizeLimit=0.075, saveData=True, sampleName='', outputDir='' ):
     """Computes the relative breakage parameter according to the defintion by Hardin(1985)
 
     Hardin proposes that after a particle reaches a certain threshold size
@@ -658,8 +653,7 @@ def getRelativeBreakageHardin( psdOriginal, psdCurrent,smallSizeLimit=0.075,
 
     return potentialBreakage, currentBreakage, relativeBreakage
 
-def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=2.6,
-                              smallSizeLimit=0.001 ):
+def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=2.6, smallSizeLimit=0.001 ):
     """Computes the relative breakage parameter according to the defintion of Einav (2007)
 
     Einav proposes that the largest particle size does not change with crushing and
@@ -730,8 +724,7 @@ def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=2.6,
 
     return potentialBreakage, currentBreakage, relativeBreakage
 
-def getUltimateFractalParticleSizeDistribution(minSize=0.0,maxSize=0.0,
-                                               fractalDimension=2.6,num=100):
+def getUltimateFractalParticleSizeDistribution(minSize=0.0,maxSize=0.0,fractalDimension=2.6,num=100):
     """Gets the ultimate particle size distribution following the fractal
     distribution
 
@@ -810,9 +803,8 @@ def getAreaUnderPSDCurve( psd, maxSize=0.0 ):
 
     return areaUnderCurve
 
-#These need to be checked
-def getContactNormalsSPAM( labelMap, method='randomWalker',
-                         saveData=True, sampleName='', outputDir='' ):
+#TODO: these need to be checked
+def getContactNormalsSPAM( labelMap, method='randomWalker', saveData=True, sampleName='', outputDir='', keepPositive='Y'):
     """Computes the orientations of the inter-particle contacts
     in the scanned data using the spam libraries. This is a loose wrapper.
 
@@ -828,6 +820,22 @@ def getContactNormalsSPAM( labelMap, method='randomWalker',
     method : string
         This can be either randomWalker or itkWatershed
 
+    saveData : Bool
+        Should the data be saved? Default is True 
+
+    sampleName : string
+        Name of the sample. Default is empty (same location as the script)
+
+    outputDir : string
+        Where should the data be stored? Default is empty (same location as the script)
+
+    keepPositive : strin
+        Which axis should be flipped to have it as positive?
+        Z - Flips the contact notmals to have all Z as positive
+        Y - Flips the contact normals to have all Y as positive
+        X - Flips the contact normals to have all X as positive
+        Default is Y
+
     Return
     ------
     contTable : float ndarray
@@ -837,7 +845,7 @@ def getContactNormalsSPAM( labelMap, method='randomWalker',
     if VERBOSE:
         print( "\nMeasuring contact normals using SPAM library\n" )
 
-    labelledData = labelMap
+    labelledData = Segment.applyPaddingToLabelledMap(labelMap, 2)
     binaryData = np.zeros_like( labelledData )
     binaryData[ np.where( labelledData != 0 ) ] = int( 1 )
 
@@ -855,7 +863,11 @@ def getContactNormalsSPAM( labelMap, method='randomWalker',
         j = 0
         for i in range( 0 , ortTabSandRW.shape[ 0 ] ):
 
-            if ortOnlySandRW[ i , 0 ] < 0:
+            if keepPositive == 'Z': axisToKeepPositive = 0
+            if keepPositive == 'Y': axisToKeepPositive = 1
+            if keepPositive == 'X': axisToKeepPositive = 2
+            
+            if ortOnlySandRW[ i , axisToKeepPositive ] < 0:
                 ortOnlySandRW[ i ] *= -1
 
             if ( ortOnlySandRW[ i ] ** 2 ).sum() <= 0.999:
@@ -976,7 +988,7 @@ def fabricVariablesWithUncertainity( contactTable, vectUncert = 0 ):
 
     return uN, uF, uFq
 
-def getCoordinationNumberList(labelledMap):
+def getCoordinationNumberList( labelledMap ):
     """
     """
     numberOfLabels = labelledMap.max()
@@ -984,8 +996,7 @@ def getCoordinationNumberList(labelledMap):
 
     labelledMap = Segment.applyPaddingToLabelledMap(labelledMap, 2)
 
-    # TODO: Not sure why this starts from 2. Check and corret this if error (20210402)
-    for currentLabel in range(2, numberOfLabels + 1):
+    for currentLabel in range(1, numberOfLabels + 1):
         print('\nChecking for label ' + str(np.round(currentLabel)))
         contactLabels = slab.contactingLabels( labelledMap, currentLabel, areas=False)
         numberOfContacts = len(contactLabels)
