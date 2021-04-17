@@ -829,7 +829,7 @@ def getContactNormalsSPAM( labelMap, method='randomWalker', saveData=True, sampl
     outputDir : string
         Where should the data be stored? Default is empty (same location as the script)
 
-    keepPositive : strin
+    keepPositive : string
         Which axis should be flipped to have it as positive?
         Z - Flips the contact notmals to have all Z as positive
         Y - Flips the contact normals to have all Y as positive
@@ -996,6 +996,7 @@ def getCoordinationNumberList( labelledMap ):
 
     labelledMap = Segment.applyPaddingToLabelledMap(labelledMap, 2)
 
+    # TODO: Starting from 2 because corLabMap does not seem to have a label 1. 
     for currentLabel in range(1, numberOfLabels + 1):
         print('\nChecking for label ' + str(np.round(currentLabel)))
         contactLabels = slab.contactingLabels( labelledMap, currentLabel, areas=False)

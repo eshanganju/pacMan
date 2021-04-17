@@ -11,18 +11,9 @@ The objective of this code is to assemble the codes in pac directory to:
     4. Distribution of rel. breakage and fabric tensor
 '''
 # Importing files
-from pac import Read                      # Reads files, cuts into smaller pieces
-from pac import Filter                      # Filters files using NLM filter
-from pac import Segment                     # Binarizatio and WS
-from pac import Measure                     # Calculates particle size, mprphology, contact, breakage
 from pac import Plot                        # Plotting functions
-import time                                 # The fourth dimension
-import matplotlib.pyplot as plt             # matplotlib
-import skimage.external.tifffile as tf      # scikit-image
 import numpy as np                          # numpy
-from uncertainties import unumpy as unp
-from uncertainties import ufloat
-from uncertainties.umath import *
+import matplotlib
 
 '''
 Binarization according to density measurement
@@ -32,18 +23,14 @@ Relative breakage according to Einav
 Contact according to ITK and RW
 Plotting orientations in rose and EAP diagrams
 '''
-totalTimeStart=time.time()
 
-run = ['2QR-500N-Middle']
-# run = [ '2QR-0N-Top','2QR-0N-Middle','2QR-0N-Bottom', '2QR-50N-Middle','2QR-100N-Middle','2QR-500N-Middle', '2QR-1500N-Top', '2QR-1500N-Middle', '2QR-1500N-Bottom']
-# run = [ 'OGF-0N', 'OGF-100N', 'OGF-500N', 'OGF-1500N']
-# run = [ 'OTC-0N' ,'OTC-500N', 'OTC-1500N','OTC-MD-0N', 'OTC-MD-50N', 'OTC-MD-500N', 'OTC-MD-1500N']
+# run = ['2QR-1500N-Middle']
+
+run = [ '2QR-0N-Top','2QR-0N-Middle','2QR-0N-Bottom', '2QR-50N-Middle','2QR-100N-Middle','2QR-500N-Middle', '2QR-1500N-Top', '2QR-1500N-Middle', '2QR-1500N-Bottom', \
+		'OGF-0N', 'OGF-100N', 'OGF-500N', 'OGF-1500N',\
+		'OTC-0N' ,'OTC-500N', 'OTC-1500N','OTC-MD-0N', 'OTC-MD-50N', 'OTC-MD-500N', 'OTC-MD-1500N' ]
 
 for i in run:
-
-	# Void ratios taken from /1DAnalysisFinal20210415/VoidRatioCalculationsCTSamples.ods
-
-	############# 2QR-D #############	
 	if i == '2QR-0N-Top' :
 	    inputFolderLocation = '/home/eg/codes/pacInput/2QR-0N/'
 	    ofl = '/home/eg/codes/pacOutput/1DAnalysisFinal20210415/2QR-0N-Top/'
@@ -366,85 +353,31 @@ for i in run:
 	    eLen = 7*d50
 	############# OTC - MD #############
 
-	# Reading and cropping the data file
-	subregionGLIMap = Read.extractSubregionFromTiffSequence(inputFolderLocation,
-	                                                        Z=zCenter,
-	                                                        Y=yCenter,
-	                                                        X=xCenter,
-	                                                        lngt=eLen,
-	                                                        calib=cal,
-	                                                        reference='center',
-	                                                        invImg=False,
-	                                                        saveImg=True, 
-	                                                        outputDir=ofl, 
-	                                                        sampleName=dataName)
+	# Contact analysis - With edge labels included
+	fileLocation = ofl + dataName + '-contactTable-RW.txt'
+	contTable = np.loadtxt(fileLocation, delimiter=' ').astype(float)
 
-	# Binarization using Otsu
-	binMap = Segment.binarizeAccordingToDensity( gliMapToBinarize=subregionGLIMap,
-	                                             measuredVoidRatio=measVoidRatio,
-	                                             returnThresholdVal=False,
-	                                             saveImg=True,
-	                                             saveData=True,
-	                                             sampleName=dataName,
-	                                             outputDir=ofl)
-
-	# EDM and particle centers
-	edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
-	                                          scaleUp = int(1),
-	                                          saveImg=False,
-	                                          sampleName=dataName,
-	                                          outputDir=ofl )
-
-	# EDM peaks
-	edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
-	                                                h=1,
-	                                                sampleName=dataName,
-	                                                saveImg=False,
-	                                                outputDir=ofl )
-
-	# Watershed segmentation
-	labMap = Segment.segmentUsingWatershed( binaryMapToSeg=binMap,
-	                                        edmMapForTopo=edmMap,
-	                                        edmPeaksForSeed=edmPeaksMap,
-	                                        sampleName=dataName,
-	                                        saveImg=True,
-	                                        outputDir=ofl )
-
-	# Correction of segmentation errors
-	corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
-	                                             pad=int(2),
-	                                             areaLimit=700,
-	                                             considerEdgeLabels=True,
-	                                             checkForSmallParticles=True,
-	                                             radiusCheck=True,
-	                                             radiusRatioLimit=0.8,
-	                                             sampleName=dataName,
-	                                             saveImg=True,
-	                                             outputDir=ofl )
-
-	# Removal of edge labels
-	noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLabMap,
-	                                            pad=0,
-	                                            sampleName=dataName,
-	                                            saveImg=True,
-	                                            outputDir=ofl )
-
-	# Particle size list
-	pss = Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis=noEdgeCorLabMap,
-	                                    calibrationFactor=cal,
-	                                    saveData=True,
-	                                    sampleName=dataName,
-	                                    outputDir=ofl )
-
-	# Particle size distribution
-	psdFeret = Measure.getParticleSizeDistribution( psSummary=pss,
-	                                                sizeParam='feretMin',
-	                                                saveData=True,
-	                                                sampleName=dataName,
-	                                                outputDir=ofl )
-
-totalTimeEnd = time.time()
-totalTimeTaken = totalTimeEnd - totalTimeStart
-
-print('\n\n--------------------------------------**')
-print('Total time taken to analyze(mins): ~' + str(totalTimeTaken//60))
+	# Updateaxis locations
+	'''The original spam code plots Z perpendicular to the plane and 
+	Y and X on the plane. This makes sense since most data has Z along 
+	the loading direction, I guess. For this data, the Y is the loading direction
+	'''
+	contTable[:,[2,3]] = contTable[:,[3,2]]
+	orientations = contTable[ : , 2 : 5 ]
+	figPathAndName = ofl + dataName + '-lambertProjections.tif'
+	
+	Plot.plotOrientationsSPAM( orientations_zyx=orientations,
+							   projection="lambert",
+							   plot="both",
+							   binValueMin=0,
+							   binValueMax=10,
+							   binNormalisation = False,
+							   numberOfRings = 18,
+							   pointMarkerSize = 3,
+							   cmap = matplotlib.pyplot.cm.gray_r,
+							   title = "",
+							   subtitle = {"points":"","bins":""},
+							   saveFigPath = figPathAndName,
+							   figXSize = 10.5,
+							   figYSize = 4.8,
+							   figFontSize = 15 )

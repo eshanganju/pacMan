@@ -51,8 +51,7 @@ def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleNam
 
     return labMap.astype('uint16')
 
-def binarizeAccordingToOtsu( gliMapToBinarize, returnThresholdVal=True, 
-                             sampleName='', saveImg=True, saveData=True, outputDir='' ):
+def binarizeAccordingToOtsu( gliMapToBinarize, returnThresholdVal=True, sampleName='', saveImg=True, saveData=True, outputDir='' ):
     """Function to binarize GLI map according to OTSUs algorithm
     Uses the skimage.filter module threshold_otsu
 
@@ -105,8 +104,7 @@ def binarizeAccordingToOtsu( gliMapToBinarize, returnThresholdVal=True,
     if returnThresholdVal == True: return otsuThreshold, binaryMap
     elif returnThresholdVal == False: return binaryMap
 
-def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold=0.0, returnThresholdVal=True,
-                                      saveImg=True, saveData=True, sampleName='', outputDir=''):
+def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold=0.0, returnThresholdVal=True, saveImg=True, saveData=True, sampleName='', outputDir=''):
     """Binarize according to user supplied threshold
 
     Parameters
@@ -158,8 +156,7 @@ def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold=0.0, retur
     if returnThresholdVal == True: return userThreshold, binaryMap
     if returnThresholdVal == False: return binaryMap
 
-def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = 0.0, returnThresholdVal=True,
-                                maxIterations=100, saveImg=True, saveData=True, sampleName='', outputDir='' ):
+def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = 0.0, returnThresholdVal=True, maxIterations=100, saveImg=True, saveData=True, sampleName='', outputDir='' ):
     """Binarizes the XCT data according to the known density
 
     The density or void ratio of the sample is computed after binarization and then
@@ -321,8 +318,7 @@ def removeSpecks( oldBinaryMapWithSpecks, remSpecksCheck=True ):
 
     return newNoSpekBinaryMap.astype(int)
 
-def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1),
-                             saveImg=False, sampleName='', outputDir='' ):
+def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1), saveImg=False, sampleName='', outputDir='' ):
     """Computes the euclidian distance tranform (EDT) for a binary map
 
     An EDT or an euclidian distance map (EDM) is an ndarray of the same size as
@@ -375,8 +371,7 @@ def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1),
 
     return edMap
 
-def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5,
-                              saveImg=False, sampleName='', outputDir='' ):
+def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5, saveImg=False, sampleName='', outputDir='' ):
     """Computes the local maxima in the euclidean distance map.
     it uses skimage.morphology
 
@@ -432,11 +427,10 @@ def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5,
 
     return edmPeakMarkers
 
-def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
-                             considerEdgeLabels=True,checkForSmallParticles = True,
-                             radiusCheck=True, radiusRatioLimit=0.5, sampleName='',
-                             saveImg=True, outputDir=''):
+def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, considerEdgeLabels=True,checkForSmallParticles = True, radiusCheck=True, radiusRatioLimit=0.5, sampleName='', saveImg=True, outputDir=''):
     """Corrects over segmentation caused by incorrect edm peak selection
+
+    Also remmoves small particle smaller than the obsevable threshold
 
     There are two main approaches. One way is to compute the "area of contact"
     between the two particles suspected of being one, and if the area is larger
@@ -611,6 +605,7 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
 
     correctionLog.close()
 
+    # Checking for small particles
     if checkForSmallParticles == True:
         correctedCleanedLabelMap = removeSmallParticles( correctedLabelMap )
         
@@ -643,27 +638,24 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700,
     return correctedCleanedLabelMap
 
 def applyPaddingToLabelledMap( labelledMap, pad ):
-    paddedMap = labelledMap
     padLabMap = np.zeros( ( labelledMap.shape[0]+2*pad, labelledMap.shape[1]+2*pad, labelledMap.shape[2]+2*pad ) )
     padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ] = labelledMap
     return padLabMap.astype(int)
 
 def removePaddingFromLabelledMap( padLabMap, pad ):
-    cleanLabMap = padLabMap[pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ].astype(int)
+    cleanLabMap = padLabMap[ pad : padLabMap.shape[0]-pad , pad : padLabMap.shape[1]-pad , pad : padLabMap.shape[ 2 ]-pad ].astype(int)
     return cleanLabMap
 
 def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 1000, saveImg=False, sampleName='', outputDir=''):
     """[TODO] can the total volume of particles be calculated - this can be used to modify the 
     gradation
 
-    Removes particles that have a size smaller than a threshold.
-
     The idea is that particles that have less than 10 voxels across the
     diameter cannot be accurately measured for size and contact. Thus,
     these particles should be removed
 
-    Assuming the diameter as the equivalent sphere diameter, the volume (voxel count)
-    for such a particle will be about 1000 voxels - This is 10X10X10 pixel size
+    Assuming a cube - this may be debatable - the volume (voxel count)
+    for such a particle will be 1000 voxels
 
     Parameters
     ----------
@@ -693,11 +685,11 @@ def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 1000, saveI
         voxelCount = isolate.sum()
 
         if voxelCount >= voxelCountThreshold :
-            print('\tIts OK')
+            if VERBOSE: print('\tIts OK')
             ptclNo = ptclNo + 1
 
         else:
-            print('\tIts smaller than threshold, removing and updating particle counts')
+            if VERBOSE: print('\tIts smaller than threshold, removing and updating particle counts')
             labMapUpdated[ np.where( labMapUpdated  == ptclNo ) ] = int( 0 )
             labMapUpdated = moveLabelsUp( labMapUpdated , ptclNo )
             ptclCount = ptclCount - 1
@@ -738,8 +730,7 @@ def moveLabelsUp( labelMapToFix, labelStartingWhichMoveUp ):
     fixedLabelMap = labelMapToFix - deltaMatrix
     return fixedLabelMap
 
-def removeEdgeLabels( labelledMapForEdgeLabelRemoval, pad=0,
-                      sampleName='', saveImg=False, outputDir='' ):
+def removeEdgeLabels( labelledMapForEdgeLabelRemoval, pad=0, sampleName='', saveImg=False, outputDir='' ):
     """Removes edge labels that may be cut due to the subregion boundary
 
     Parameters
