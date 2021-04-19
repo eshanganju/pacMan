@@ -26,6 +26,7 @@ Plotting orientations in rose and EAP diagrams
 
 # run = ['2QR-1500N-Middle']
 
+
 run = [ '2QR-0N-Top','2QR-0N-Middle','2QR-0N-Bottom', '2QR-50N-Middle','2QR-100N-Middle','2QR-500N-Middle', '2QR-1500N-Top', '2QR-1500N-Middle', '2QR-1500N-Bottom', \
 		'OGF-0N', 'OGF-100N', 'OGF-500N', 'OGF-1500N',\
 		'OTC-0N' ,'OTC-500N', 'OTC-1500N','OTC-MD-0N', 'OTC-MD-50N', 'OTC-MD-500N', 'OTC-MD-1500N' ]
@@ -364,7 +365,9 @@ for i in run:
 	'''
 	contTable[:,[2,3]] = contTable[:,[3,2]]
 	orientations = contTable[ : , 2 : 5 ]
-	figPathAndName = ofl + dataName + '-lambertProjections.tif'
+	# figPathAndName = ofl + dataName + '-lambertProjections.tif'
+	figPathAndName = '/home/eg/Desktop/figsLambert/'+dataName+'-lambertProjections-Hot_r.tif'
+
 	
 	Plot.plotOrientationsSPAM( orientations_zyx=orientations,
 							   projection="lambert",
@@ -374,10 +377,10 @@ for i in run:
 							   binNormalisation = False,
 							   numberOfRings = 18,
 							   pointMarkerSize = 3,
-							   cmap = matplotlib.pyplot.cm.gray_r,
+							   cmap = matplotlib.pyplot.cm.hot_r,
 							   title = "",
 							   subtitle = {"points":"","bins":""},
 							   saveFigPath = figPathAndName,
-							   figXSize = 10.5,
+							   figXSize = 12,
 							   figYSize = 4.8,
-							   figFontSize = 15 )
+							   figFontSize = 20 )

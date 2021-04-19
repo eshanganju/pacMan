@@ -23,7 +23,6 @@ import numpy as np                          # numpy
 from uncertainties import unumpy as unp
 from uncertainties import ufloat
 from uncertainties.umath import *
-import tifffile as tf
 
 '''
 Binarization according to density measurement
@@ -39,8 +38,6 @@ totalTimeStart=time.time()
 # run = [ '2QR-0N-Top','2QR-0N-Middle','2QR-0N-Bottom', '2QR-50N-Middle','2QR-100N-Middle','2QR-500N-Middle', '2QR-1500N-Top', '2QR-1500N-Middle', '2QR-1500N-Bottom']
 # run = [ 'OGF-0N', 'OGF-100N', 'OGF-500N', 'OGF-1500N']
 run = [ 'OTC-0N' ,'OTC-500N', 'OTC-1500N','OTC-MD-0N', 'OTC-MD-50N', 'OTC-MD-500N', 'OTC-MD-1500N']
-
-print(run)
 
 for i in run:
 
@@ -369,27 +366,86 @@ for i in run:
 	    eLen = 7*d50
 	############# OTC - MD #############
 
-	# # Contact analysis - with no edge labels included (CN only)
-	# noEdgeCorLabMapLoc = ofl + dataName + '-noEdgeCorrectedLabelMap.tif'
-	# noEdgeCorLabMap = tf.imread(noEdgeCorLabMapLoc)
+	# Reading and cropping the data file
+	# subregionGLIMap = Read.extractSubregionFromTiffSequence(inputFolderLocation,
+	#                                                         Z=zCenter,
+	#                                                         Y=yCenter,
+	#                                                         X=xCenter,
+	#                                                         lngt=eLen,
+	#                                                         calib=cal,
+	#                                                         reference='center',
+	#                                                         invImg=False,
+	#                                                         saveImg=True, 
+	#                                                         outputDir=ofl, 
+	#                                                         sampleName=dataName)
 
-	# coordinationNumberListNE = Measure.getCoordinationNumberList( noEdgeCorLabMap )
-	# np.savetxt( ( ofl + dataName + '-CNList-NoEdge.txt'), coordinationNumberListNE, delimiter=',')
+	# # Binarization using Otsu
+	# binMap = Segment.binarizeAccordingToDensity( gliMapToBinarize=subregionGLIMap,
+	#                                              measuredVoidRatio=measVoidRatio,
+	#                                              returnThresholdVal=False,
+	#                                              saveImg=True,
+	#                                              saveData=True,
+	#                                              sampleName=dataName,
+	#                                              outputDir=ofl)
 
-	# Contact analysis - With edge labels included
-	corLabMapLoc = ofl + dataName + '-correctedLabelMap.tif'
-	corLabMap = tf.imread(corLabMapLoc)
-		
-	coordinationNumberList = Measure.getCoordinationNumberList( corLabMap, excludeEdgeLabels=True )
-	np.savetxt( ( ofl + dataName + '-CNList(edgeLabelsExcluded).csv'), coordinationNumberList, delimiter=',')
+	# # EDM and particle centers
+	# edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
+	#                                           scaleUp = int(1),
+	#                                           saveImg=False,
+	#                                           sampleName=dataName,
+	#                                           outputDir=ofl )
 
-	# contactTableRW = Measure.getContactNormalsSPAM(corLabMap, method = 'randomWalker')
-	# np.savetxt( ( ofl + dataName +'-contactTable-RW.csv'), contactTableRW, fmt='%r' )    	# Contact table
-	
-	# N, F, Fq = Measure.fabricVariablesWithUncertainity( contactTableRW, vectUncert = 0.26 )
-	# np.savetxt( ( ofl + dataName +'-N2.txt'), N, fmt='%r' )    								# Fabric tensor
-	# np.savetxt( ( ofl + dataName +'-F2.txt'), F, fmt='%r' )   								# Deviatoric fabric tensor
-	# np.savetxt( ( ofl + dataName +'-Fq2.txt'), Fq, fmt='%r' )  								# Ansiotropy factor
+	# # EDM peaks
+	# edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
+	#                                                 h=1,
+	#                                                 sampleName=dataName,
+	#                                                 saveImg=False,
+	#                                                 outputDir=ofl )
+
+	# # Watershed segmentation
+	# labMap = Segment.segmentUsingWatershed( binaryMapToSeg=binMap,
+	#                                         edmMapForTopo=edmMap,
+	#                                         edmPeaksForSeed=edmPeaksMap,
+	#                                         sampleName=dataName,
+	#                                         saveImg=True,
+	#                                         outputDir=ofl )
+
+	# # Correction of segmentation errors
+	# corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
+	#                                              pad=int(2),
+	#                                              areaLimit=700,
+	#                                              considerEdgeLabels=True,
+	#                                              checkForSmallParticles=True,
+	#                                              radiusCheck=True,
+	#                                              radiusRatioLimit=0.8,
+	#                                              sampleName=dataName,
+	#                                              saveImg=True,
+	#                                              outputDir=ofl )
+
+	# # Removal of edge labels
+	# noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLabMap,
+	#                                             pad=0,
+	#                                             sampleName=dataName,
+	#                                             saveImg=True,
+	#                                             outputDir=ofl )
+	print('Checking Ferets')
+	import tifffile
+
+	noEdgeCorLabMap = tifffile.imread(ofl+dataName+'-noEdgeCorrectedLabelMap.tif')
+
+	# Particle size list
+	pss = Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis=noEdgeCorLabMap,
+	                                    calibrationFactor=cal,
+	                                    saveData=True,
+	                                    sampleName=dataName+'(SPAMFeret)',
+	                                    outputDir=ofl )
+
+	# Particle size distribution
+	psdFeret = Measure.getParticleSizeDistribution( psSummary=pss,
+	                                                sizeParam='feretMin',
+	                                                saveData=True,
+	                                                sampleName=dataName + '(SPAMFeret)',
+	                                                outputDir=ofl )
 
 totalTimeEnd = time.time()
 totalTimeTaken = totalTimeEnd - totalTimeStart

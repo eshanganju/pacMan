@@ -197,7 +197,7 @@ def plotOrientationsSPAM(orientations_zyx,
 
             radiusGridValues.append( _projectOrientations( projection, "spherical", [ 1, angle*math.pi/180.0, 0 ] )[1][1] )
 
-        ax.set_rgrids( radiusGridValues, labels=[ "%02i$^\circ$"%(x) for x in numpy.arange(  15,91,15) ], angle=None, fmt=None, fontsize=figFontSize-2 )
+        ax.set_rgrids( radiusGridValues, labels=[ "%02i$^\circ$"%(x) for x in numpy.arange(  15,91,15) ], angle=None, fmt=None, fontsize=12)
         ax.plot( projection_theta_r[:,0], projection_theta_r[:,1] , '.', markersize=pointMarkerSize )
 
         if plot == "points":
@@ -323,7 +323,7 @@ def plotOrientationsSPAM(orientations_zyx,
         for angle in radiusGridAngles:
             radiusGridValues.append( _projectOrientations( projection, "spherical", [ 1, angle*math.pi/180.0, 0 ] )[1][1] )
 
-        ax.set_rgrids( radiusGridValues, labels=[ "%02i$^\circ$"%(x) for x in numpy.arange(  15,91,15) ], angle=None, fmt=None, fontsize=figFontSize-2)
+        ax.set_rgrids( radiusGridValues, labels=[ "%02i$^\circ$"%(x) for x in numpy.arange(  15,91,15) ], angle=None, fmt=None, fontsize=12)
 
         fig.subplots_adjust(left=0.05,right=0.85)
 

@@ -150,8 +150,15 @@ def getParticleSizeArray( labelledMapForParticleSizeAnalysis, calibrationFactor=
         particleSizeDataSummary[particleNum, 5] = caMin * calibrationFactor
 
         # Feret diameters
-        feretMax, feretMin = getMinMaxFeretDia( labelMap=labelledMapForParticleSizeAnalysis,
-                                                label=int(particleNum), numOrts=100, numRots=10)
+        # feretMax, feretMin = getMinMaxFeretDia( labelMap=labelledMapForParticleSizeAnalysis,
+        #                                         label=int(particleNum), numOrts=100, numRots=10)
+
+        feretDia = getFeretDiametersSPAM( lab=labelledMapForParticleSizeAnalysis,
+                                          labelList=int(particleNum)  )
+
+        feretMax = feretDia [0,0]
+        feretMin = feretDia [0,1]
+
         particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
         particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
 
@@ -259,7 +266,7 @@ def _getMinMaxFeretDiaSPAM( labelMap, label, numOrts=100 ):
     """
     labOneOnly = np.zeros_like( labelMap )
     labOneOnly[ np.where( labelMap == label ) ] = 1
-    feretDims, feretOrts = slab.feretDiameters( labOneOnly, numberOfOrientations=numOrts )
+    feretDims, feretOrts = slab._feretDiameters( labOneOnly, numberOfOrientations=numOrts )
 
     feretMax = feretDims[1,0] # Indexing start at 1 cuz spam.feret measures the 0 index - void space
     feretMin = feretDims[1,1] # ^^
@@ -290,16 +297,23 @@ def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
     minFeretDia : float
 
     maxFeretDia : float
+
+    NOTES
+    -----
+
+    This code giced smaller particle sizes than the SPAM code. All analysis is reverted back to SPAM code till this issue is fixed. 
     """
     if TESTING: print('\nChecking feret diameters of ' + str(np.round(label)) + '/' + str( np.round( labelMap.max() ) ) )
 
-    zyxLocations = getZYXLocationOfLabel(labelMap, label)
+    zyxLocations = getZYXLocationOfLabel(labelMap, label).astype('float')
 
     cogZ, cogY, cogX = getCenterOfGravityFromZYXLocations ( zyxLocationData=zyxLocations )
 
     surfaceOnlyLabMap = getSurfaceVoxelsofParticle(labelMap, label, returnWithLabel = True)
 
-    zyxSurfaceLocations = getZYXLocationOfLabel(surfaceOnlyLabMap, label)
+    # zyxSurfaceLocations = getZYXLocationOfLabel(surfaceOnlyLabMap, label)
+    zyxSurfaceLocations = zyxLocations
+    print(zyxSurfaceLocations)
 
     meanMatrix = np.zeros_like(zyxSurfaceLocations)
     meanMatrix[:,0] = cogZ
@@ -362,9 +376,12 @@ def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
             correctedRotatedZYXSurfaceLocations = np.matmul( RzInv,np.matmul( RyInv, rotatedZYXSurfaceLocations ) )
 
             sizeRange = np.zeros( ( 3, 1 ) )
-            sizeRange[ 0, 0 ] = correctedRotatedZYXSurfaceLocations[ 0,: ].max() - correctedRotatedZYXSurfaceLocations[ 0, : ].min()
-            sizeRange[ 1, 0 ] = correctedRotatedZYXSurfaceLocations[ 1,: ].max() - correctedRotatedZYXSurfaceLocations[ 1, : ].min()
-            sizeRange[ 2, 0 ] = correctedRotatedZYXSurfaceLocations[ 2,: ].max() - correctedRotatedZYXSurfaceLocations[ 2, : ].min()
+            '''
+            THe one pixel value is added to account for hte length of hte pixel not considered
+            '''
+            sizeRange[ 0, 0 ] = correctedRotatedZYXSurfaceLocations[ 0,: ].max() - correctedRotatedZYXSurfaceLocations[ 0, : ].min() + 1
+            sizeRange[ 1, 0 ] = correctedRotatedZYXSurfaceLocations[ 1,: ].max() - correctedRotatedZYXSurfaceLocations[ 1, : ].min() + 1
+            sizeRange[ 2, 0 ] = correctedRotatedZYXSurfaceLocations[ 2,: ].max() - correctedRotatedZYXSurfaceLocations[ 2, : ].min() + 1
 
             if minFeretDiameter != 0:
                 if minFeretDiameter > sizeRange.min():
@@ -988,23 +1005,214 @@ def fabricVariablesWithUncertainity( contactTable, vectUncert = 0 ):
 
     return uN, uF, uFq
 
-def getCoordinationNumberList( labelledMap ):
+def getCoordinationNumberList( labelledMap, excludeEdgeLabels=True ):
     """
     """
     numberOfLabels = labelledMap.max()
-    coordinationNumberArray = np.zeros( ( numberOfLabels, 2) )
+
+    appliedPadding = 2
+
+    coordinationNumberArray = np.zeros( ( numberOfLabels, appliedPadding ) )
 
     labelledMap = Segment.applyPaddingToLabelledMap(labelledMap, 2)
 
-    # TODO: Starting from 2 because corLabMap does not seem to have a label 1. 
     for currentLabel in range(1, numberOfLabels + 1):
         print('\nChecking for label ' + str(np.round(currentLabel)))
+        
         contactLabels = slab.contactingLabels( labelledMap, currentLabel, areas=False)
         numberOfContacts = len(contactLabels)
+       
         coordinationNumberArray[currentLabel-1,0] = currentLabel
-        coordinationNumberArray[currentLabel-1,1] = numberOfContacts
+        
+        edgeLabel = Segment.checkIfEdgeLabel(labelledMap,currentLabel, pad = appliedPadding)
+        
+        if edgeLabel == False: coordinationNumberArray[currentLabel-1,1] = numberOfContacts
+        if edgeLabel == True: coordinationNumberArray[currentLabel-1,1] = -1
 
     # labelledMap = Segment.removePaddingFromLabelledMap(padLabMap, 2)
 
     return coordinationNumberArray
+
+def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass=None, numberOfOrientations=100, margin=0, interpolationOrder=0, returnOrts = False):
+    """
+    Calculates (binary) feret diameters (caliper lengths) over a number of equally-spaced orientations
+    and returns the maximum and minimum values, as well as the orientation they were found in.
+
+    Parameters
+    ----------
+        lab : 3D array of integers
+            Labelled volume, with lab.max() labels
+
+        labelList: list of ints, optional
+            List of labels for which to calculate feret diameters and orientations. Labels not in lab are ignored. Outputs are given in order of labelList.
+            If not defined (Default = None), a list is created from label 0 to lab.max()
+
+        boundingBoxes : lab.max()x6 array of ints, optional
+            Bounding boxes in format returned by ``boundingBoxes``.
+            If not defined (Default = None), it is recomputed by running ``boundingBoxes``
+
+        centresOfMass : lab.max()x3 array of floats, optional
+            Centres of mass in format returned by ``centresOfMass``.
+            If not defined (Default = None), it is recomputed by running ``centresOfMass``
+
+        numberOfOrientations : int, optional
+            Number of trial orientations in 3D to measure the caliper lengths in.
+            These are defined with a Saff and Kuijlaars Spiral.
+            Default = 100
+
+        margin : int, optional
+            Number of pixels by which to pad the bounding box length to apply as the margin in spam.label.getLabel().
+            Default = 0
+
+        interpolationOrder = int, optional
+            Interpolation order for rotating the object.
+            Default = 0
+
+    Returns
+    -------
+        feretDiameters : lab.max()x2 (or len(labelList)x2 if labelList is not None) array of integers
+            The max and min values of the caliper lengths of each labelled shape.
+            Expected accuracy is +- 1 pixel
+
+        feretOrientations : lab.max()x6 (or len(labelList)x6 if labelList is not None) array of floats
+            2 x Z,Y,X components of orientations of the max and min caliper lengths
+
+    Notes
+    -----
+        Function contributed by Estefan Garcia (Caltech, previously at Berkeley)
+    """
+
+    #Notes
+    #-------
+        #Must import spam.DIC to use this function because it utilizes the computePhi and applyPhi functions.
+        #This function currently runs in serial but can be improved to run in parallel.
+        
+    import spam.DIC
+    import spam
+    import spam.label as slab
+    import spam.plotting as splt
+    import spam.deformation as sdef
+
+    labelType = '<u4'
+    lab = lab.astype(labelType)
+
+    if labelList is None:
+        labelList = list(range(0,lab.max()+1))
+        feretDiameters = np.zeros((lab.max() + 1, 2))
+        feretOrientations = np.zeros((lab.max()+1,6))
+    
+    elif type(labelList) is not list and type(labelList) is not np.ndarray:
+        # Allow inputs to be ints or of type np.ndarray
+        labelList = [labelList]
+        feretDiameters = np.zeros((len(labelList),2))
+        feretOrientations = np.zeros((len(labelList),6))
+    
+    else:
+        feretDiameters = np.zeros((len(labelList),2))
+        feretOrientations = np.zeros((len(labelList),6))
+
+    #print('Calculating Feret diameters for '+str(len(labelList))+' label(s).')
+
+    if boundingBoxes is None:
+        boundingBoxes = spam.label.boundingBoxes(lab)
+    
+    if centresOfMass is None:
+        centresOfMass = spam.label.centresOfMass(lab, boundingBoxes=boundingBoxes)
+
+    # Define test orientations
+    testOrientations = splt.orientationPlotter.SaffAndKuijlaarsSpiral(4*numberOfOrientations)
+
+    i=0
+    while i < len(testOrientations):
+        if (testOrientations[i] < 0).any():
+            testOrientations = np.delete(testOrientations,i,axis=0)
+        else:
+            i+=1
+
+    # Compute rotation of trial orientations onto z-axis
+    rot_axes = np.cross(testOrientations,[1.,0.,0.])
+    rot_axes/=np.linalg.norm(rot_axes,axis=1,keepdims=True)
+    theta=np.reshape(np.rad2deg(np.arccos(np.dot(testOrientations,[1.,0.,0.]))),[len(testOrientations),1])
+
+    # Compute Phi and its inverse for all trial orientations
+    Phi = np.zeros((len(testOrientations),4,4))
+    transf_R = rot_axes*theta
+    
+    for r in range(0,len(transf_R)):
+        transformation = {'r': transf_R[r]}
+        Phi[r] = sdef.deformationFunction.computePhi(transformation)
+    
+    Phi_inv = np.linalg.inv(Phi)
+
+    # Loop through all labels provided in labelList. Note that labels might not be in order.
+    for labelIndex in range(0,len(labelList)):
+        print()
+        label = labelList[labelIndex]
+        
+        if label in lab and label > 0: #skip if label does not exist or if zero
+
+            particle = slab.label.getLabel(lab,
+                                          label,
+                                          boundingBoxes   = boundingBoxes,
+                                          centresOfMass   = centresOfMass,
+                                          extractCube     = True,
+                                          margin          = margin,
+                                          maskOtherLabels = True)
+            
+            subvol = particle['subvol']
+
+            # Initialize DMin and DMax using the untransformed orientation
+            subvol_transformed_BB = spam.label.boundingBoxes(subvol > 0.5)
+            zWidth = subvol_transformed_BB[1,1] - subvol_transformed_BB[1,0] + 1
+            yWidth = subvol_transformed_BB[1,3] - subvol_transformed_BB[1,2] + 1
+            xWidth = subvol_transformed_BB[1,5] - subvol_transformed_BB[1,4] + 1
+
+            index_max = np.argmax([zWidth,yWidth,xWidth])
+            index_min = np.argmin([zWidth,yWidth,xWidth])
+
+            DMax = max([zWidth, yWidth, xWidth])
+            DMin = min([zWidth, yWidth, xWidth])
+            maxOrientation = [np.array([1.,0.,0.]),
+                              np.array([0.,1.,0.]),
+                              np.array([0.,0.,1.])][index_max]
+            minOrientation = [np.array([1.,0.,0.]),
+                              np.array([0.,1.,0.]),
+                              np.array([0.,0.,1.])][index_min]
+
+            for orientationIndex in range(0,len(testOrientations)):
+                # Apply rotation matrix about centre of mass of particle
+                subvol_centreOfMass = spam.label.centresOfMass(subvol)
+                subvol_transformed = spam.DIC.applyPhi(subvol,
+                                                       Phi = Phi[orientationIndex],
+                                                       PhiPoint = subvol_centreOfMass[1],
+                                                       interpolationOrder=interpolationOrder)
+
+                # Use bounding box of transformed subvolume to calculate particle widths in 3 directions
+                subvol_transformed_BB = spam.label.boundingBoxes(subvol_transformed > 0.5)
+                zWidth = subvol_transformed_BB[1,1] - subvol_transformed_BB[1,0] + 1
+                yWidth = subvol_transformed_BB[1,3] - subvol_transformed_BB[1,2] + 1
+                xWidth = subvol_transformed_BB[1,5] - subvol_transformed_BB[1,4] + 1
+
+                # Check if higher than previous DMax or lower than previous DMin
+                index_max = np.argmax([DMax,zWidth,yWidth,xWidth])
+                index_min = np.argmin([DMin,zWidth,yWidth,xWidth])
+                DMax = max([DMax,zWidth,yWidth,xWidth])
+                DMin = min([DMin,zWidth,yWidth,xWidth])
+
+                # Update orientations for DMax and DMin
+                maxOrientation = [maxOrientation,
+                                testOrientations[orientationIndex],
+                                np.matmul(Phi_inv[orientationIndex,:3,:3],np.array([0,1,0])),
+                                np.matmul(Phi_inv[orientationIndex,:3,:3],np.array([0,0,1]))][index_max]
+                minOrientation = [minOrientation,
+                                testOrientations[orientationIndex],
+                                np.matmul(Phi_inv[orientationIndex,:3,:3],np.array([0,1,0])),
+                                np.matmul(Phi_inv[orientationIndex,:3,:3],np.array([0,0,1]))][index_min]
+
+
+            feretDiameters[labelIndex,:] = [DMax,DMin]
+            feretOrientations[labelIndex,:] = np.concatenate([maxOrientation,minOrientation])
+
+    if returnOrts == True: return feretDiameters,feretOrientations
+    if returnOrts == False: return feretDiameters
 
