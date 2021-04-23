@@ -34,7 +34,7 @@ Plotting orientations in rose and EAP diagrams
 '''
 totalTimeStart=time.time()
 
-run = ['2QR-500N-Middle']
+run = ['2QR-1500N-Middle']
 # run = [ '2QR-0N-Top','2QR-0N-Middle','2QR-0N-Bottom', '2QR-50N-Middle','2QR-100N-Middle','2QR-500N-Middle', '2QR-1500N-Top', '2QR-1500N-Middle', '2QR-1500N-Bottom']
 # run = [ 'OGF-0N', 'OGF-100N', 'OGF-500N', 'OGF-1500N']
 # run = [ 'OTC-0N' ,'OTC-500N', 'OTC-1500N','OTC-MD-0N', 'OTC-MD-50N', 'OTC-MD-500N', 'OTC-MD-1500N']
@@ -366,6 +366,11 @@ for i in run:
 	    eLen = 7*d50
 	############# OTC - MD #############
 
+	dataName = dataName + '1rr'
+	'''
+	This case is for 2QR 1500N to check if the segmentation is less over corrected.
+	'''
+	
 	# Reading and cropping the data file
 	subregionGLIMap = Read.extractSubregionFromTiffSequence(inputFolderLocation,
 	                                                        Z=zCenter,
@@ -417,7 +422,7 @@ for i in run:
 	                                             considerEdgeLabels=True,
 	                                             checkForSmallParticles=True,
 	                                             radiusCheck=True,
-	                                             radiusRatioLimit=0.8,
+	                                             radiusRatioLimit=1,
 	                                             sampleName=dataName,
 	                                             saveImg=True,
 	                                             outputDir=ofl )

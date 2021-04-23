@@ -43,7 +43,7 @@ if v==1:
 if v==2:
     # scanList = ['2QR_50_tip','2QR_50_mid','2QR_50_top']
     # scanList = ['2QR_50_mid']
-    scanList = ['2QR_50_top']
+    # scanList = ['2QR_50_top']
     print('run')
 
     originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv'
@@ -53,7 +53,10 @@ if v==2:
 
 # 2QR 90
 if v==3:
-    scanList = ['2QR_90_tip','2QR_90_mid','2QR_90_top']
+    # scanList = ['2QR_90_tip','2QR_90_mid','2QR_90_top']
+    # scanList = ['2QR_90_mid']
+    scanList = ['2QR_90_top']
+
     originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv'
     psdOrig = Read.readDataFromCsv( originalPSDLoc,
                                     maxRows=10,
@@ -156,7 +159,7 @@ for scan in scanList:
                                                                    lngt=nD50*subregionD50,
                                                                    calib=subregionCalib,
                                                                    invImg=False,
-                                                                   saveImg=True,
+                                                                   saveImg=False,
                                                                    outputDir=outputLoc,
                                                                    sampleName=currentSampleName )
 
