@@ -22,108 +22,43 @@ from pac import Segment
 from pac import Measure
 from pac import Plot
 
+import tifffile as tf
+
 v=int(input('Enter number: '))
 userH=int(1)
 userRR=0.8 # This has been updated from the number used previously (0.6). Check the psds
 numberofSubregionsPerScan=10
 nD50=6
 
-mainInput = '/home/eg/codes/pacInput/'
-subregionInput = '/home/eg/pacMan/subregionInfo/'
-mainOutput = '/home/eg/codes/pacOutput/cone/finalFolder/'
+mainInput = '/home/eg/codes/pacInput/resinSample/'
+subregionInput = '/home/eg/pacMan/subregionInfoResin/'
+mainOutput = '/home/eg/codes/pacOutput/cone/finalFolderResin/'
 
-# 2QR 25
-if v==1:
-    scanList = ['2QR_25_tip','2QR_25_mid','2QR_25_top']
-    originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv'
-    psdOrig = Read.readDataFromCsv( originalPSDLoc,
-                                    maxRows=10,
-                                    dataForm='array').reshape(10,2)
-# 2QR 50
-if v==2:
-    # scanList = ['2QR_50_tip','2QR_50_mid','2QR_50_top']
-    # scanList = ['2QR_50_mid']
-    # scanList = ['2QR_50_top']
-    print('run')
+originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv'
+psdOrig = Read.readDataFromCsv( originalPSDLoc,maxRows=10,dataForm='array').reshape(10,2)
 
-    originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv'
-    psdOrig = Read.readDataFromCsv( originalPSDLoc,
-                                    maxRows=10,
-                                    dataForm='array').reshape(10,2)
-
-# 2QR 90
-if v==3:
-    # scanList = ['2QR_90_tip','2QR_90_mid','2QR_90_top']
-    # scanList = ['2QR_90_mid']
-    scanList = ['2QR_90_top']
-
-    originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/2qrOrig.csv'
-    psdOrig = Read.readDataFromCsv( originalPSDLoc,
-                                    maxRows=10,
-                                    dataForm='array').reshape(10,2)
-
-# OGF 25
-if v==4:
-    scanList = ['OGF_25_tip','OGF_25_mid','OGF_25_top']
-    originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv'
-    psdOrig = Read.readDataFromCsv( originalPSDLoc,
-                                    maxRows=10,
-                                    dataForm='array').reshape(10,2)
-
-# OGF 50
-if v==5:
-    scanList = ['OGF_50_tip','OGF_50_mid','OGF_50_top']
-    originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv'
-    psdOrig = Read.readDataFromCsv( originalPSDLoc,
-                                    maxRows=10,
-                                    dataForm='array').reshape(10,2)
-
-# OGF 90
-if v==6:
-    scanList = ['OGF_90_tip','OGF_90_mid','OGF_90_top']
-    originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/ogfOrig.csv'
-    psdOrig = Read.readDataFromCsv( originalPSDLoc,
-                                    maxRows=10,
-                                    dataForm='array').reshape(10,2)
-
-# OTC 25
-if v==7:
-    scanList = ['OTC_25_tip','OTC_25_mid','OTC_25_top']
-    originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv'
-    psdOrig = Read.readDataFromCsv( originalPSDLoc,
-                                    maxRows=10,
-                                    dataForm='array').reshape(10,2)
-# OTC 50
-if v==8:
-    scanList = ['OTC_50_tip','OTC_50_mid','OTC_50_top']
-    originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv'
-    psdOrig = Read.readDataFromCsv( originalPSDLoc,
-                                    maxRows=10,
-                                    dataForm='array').reshape(10,2)
-
-# OTC 90
-if v==9:
-    scanList = ['OTC_90_tip','OTC_90_mid','OTC_90_top']
-    originalPSDLoc = '/home/eg/codes/pacInput/originalGSD/otcOrig.csv'
-    psdOrig = Read.readDataFromCsv( originalPSDLoc,
-                                    maxRows=10,
-                                    dataForm='array').reshape(10,2)
-
-
+scanList = [1,2,3,4,5]
+scanList = [2,3,4]
+scanList = [1,5]
 
 for scan in scanList:
 
-    # Locations of data
-    scanInputLoc = mainInput + scan + '/'
-    subregionInfo = subregionInput + 'subregionInfo-' + scan +'.csv'
-    outputLoc = mainOutput + scan + '/'
+    scanInputLoc = mainInput + 'scan' + str(int(scan)) + '/'
+    subregionInfo = subregionInput + 'subregionInfo-' + 'scan' + str(int(scan)) +'.csv'
+    outputLoc = mainOutput + 'scan' + str(int(scan))  + '/'
+
+    if scan == 1: numberofSubregionsPerScan=9
+    if scan == 2: numberofSubregionsPerScan=6
+    if scan == 3: numberofSubregionsPerScan=6
+    if scan == 4: numberofSubregionsPerScan=6
+    if scan == 5: numberofSubregionsPerScan=9
 
     # Reading subregion data saved in the subregionInfo location.
     subregionCalib = Read.readDataFromCsv( subregionInfo,
-                                             skipHeader=1,
-                                             maxRows=1,
-                                             fmt='float',
-                                             dataForm='number' )
+                                           skipHeader=1,
+                                           maxRows=1,
+                                           fmt='float',
+                                           dataForm='number' )
 
     # The average particle size of the sand
     subregionD50 = Read.readDataFromCsv( subregionInfo,
@@ -148,10 +83,10 @@ for scan in scanList:
 
     for currentSubregion in range(0,numberofSubregionsPerScan):
 
-        currentSampleName = scan + '-' + str( round( currentSubregion ) )
+        currentSampleName = 'scan' + str(int(scan)) + '-' + str( round( currentSubregion ) )
 
         # Extraction of the subregion from the complete scan
-        subregionGLIMap = Read.extractSubregionFromTiffSequence( folderDir=scanInputLoc,
+        subregionGLIMap = Read.extractSubregionFromTiffSequence(   folderDir=scanInputLoc,
                                                                    reference='topLeft',
                                                                    Z=subregionZ,
                                                                    Y=subregionYXArray[currentSubregion,0],
@@ -166,7 +101,7 @@ for scan in scanList:
         # Binarization using Otsu
         binMap = Segment.binarizeAccordingToOtsu( gliMapToBinarize=subregionGLIMap,
                                                   sampleName=currentSampleName,
-                                                  saveImg=False,
+                                                  saveImg=True,
                                                   outputDir=outputLoc,
                                                   returnThresholdVal=False)
 
@@ -231,3 +166,24 @@ for scan in scanList:
                                                       saveData=True,
                                                       sampleName=currentSampleName,
                                                       outputDir=outputLoc )
+
+        # Contact analysis - With edge labels included
+        '''
+        The "corlabMap" is read again to prevent errors in stored memory.
+        '''
+        corLabMapLoc = outputLoc + currentSampleName + '-correctedLabelMap.tif'
+        corLabMap = tf.imread(corLabMapLoc)
+            
+        coordinationNumberList = Measure.getCoordinationNumberList( corLabMap, excludeEdgeLabels=True )
+        np.savetxt( ( outputLoc + currentSampleName + '-CNList(edgeLabelsExcluded).csv'), coordinationNumberList, delimiter=',')
+
+        contactTableRW = Measure.getContactNormalsSPAM(corLabMap, method = 'randomWalker')
+        np.savetxt( ( outputLoc + currentSampleName +'-contactTable-RW.csv'), contactTableRW, fmt='%r' )     # Contact table
+        
+        N, F, Fq = Measure.fabricVariablesWithUncertainity( contactTableRW, vectUncert = 0.26 )
+        np.savetxt( ( outputLoc + currentSampleName +'-N2.txt'), N, fmt='%r' )                                   # Fabric tensor
+        np.savetxt( ( outputLoc + currentSampleName +'-F2.txt'), F, fmt='%r' )                                   # Deviatoric fabric tensor
+        np.savetxt( ( outputLoc + currentSampleName +'-Fq2.txt'), Fq, fmt='%r' )                                 # Ansiotropy factor
+
+
+

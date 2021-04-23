@@ -598,7 +598,7 @@ def getZYXLocationOfLabel( labelMap, label ):
     zyxLocationData[:,2] = particleLocationArray[2]
     return zyxLocationData
 
-def getRelativeBreakageHardin( psdOriginal, psdCurrent,smallSizeLimit=0.075, saveData=True, sampleName='', outputDir='' ):
+def getRelativeBreakageHardin( psdOriginal, psdCurrent, smallSizeLimit=0.075, saveData=True, sampleName='', outputDir='' ):
     """Computes the relative breakage parameter according to the defintion by Hardin(1985)
 
     Hardin proposes that after a particle reaches a certain threshold size
