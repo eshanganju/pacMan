@@ -106,7 +106,8 @@ for scan in scanList:
                                                          pDistance=7,
                                                          saveImg=True,
                                                          outputDir=outputLoc,
-                                                         sampleName=currentSampleName )
+                                                         sampleName=currentSampleName,
+                                                         loop=False )
 
         # Binarization using Otsu
         binMap = Segment.binarizeAccordingToOtsu( gliMapToBinarize=filteredSubregionGLIMap,
