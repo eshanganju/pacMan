@@ -11,8 +11,8 @@ import time
 VERBOSE = True
 TESTING = True
 
-def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=450,
-                   saveImg=False,outputDir='',sampleName='sampleX'):
+def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=None,
+                   saveImg=False,outputDir='',sampleName='sampleX',loop=True):
     """This function takes in a unfiltered grey level and filters it using non-local means (nlm) filter
     This function loops over nlm parameters till user accepts the filtered image.
     The nlm filter removes noise with minimal effect on grey-level edges.
@@ -48,6 +48,9 @@ def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=450,
     filteredMap : unsigned integer ndarray
         Filtered image in the form of a numpy array.
     """
+    print('Starting non-local means filter')
+    print('------------------------------*\n\n')
+
     gliMax = 2**bitDepth-1
 
     inputImage = gli[ gli.shape[ 0 ] // 2 ]
@@ -65,6 +68,8 @@ def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=450,
     sigmaEstimateImage = restoration.estimate_sigma(inputImage, multichannel=False)
     sigmaEstimateMap = restoration.estimate_sigma(inputMap, multichannel=False)
 
+    if hVal==None: hVal = 1.5*sigmaEstimateImage 
+  
     print('Gaussian noise slice: ' + str(sigmaEstimateImage) + '\n')
     print('Gaussian noise Map: ' + str(sigmaEstimateMap) + '\n')
 
@@ -80,6 +85,7 @@ def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=450,
     print('Patch size: ', pSize)
     print('Patch distance: ', pDistance)
     print('Cut-off pixel intensity: ', round(hVal))
+    print('--------------------------------------------------*\n')
 
     runSliceFilter = True
     while runSliceFilter == True:
@@ -87,13 +93,19 @@ def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=450,
         print('\n\nNew filtering loop started on central cross-section--------*\n')
         start_time = time.time()
 
+        print('\n\nCurrent parameters for filter----------------------*\n')
+        print('Patch size: ', pSize)
+        print('Patch distance: ', pDistance)
+        print('Cut-off pixel intensity: ', round(hVal))
+        print('--------------------------------------------------*\n')
+
         filteredImage = restoration.denoise_nl_means( inputImage,
                                                       patch_size=pSize,
                                                       patch_distance=pDistance,
                                                       h=hVal,
                                                       multichannel=False,
                                                       fast_mode=True,
-                                                      sigma=sigmaEstimateImage )
+                                                      sigma=sigmaEstimateMap )
 
         noiseRemoved = abs( inputImage - filteredImage )
 
@@ -110,24 +122,26 @@ def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=450,
         plt.figure()
         plt.imshow(inputImage, cmap= 'Greys_r' )
         plt.draw() # draw the plot
-        nameofTempFile = outputDir+sampleName+'-noisyImage-CenterSlice.png'
-        plt.savefig(nameofTempFile)
+        nameofTempFile = outputDir+sampleName+'-noisyImage-CenterSlice.tif'
+        tiffy.imsave(nameofTempFile,inputImage)
         plt.pause( 1 ) # show it for 1 seconds
         plt.close()
+
+        filterDetails = '-ps' + str(round(pSize)) + '-pd' + str(round(pDistance)) + '-h' + str(round(hVal))
 
         plt.figure()
         plt.imshow(filteredImage, cmap= 'Greys_r' )
         plt.draw() # draw the plot
-        nameofTempFile = outputDir+sampleName+'-filteredImage-CenterSlice.png'
-        plt.savefig(nameofTempFile)
+        nameofTempFile = outputDir+sampleName+'-filteredImage-CenterSlice' + filterDetails + '.tif'
+        tiffy.imsave(nameofTempFile,filteredImage)
         plt.pause( 1 ) # show it for 5 seconds
         plt.close()
 
         plt.figure()
         plt.imshow(noiseRemoved, cmap= 'Greys_r' )
         plt.draw() # draw the plot
-        nameofTempFile = outputDir+sampleName+'-noiseRemoved-CenterSlice.png'
-        plt.savefig(nameofTempFile)
+        nameofTempFile = outputDir+sampleName+'-noiseRemoved-CenterSlice' + filterDetails + '.tif'
+        tiffy.imsave(nameofTempFile,noiseRemoved)
         plt.pause( 1 ) # show it for 5 seconds
         plt.close()
 
@@ -136,7 +150,7 @@ def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=450,
         plt.plot(his_x, histClean[ 0 ])
         plt.grid()
         plt.draw() # draw the plot
-        nameofTempFile = outputDir+sampleName+'-histogram-CenterSlice.png'
+        nameofTempFile = outputDir+sampleName+'-histogram-CenterSlice' + filterDetails + '.tif'
         plt.savefig(nameofTempFile)
         plt.pause( 1 ) # show it for 5 seconds
         plt.close()
@@ -144,14 +158,17 @@ def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=450,
         timeTakenThisLoop = ( time.time() - start_time )
         print( "\n--- Time taken: %s seconds ---" %round( timeTakenThisLoop ) )
 
-        answer = input( "\n\nCheck files - are filter parameters suitable ([y]/n)?:" )
-        if answer == 'n':
-            print( "Enter new parameters: \n\n" )
-            patchSize = int( input( "Patch size (pixel): " ) )
-            patchDistance = int( input( "Patch distance (pixel):" ) )
-            hVal = float( input( "Cut-off pixel intensity: " ) )
-        else:
-            runSliceFilter = False
+        if loop == True:
+            answer = input( "\n\nCheck files - are filter parameters suitable ([y]/n)?:" )
+            if answer == 'n':
+                print( "Enter new parameters: \n\n" )
+                patchSize = int( input( "Patch size (pixel): " ) )
+                patchDistance = int( input( "Patch distance (pixel):" ) )
+                hVal = float( input( "Cut-off pixel intensity: " ) )
+            else:
+                runSliceFilter = False
+
+        if loop == False: runSliceFilter = False
 
 
     print( '\n\nFilter for entire grey level map started--------*' )
@@ -195,13 +212,13 @@ def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=450,
 
     filterParameterFileName = outputDir+sampleName+'-NLMParameters.txt'
     f = open(filterParameterFileName,"w+")
-    f.write("NLM filter parameters---------------------*\n")
-    f.write("Patch size = %f\n" % patchSize)
-    f.write("Patch distance = %f\n" % patchDistance)
-    f.write("Cut-off intensity = %f\n" % hVal)
-    f.write("Estimated sigma - CS = %f\n" % sigmaEstimateImage)
-    f.write("Estimated sigma - Map = %f\n" % sigmaEstimateMap)
-    f.write("Time taken for filter (s) = %f\n" % round(timeTakenThisLoop))
+    f.write( "NLM filter parameters---------------------*\n")
+    f.write( "Patch size = %f\n" % pSize )
+    f.write( "Patch distance = %f\n" % pDistance )
+    f.write( "Cut-off intensity = %f\n" % hVal)
+    f.write( "Estimated sigma - CS = %f\n" % sigmaEstimateImage )
+    f.write( "Estimated sigma - Map = %f\n" % sigmaEstimateMap )
+    f.write( "Time taken for filter (s) = %f\n" % round(timeTakenThisLoop ) )
     f.close()
 
     if saveImg == True: tiffy.imsave(outputDir+sampleName+'-filteredGLIMap.tif',filteredMap.astype('uint16'))
