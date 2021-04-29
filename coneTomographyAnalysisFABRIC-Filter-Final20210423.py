@@ -43,7 +43,7 @@ scanList = [2,3,4]
 
 for scan in scanList:
 
-    scanInputLoc = mainInput + 'scan' + str(int(scan)) + '/corData/'
+    scanInputLoc = mainInput + 'scan' + str(int(scan)) + '/corData2/'
     subregionInfo = subregionInput + 'subregionInfo-' + 'scan' + str(int(scan)) +'.csv'
     outputLoc = mainOutput + 'scan' + str(int(scan))  + '/'
 
