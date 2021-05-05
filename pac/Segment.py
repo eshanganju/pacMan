@@ -608,27 +608,12 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, consi
     # Checking for small particles
     if checkForSmallParticles == True:
         correctedCleanedLabelMap = removeSmallParticles( correctedLabelMap )
-        
-        binMapWithSmallParticles = np.zeros_like(correctedLabelMap)
-        binMapWithoutSmallParticles = np.zeros_like(correctedCleanedLabelMap)
-
-        binMapWithSmallParticles[ np.where( correctedLabelMap > 0 ) ] = 1
-        binMapWithoutSmallParticles[ np.where( correctedCleanedLabelMap > 0 ) ] = 1
-
-        solidVolumeWithSmallParticles = np.sum(binMapWithSmallParticles)
-        solidVolumeWithoutSmallParticles = np.sum(binMapWithoutSmallParticles)
-
-        volumeLoss = solidVolumeWithSmallParticles - solidVolumeWithoutSmallParticles
-        percentLoss = (volumeLoss/solidVolumeWithSmallParticles * 100)
-
-        volumeLossFileName = outputDir +  sampleName + '-volumeLossSmallPtcl.txt'
-        f = open( volumeLossFileName, "w+" )
-        f.write( "Solid voxel count with small particles = %f\n" % solidVolumeWithSmallParticles )
-        f.write( "Solid voxel count without small particles =  %f\n" % solidVolumeWithoutSmallParticles )
-        f.write( "Volume loss = %f\n" % volumeLoss )
-        f.write( "Percent volume loss = %f\n" % percentLoss )
-        f.close()
-    
+        solidVolumeWithSmallParticles, solidVolumeWithoutSmallParticles, volumeLoss, percentLoss = computeVolumeLoss( labelledMapWithSmallParticles=correctedLabelMap, 
+                                                                                                                      labelledMapWithoutSmallParticles=correctedCleanedLabelMap,
+                                                                                                                      saveFile=True, 
+                                                                                                                      sampleName=sampleName, 
+                                                                                                                      outputDir=outputDir)
+            
     else : correctedCleanedLabelMap = correctedLabelMap
 
     if saveImg == True:
@@ -636,6 +621,33 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, consi
         tiffy.imsave(outputDir+sampleName+'-correctedLabelMap.tif',correctedCleanedLabelMap.astype('uint16'))
 
     return correctedCleanedLabelMap
+
+def computeVolumeLoss(labelledMapWithSmallParticles, labelledMapWithoutSmallParticles, saveFile=False, sampleName='', outputDir=''):
+    '''This function computes the volume loss due to removal of voxels belonging to solid particles
+    '''
+    binMapWithSmallParticles = np.zeros_like(labelledMapWithSmallParticles)
+    binMapWithoutSmallParticles = np.zeros_like(labelledMapWithoutSmallParticles)
+
+    binMapWithSmallParticles[ np.where( labelledMapWithSmallParticles > 0 ) ] = 1
+    binMapWithoutSmallParticles[ np.where( labelledMapWithoutSmallParticles > 0 ) ] = 1
+
+    solidVolumeWithSmallParticles = np.sum(binMapWithSmallParticles)
+    solidVolumeWithoutSmallParticles = np.sum(binMapWithoutSmallParticles)
+
+    volumeLoss = solidVolumeWithSmallParticles - solidVolumeWithoutSmallParticles
+    percentLoss = (volumeLoss/solidVolumeWithSmallParticles * 100)
+
+    if saveFile == True:
+        volumeLossFileName = outputDir +  sampleName + '-volumeLossSmallPtcl.txt'
+        f = open( volumeLossFileName, "w+" )
+        f.write('Solid vol with; solid volume without;volume loss; percent loss\n')
+        f.write( str(solidVolumeWithSmallParticles) +'\n' )
+        f.write( str(solidVolumeWithoutSmallParticles) +'\n' )
+        f.write( str(volumeLoss) +'\n' )
+        f.write( str(percentLoss) +'\n' )
+        f.close()
+
+    return solidVolumeWithSmallParticles, solidVolumeWithoutSmallParticles, volumeLoss, percentLoss
 
 def applyPaddingToLabelledMap( labelledMap, pad ):
     padLabMap = np.zeros( ( labelledMap.shape[0]+2*pad, labelledMap.shape[1]+2*pad, labelledMap.shape[2]+2*pad ) )
