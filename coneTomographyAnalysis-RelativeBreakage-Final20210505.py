@@ -33,7 +33,14 @@ fileList = glob.glob(searchString)
 f = open( ouputLocation + 'breakageDataSummary.csv',"w+" ) 
 f.write('Name,PLoss,Np,BP,BC,BR')
 
+count = 1
+countAll = len(fileList)
+
 for gsdFile in fileList:
+
+	# Notify
+	print('Analyzing ' + str(round(count)) + '/' + str(round(countAll)))
+	
 	# get gsd
 	gsdComplete = np.loadtxt(gsdFile, delimiter=',')
 	gsdOnly = gsdComplete[:,-2:]
@@ -50,14 +57,25 @@ for gsdFile in fileList:
 	gsdOnlyUpdate[:,1] = ( gsdOnly[:,1] + lossVal )/( 100 + lossVal) *100
 	gsdUpdateFileName = ouputLocation + dataName[0] + '-' + dataName[1] + '-gsdUpdate.csv'
 
-	# Save updated gsd
-	np.savetxt(gsdUpdateFileName,gsdOnlyUpdate,delimiter=',')
 
 	# Compute Hardine Br using updated GSD
 	sandName = dataName[0].split('_')[0]
-	if sandName == 'OTC': psdOrig = np.loadtxt('/home/eg/codes/pacInput/originalGSD/otcOrig.csv',delimiter=',')
-	if sandName == 'OGF': psdOrig = np.loadtxt('/home/eg/codes/pacInput/originalGSD/ogfOrig.csv',delimiter=',')
-	if sandName == '2QR': psdOrig = np.loadtxt('/home/eg/codes/pacInput/originalGSD/2qrOrig.csv',delimiter=',')
+	
+	if sandName == 'OTC': 
+		psdOrig = np.loadtxt('/home/eg/codes/pacInput/originalGSD/otcOrig.csv',delimiter=',')
+		gsdOnlyUpdate[:,0] = gsdOnlyUpdate[:,0] - 0.11
+	
+	if sandName == 'OGF': 
+		psdOrig = np.loadtxt('/home/eg/codes/pacInput/originalGSD/ogfOrig.csv',delimiter=',')
+	
+	if sandName == '2QR': 
+		psdOrig = np.loadtxt('/home/eg/codes/pacInput/originalGSD/2qrOrig.csv',delimiter=',')
+
+	# Save updated gsd
+	np.savetxt(gsdUpdateFileName,gsdOnlyUpdate,delimiter=',')
+
+	# Save data
+	numPtcl = gsdOnlyUpdate.shape[0]
 	
 	potBreakage, curBreakage, relBreakage = Measure.getRelativeBreakageHardin( psdOriginal=psdOrig, 
 																			   psdCurrent=gsdOnlyUpdate, 
@@ -65,6 +83,18 @@ for gsdFile in fileList:
 																			   saveData=True, 
 																			   sampleName= (dataName[0] + '-' + dataName[1]), 
 																			   outputDir=ouputLocation )
+
+	maxSize = psdOrig[ :,0 ].max()
+	
+	gsdOnlyUpdate = np.append( gsdOnlyUpdate, np.array( [maxSize , 100.0] ).reshape( 1, 2 ), 0 )
+
+	minSize = 0.075
+	psdClipped = gsdOnlyUpdate[np.where(gsdOnlyUpdate[:,0] > minSize)]
+	minpp = min(psdClipped[:,1])
+	val = np.array([minSize,minpp]).reshape(1,2)
+
+	gsdOnlyUpdate = np.concatenate((val,psdClipped), axis=0)
+
 
 	plt.figure()
 	plt.semilogx( psdOrig[ :,0 ] , psdOrig[ : , 1 ] , label='Original' )
@@ -77,15 +107,15 @@ for gsdFile in fileList:
 	plt.close()
 
 
-	# Save data
-	numPtcl = gsdOnlyUpdate.shape[0]
-	
 	f.write( '\n' \
-		     + str(dataName[0]) + ',' \
+		     + str(dataName[0]+ '-' + dataName[1]) + ',' \
 			 + str(lossVal) + ',' \
 			 + str(numPtcl) + ',' \
 			 + str(potBreakage) + ',' \
 			 + str(curBreakage) + ',' \
 			 + str(relBreakage) )
+
+	count = count + 1
+
 
 f.close()

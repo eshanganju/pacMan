@@ -783,7 +783,7 @@ def getUltimateFractalParticleSizeDistribution(minSize=0.0,maxSize=0.0,fractalDi
 
     return ultimatePSDFractal
 
-def getAreaUnderPSDCurve( psd, maxSize=0.0 ):
+def getAreaUnderPSDCurve( psd, maxSize=0.0, minSize=0.075):
     """Computes the area under the particle size distribution curve passed to it
 
     Since the GSD curves are plotted on a semi-log graph, the log10 of the x
@@ -804,11 +804,16 @@ def getAreaUnderPSDCurve( psd, maxSize=0.0 ):
         area under the psd
     """
     if maxSize == 0.0: maxSize = float(input('Enter the max particle size (mm): '))
-
     psd = np.append( psd, np.array( [maxSize , 100.0] ).reshape( 1, 2 ), 0 )
+
+    psdClipped = psd[np.where(psd[:,0] > minSize)]
+    minpp = min(psdClipped[:,1])
+    val = np.array([minSize,minpp]).reshape(1,2)
+
+    psd = np.concatenate((val,psdClipped), axis=0)
+
     numberOfPoints = psd.shape[0]
     areaUnderCurve = 0.0
-
     for i in range( 0, numberOfPoints - 1 ):
         Y = psd[ i, 1 ]
         deltaX = np.log10( psd[ i + 1, 0 ] ) - np.log10( psd[ i, 0 ] )
