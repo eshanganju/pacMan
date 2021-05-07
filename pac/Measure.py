@@ -820,7 +820,6 @@ def getAreaUnderPSDCurve( psd, maxSize=0.0 ):
 
     return areaUnderCurve
 
-#TODO: these need to be checked
 def getContactNormalsSPAM( labelMap, method='randomWalker', saveData=True, sampleName='', outputDir='', keepPositive='Y'):
     """Computes the orientations of the inter-particle contacts
     in the scanned data using the spam libraries. This is a loose wrapper.
