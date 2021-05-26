@@ -22,8 +22,8 @@ import matplotlib.pyplot as plt
 	# Read uncorrected particle size distribution
 	# Updated uncorrected particle size distribution
 
-inputFileLoc = '/home/eg/codes/pacInput/gradationsConeCrushFinal20210505/psd/'
-pLossLocation = '/home/eg/codes/pacInput/gradationsConeCrushFinal20210505/volLoss/'
+inputFileLoc = '/home/eg/codes/pacInput/gradationsConeCrushFinal20210505-2/psd/'
+pLossLocation = '/home/eg/codes/pacInput/gradationsConeCrushFinal20210505-2/volLoss/'
 
 ouputLocation = '/home/eg/codes/pacOutput/cone/finalFolder/gsdAnalysis/'
 

@@ -799,7 +799,7 @@ def getAreaUnderPSDCurve( psd, maxSize=0.0, minSize=0.075):
         upper limit of integration in mm
 
     Return
-    ------
+    ------S
     areaUnderPSDCurve : unsigned float
         area under the psd
     """
