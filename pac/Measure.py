@@ -598,7 +598,8 @@ def getZYXLocationOfLabel( labelMap, label ):
     zyxLocationData[:,2] = particleLocationArray[2]
     return zyxLocationData
 
-def getRelativeBreakageHardin( psdOriginal, psdCurrent, smallSizeLimit=0.075, saveData=True, sampleName='', outputDir='' ):
+def getRelativeBreakageHardin( psdOriginal, psdCurrent, smallSizeLimit=0.075, 
+                               saveData=True, sampleName='', outputDir='' ):
     """Computes the relative breakage parameter according to the defintion by Hardin(1985)
 
     Hardin proposes that after a particle reaches a certain threshold size
@@ -670,7 +671,8 @@ def getRelativeBreakageHardin( psdOriginal, psdCurrent, smallSizeLimit=0.075, sa
 
     return potentialBreakage, currentBreakage, relativeBreakage
 
-def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=2.6, smallSizeLimit=0.001 ):
+def getRelativeBreakageEinav( psdOriginal, psdCurrent , fracDim=2.6, smallSizeLimit=0.001,
+                              saveData=True, sampleName='',outputDir='',returnUPSD=True):
     """Computes the relative breakage parameter according to the defintion of Einav (2007)
 
     Einav proposes that the largest particle size does not change with crushing and
@@ -679,8 +681,8 @@ def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=2.6, smallSizeLi
     This function  computes a relative breakage parameter that follows
     Einav's proposal. Relative breakage parameters assume that the sand has an
     inital and an ultimate particle size distribution. In its uncrushed state the sand
-    is in its intial particle size distribution and after undergoing the maximum
-    curshing possible, it reaches its ultimate particle size distribution. When the
+    is in its intial particle size distribution and after undergoing the "maximum
+    curshing possible," it reaches its ultimate particle size distribution. When the
     sand is at its inital PSD, the relative breakage parameter is 0 and when
     it is at its ultimate PSD, the relative breakage parameter is 1 (or 100%).
 
@@ -695,11 +697,11 @@ def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=2.6, smallSizeLi
     
     Parameters
     ----------
-    gsdOriginal : n by 2 numpy array
+    psdOriginal : n by 2 numpy array
         Original particle size distribution with particle size in col 0 and percentage
         passing in col 1. the largest particle size is controlled by this gradation
 
-    gsdCurrent : n by 2 numpy array
+    psdCurrent : n by 2 numpy array
         Current particle size distribution with particle size in col 0 and percentage
         passing in col 1.
 
@@ -720,26 +722,45 @@ def getRelativeBreakageEinav( gsdOriginal, gsdCurrent , fracDim=2.6, smallSizeLi
     relativeBreakage : unsigned float
         The relative breakage parameter according to Einav (2007)
     """
+    largeSizeLimitOriginal = psdOriginal[ :,0 ].max()
+    largeSizeLimitCurrent = psdCurrent[:,0].max()
+    
+    dmax = min(largeSizeLimitOriginal,largeSizeLimitCurrent)
+    
     largeSizeLimit = psdOriginal[ :,0 ].max()
 
     areaUnderOriginalPSD = getAreaUnderPSDCurve( psdOriginal,
-                                                 maxSize=largeSizeLimit )
+                                                 maxSize=largeSizeLimit,
+                                                 minSize=smallSizeLimit,
+                                                 minOrZero='zero')
 
     areaUnderCurrentPSD = getAreaUnderPSDCurve( psdCurrent,
-                                                maxSize=largeSizeLimit )
+                                                maxSize=largeSizeLimit,
+                                                minSize=smallSizeLimit,
+                                                minOrZero='zero')
 
     psdUltimate = getUltimateFractalParticleSizeDistribution( minSize=smallSizeLimit,
-                                                              maxSize=largeSizeLimit,
+                                                              maxSize=dmax,
                                                               fractalDimension=fracDim )
 
     areaUnderUltimatePSD = getAreaUnderPSDCurve( psdUltimate,
-                                                 maxSize=largeSizeLimit)
+                                                 maxSize=largeSizeLimit,
+                                                 minSize=smallSizeLimit,
+                                                 minOrZero='zero')
 
     potentialBreakage = areaUnderUltimatePSD - areaUnderOriginalPSD
     currentBreakage = areaUnderCurrentPSD - areaUnderOriginalPSD
     relativeBreakage = currentBreakage/potentialBreakage*100
 
-    return potentialBreakage, currentBreakage, relativeBreakage
+    if saveData==True:
+        fileNameToSave = outputDir + sampleName + '-envRelBreakParams.csv'
+        dataToSave = np.array( [ potentialBreakage,
+                                 currentBreakage,
+                                 relativeBreakage ] ).reshape(3,1)
+
+        np.savetxt( fileNameToSave, dataToSave, delimiter=',')
+
+    return psdUltimate, potentialBreakage, currentBreakage, relativeBreakage
 
 def getUltimateFractalParticleSizeDistribution(minSize=0.0,maxSize=0.0,fractalDimension=2.6,num=100):
     """Gets the ultimate particle size distribution following the fractal
@@ -783,7 +804,7 @@ def getUltimateFractalParticleSizeDistribution(minSize=0.0,maxSize=0.0,fractalDi
 
     return ultimatePSDFractal
 
-def getAreaUnderPSDCurve( psd, maxSize=0.0, minSize=0.075):
+def getAreaUnderPSDCurve( psd, maxSize=0.0, minSize=0.075, minOrZero='min'):
     """Computes the area under the particle size distribution curve passed to it
 
     Since the GSD curves are plotted on a semi-log graph, the log10 of the x
@@ -807,7 +828,8 @@ def getAreaUnderPSDCurve( psd, maxSize=0.0, minSize=0.075):
     psd = np.append( psd, np.array( [maxSize , 100.0] ).reshape( 1, 2 ), 0 )
 
     psdClipped = psd[np.where(psd[:,0] > minSize)]
-    minpp = min(psdClipped[:,1])
+    if minOrZero == 'min': minpp = min(psdClipped[:,1])
+    if minOrZero == 'zero': minpp = 0
     val = np.array([minSize,minpp]).reshape(1,2)
 
     psd = np.concatenate((val,psdClipped), axis=0)
