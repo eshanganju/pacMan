@@ -1,7 +1,0 @@
-Width: 1,000 px (12,391.00 µm)
-Height: 1,010 px (12,514.91 µm)
-Depth: 1,024 px (12,688.38 µm)
-Time steps: 1
-Voxels: 1,034,240,000
-Size: 1973 Mb  Data type: USHORT
-Volume: 1,967,616,253,333.21 µm³
