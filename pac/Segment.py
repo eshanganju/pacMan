@@ -21,7 +21,7 @@ from pac import Measure
 VERBOSE = True
 TESTING = True
 
-def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleName='',saveImg=True,outputDir=''):
+def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleName='',saveImg=True,outputDir='',addWatershedLine=False):
     """Simple function that uses skimage watershed and saves a copy of the segmented image
 
     Parameters
@@ -43,7 +43,7 @@ def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleNam
         print('-----------------------------------------*')
 
     # This is using the skimage.segmentation watershed algorithm. There is no watershed line as the default is set to false.
-    labMap = wsd(-edmMapForTopo,markers=edmPeaksForSeed,mask=binaryMapToSeg)
+    labMap = wsd(-edmMapForTopo,markers=edmPeaksForSeed,mask=binaryMapToSeg, watershed_line=addWatershedLine)
 
     if saveImg == True:
         if VERBOSE: print('\nSaving lab map...')

@@ -1,3 +1,0 @@
-Noise-------*
-Gaussian noise slice: 1303.372189
-Gaussian noise map: 920.993084

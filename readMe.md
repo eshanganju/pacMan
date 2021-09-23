@@ -48,6 +48,6 @@ pacMan uses the following libraries:
 - glob
 
 # Speeding up the code
-- Numba for numpy manipulations
+- Numba for numpy manipulations (future)
 
 

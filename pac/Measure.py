@@ -125,7 +125,7 @@ def getParticleSizeArray( labelledMapForParticleSizeAnalysis, calibrationFactor=
     particleSizeDataSummary : unsigned float ndarray
         Particle size array containing columns
         [0] Label index, [1] Volume, [2] Eqsp, [3] Centroidal - max,
-        [4] Centroidal - med, [5] Centroidal - min, [6] Feret-min X, [7] Feret -max X
+        [4] Centroidal - med, [5] Centroidal - min, [6] Feret-max X, [7] Feret -min X
     """
     numberOfParticles = int( labelledMapForParticleSizeAnalysis.max() )
 
@@ -197,6 +197,20 @@ def getEqspDia( labelMap, label ):
     eqspLabelDia = (6*volume/(math.pi))**(1/3)
 
     return volume, eqspLabelDia
+    
+def getPrincipalAxesOrtTable( labelMapForParticleOrientation,
+				saveData=False, 
+				sampleName='', 
+				outputDir=''):
+	"""
+	"""
+	a = 1
+	
+	
+def getPrincipalAxesOrt( labelMap, label ):
+	"""
+	"""
+	a = 1
 
 def getPrincipalAxesLengths( labelMap, label ):
     """Computes the principal axes lengths of the particle in px units
@@ -1210,7 +1224,7 @@ def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass
                 subvol_centreOfMass = spam.label.centresOfMass(subvol)
                 subvol_transformed = spam.DIC.applyPhi(subvol,
                                                        Phi = Phi[orientationIndex],
-                                                       PhiPoint = subvol_centreOfMass[1],
+                                                       PhiCenter = subvol_centreOfMass[1],
                                                        interpolationOrder=interpolationOrder)
 
                 # Use bounding box of transformed subvolume to calculate particle widths in 3 directions
