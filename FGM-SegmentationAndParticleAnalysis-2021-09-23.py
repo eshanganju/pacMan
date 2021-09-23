@@ -68,14 +68,14 @@ noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLa
 					       outputDir=ofl)
 	                                
 # Particle size anaysis on corlabMap
-Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis = corLabMap, 
+Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis = noEdgeCorLabMap, 
 				calibrationFactor=1, 
 				saveData=True, 
 				sampleName=dataName, 
 				outputDir=ofl)
 
 # Orientation of major axis of particle
-Measure.getPrincipalAxesOrtTable( labelMapForParticleOrientation = corLabMap,
+Measure.getPrincipalAxesOrtTable( labelMapForParticleOrientation = noEdgeCorLabMap,
 				    saveData=True, 
 				    sampleName=dataName, 
 				    outputDir=ofl)

@@ -1224,7 +1224,7 @@ def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass
                 subvol_centreOfMass = spam.label.centresOfMass(subvol)
                 subvol_transformed = spam.DIC.applyPhi(subvol,
                                                        Phi = Phi[orientationIndex],
-                                                       PhiCenter = subvol_centreOfMass[1],
+                                                       PhiCentre = subvol_centreOfMass[1],
                                                        interpolationOrder=interpolationOrder)
 
                 # Use bounding box of transformed subvolume to calculate particle widths in 3 directions
