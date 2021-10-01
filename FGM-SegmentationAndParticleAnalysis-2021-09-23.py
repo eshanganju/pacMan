@@ -80,8 +80,5 @@ Measure.getPrincipalAxesOrtTable( labelMapForParticleOrientation = noEdgeCorLabM
 				    sampleName=dataName, 
 				    outputDir=ofl)
 
-
-# Plots for major orientation of particles
-
 	                                     
 
