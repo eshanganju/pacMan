@@ -199,8 +199,8 @@ def getEqspDia( labelMap, label ):
     return volume, eqspLabelDia
     
 def getPrincipalAxesOrtTable( labelMapForParticleOrientation, saveData=False, sampleName='', outputDir=''):
-	"""Computes a table of the major axes of the particles - orientation of the particles long axis 
-	"""
+    """Computes a table of the major axes of the particles - orientation of the particles long axis 
+    """
     numberOfParticles = int( labelMapForParticleOrientation.max() )
     particleOrientationDataSummary = np.zeros( ( numberOfParticles + 1 , 4 ) )  # This is needed because of ZYX + the particle number
 
@@ -208,14 +208,13 @@ def getPrincipalAxesOrtTable( labelMapForParticleOrientation, saveData=False, sa
         print( "Computing orientation of", particleNum, "/", numberOfParticles, "particle" )
         particleOrientationDataSummary[particleNum, 0] = particleNum
 
-        ortZZ, ortYY, ortXX = getMajorPrincipalAxesOrt( labelMap=labelledMapForParticleSizeAnalysis, label=int(particleNum) )
-
+        ortZZ, ortYY, ortXX = getMajorPrincipalAxesOrt( labelMap=labelMapForParticleOrientation, label=int(particleNum) )
         particleOrientationDataSummary[particleNum, 1] = ortZZ
         particleOrientationDataSummary[particleNum, 2] = ortYY
         particleOrientationDataSummary[particleNum, 3] = ortXX
 
-        # Removing the extra zero in the summary (first row)
-        particleOrientationDataSummary = np.delete( particleOrientationDataSummary, 0, 0 )
+    # Removing the extra zero in the summary (first row)
+    particleOrientationDataSummary = np.delete( particleOrientationDataSummary, 0, 0 )
 
     if saveData == True:
         if VERBOSE:  print('\nSaving particle ort list...')
@@ -226,18 +225,18 @@ def getPrincipalAxesOrtTable( labelMapForParticleOrientation, saveData=False, sa
 
 	
 def getMajorPrincipalAxesOrt( labelMap, label ):
-	"""Computes the orientation of the principal axes along which the particle has the "largest length"
-
+    """Computes the orientation of the principal axes along which the particle has the "largest length"
     The eigen vector corresponding to the largest eigenvalue is the vector along which the point cloud of the particle has the largest length.
-	"""
-	zyxofLabel = getZYXLocationOfLabel(labelMap,label)
+    """
+    zyxofLabel = getZYXLocationOfLabel(labelMap,label)
 
     covarianceMatrix = np.cov( zyxofLabel.T )
 
     eigval, eigvec = np.linalg.eig( covarianceMatrix )
 
     # Eigenvector corresponding to max eigenvalue
-    maxEigvalEigvecIndex = eigvec[np.argmax(eigval)]
+    maxEigvalEigvecIndex = int(np.argmax(eigval))
+    
     ortZZ = eigvec[0,maxEigvalEigvecIndex]
     ortYY = eigvec[1,maxEigvalEigvecIndex]
     ortXX = eigvec[2,maxEigvalEigvecIndex]
@@ -246,7 +245,7 @@ def getMajorPrincipalAxesOrt( labelMap, label ):
 
 def getPrincipalAxesLengths( labelMap, label ):
     """Computes the principal axes lengths of the particle in px units
-
+S
     Parameters
     ----------
     labelMap : unsigned integer ndarray
