@@ -56,9 +56,11 @@ def plotOrientationsSPAM(orientations_zyx,
                          title = "",
                          subtitle = {"points":"","bins":""},
                          saveFigPath = None,
+                         sampleName='',
                          figXSize = 6.1,
                          figYSize = 4.8,
-                         figFontSize = 15 ):
+                         figFontSize = 15,
+                         labelName = '' ):
     """
     2021-04-21: This function is taken from the SPAM library. Modifications have been made
     the asthetics of the figure to have the figures in publication quality. 
@@ -254,7 +256,7 @@ def plotOrientationsSPAM(orientations_zyx,
         # ========================================================================
 
         plottingRadii = numpy.linspace( radiusMax/float(numberOfRings), radiusMax, numberOfRings )
-
+sampleName
         bars = []
 
         '''
@@ -314,7 +316,7 @@ def plotOrientationsSPAM(orientations_zyx,
 
         ax3 = fig.add_axes([0.9, 0.1, 0.03, 0.8])
         cb1 = matplotlib.colorbar.ColorbarBase( ax3, cmap=cmap, norm=norm )
-        cb1.set_label(label='Number of contacts', size=figFontSize)
+        cb1.set_label(label=labelName, size=figFontSize)
         cb1.ax.tick_params(labelsize=figFontSize)
 
         radiusGridAngles = numpy.arange( 15, 91, 15 )
@@ -331,7 +333,7 @@ def plotOrientationsSPAM(orientations_zyx,
 
         if saveFigPath is not None:
           plt.draw()
-          plt.savefig( saveFigPath, transparent=False, dpi=300 )
+          plt.savefig( (saveFigPath+sampleName), transparent=False, dpi=300 )
           plt.pause(1)
           plt.close()
         else:

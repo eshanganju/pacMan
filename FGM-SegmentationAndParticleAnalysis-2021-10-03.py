@@ -25,7 +25,7 @@ dataFile = ifl + 'SiC_2_CMASK_crop_final_volfrac_100.tif'
 dataName = 'FGM3-DSC0VER_100x100x100zyx_10h_rr08' # Change this to have different output file names
 
 #Reading binary data
-binMap = tf.imread(dataFile)//128	# Makes it 0 and 1
+binMap = tf.imread(dataFile)	# Makes it 0 and 1
 
 # Getting EDM
 edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
@@ -69,17 +69,17 @@ noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLa
 					       outputDir=ofl)
 	                                
 # Particle size anaysis on corlabMap
-Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis = noEdgeCorLabMap, 
-				calibrationFactor=0.003,	# mm per voxel 
+Measure.getParticleSizeArraye( labelledMapForParticleSizeAnalysis = noEdgeCorLabMap, 
+				calibrationFactor=1,	# mm per voxel 
 				saveData=True, 
 				sampleName=dataName, 
 				outputDir=ofl)
 
 # Orientation of major axis of particle
 ortsTable = Measure.getPrincipalAxesOrtTable( labelMapForParticleOrientation = noEdgeCorLabMap,
-											    saveData=True, 
-					    						sampleName=dataName, 
-												outputDir=ofl)
+						saveData=True, 
+					    	sampleName=dataName, 
+						outputDir=ofl)
 
 # Plot orientations
 Plot.plotOrientationsSPAM(ortTable[:,1:],
@@ -95,9 +95,11 @@ Plot.plotOrientationsSPAM(ortTable[:,1:],
                          title = "",
                          subtitle = {"points":"","bins":""},
                          saveFigPath = ofl,
+                         sampleName=dataName,
                          figXSize = 6.1,
                          figYSize = 4.8,
-                         figFontSize = 15 )
+                         figFontSize = 15,
+                         labelName = 'Number of particles')
 
 	                                     
 
