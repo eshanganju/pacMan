@@ -14,17 +14,22 @@ The particles will be analyzed
 import tifffile as tf
 from pac import Segment
 from pac import Measure
+from pac import Plot
 
 # Input and output locations (don't change):
-ifl = '/home/chawlahpc2adm/pacInput/particleSegmentationForHamid/'
-ofl = '/home/chawlahpc2adm/pacOutput/particleSegmentationForHamid/FGM-final/'
+
+
+ifl = '/home/chawlahpc2adm/Desktop/Daniel/RAMpowder/Input/'
+ofl = '/home/chawlahpc2adm/Desktop/Daniel/RAMpowder/Output/'
+
 
 # Change name of the file here
-dataFile = ifl + 'segmented2_TIFF.tif'
-dataName = 'FGM_CROP_800-1000z_200x200xy_20h_rr08' # Change this to have different output file names
+dataFile = ifl + 'Binarized AA7050RAM2 Powder Limited Area 300x300x231.tif'
+dataName = 'Al_300x300x231zyx_50h_rr08' # Change this to have different output file names
 
 #Reading binary data
-binMap = tf.imread(dataFile)[800:1000]
+#binMap = tf.imread(dataFile)[800:1000]
+binMap = tf.imread(dataFile)
 
 # Getting EDM
 edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
@@ -35,7 +40,7 @@ edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
 
 # Getting peaks of EDM	                                        
 edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
-	                                         h=2.0, # Decrease this to capture more ptcls
+	                                         h=5, # Decrease this to capture more ptcls
 	                                         sampleName=dataName,
 	                                         saveImg=True,
 	                                         outputDir=ofl )
@@ -69,16 +74,36 @@ noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLa
 	                                
 # Particle size anaysis on corlabMap
 Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis = noEdgeCorLabMap, 
-				calibrationFactor=1, 
+				calibrationFactor=1,	# mm per voxel 
 				saveData=True, 
 				sampleName=dataName, 
 				outputDir=ofl)
 
 # Orientation of major axis of particle
-Measure.getPrincipalAxesOrtTable( labelMapForParticleOrientation = noEdgeCorLabMap,
-				    saveData=True, 
-				    sampleName=dataName, 
-				    outputDir=ofl)
+ortsTable = Measure.getPrincipalAxesOrtTable( labelMapForParticleOrientation = noEdgeCorLabMap,
+						saveData=True, 
+					    	sampleName=dataName, 
+						outputDir=ofl)
+
+# Plot orientations
+Plot.plotOrientationsSPAM(ortTable[:,1:],
+                         projection="lambert",
+                         plot="both",
+                         binValueMin=0,
+                         binValueMax=10,
+                         binNormalisation = False,
+                         numberOfRings = 9,
+                         # the size of the dots in the points plot (5 OK for many points, 25 good for few points/debugging)
+                         pointMarkerSize = 8,
+                         cmap = matplotlib.pyplot.cm.RdBu_r,
+                         title = "",
+                         subtitle = {"points":"","bins":""},
+                         saveFigPath = ofl,
+                         sampleName=dataName,
+                         figXSize = 6.1,
+                         figYSize = 4.8,
+                         figFontSize = 15,
+                         labelName = 'Number of particles')
 
 	                                     
 

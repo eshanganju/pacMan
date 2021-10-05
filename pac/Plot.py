@@ -195,8 +195,8 @@ def plotOrientationsSPAM(orientations_zyx,
 
         radiusGridAngles = numpy.arange( 15, 91, 15 )
         radiusGridValues = []
+        
         for angle in radiusGridAngles:
-
             radiusGridValues.append( _projectOrientations( projection, "spherical", [ 1, angle*math.pi/180.0, 0 ] )[1][1] )
 
         ax.set_rgrids( radiusGridValues, labels=[ "%02i$^\circ$"%(x) for x in numpy.arange(  15,91,15) ], angle=None, fmt=None, fontsize=12)
@@ -256,7 +256,7 @@ def plotOrientationsSPAM(orientations_zyx,
         # ========================================================================
 
         plottingRadii = numpy.linspace( radiusMax/float(numberOfRings), radiusMax, numberOfRings )
-sampleName
+	
         bars = []
 
         '''
