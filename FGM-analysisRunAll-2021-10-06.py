@@ -1,4 +1,4 @@
-""" 2021-10-06 SiC paper code
+""" 2021-10-06 SiC paper code - EG
 This code takes the Segmented (binarized) data from the DES scan or the ML code and then:
 - Extract subvolumes from the binarized dataset
 - Segments the dataset to get individual particles
@@ -9,34 +9,95 @@ This code takes the Segmented (binarized) data from the DES scan or the ML code 
 - Plot particle aspect ratio
 """
 
-#Imports
-import tifffile as tf	# read the binary file
+# PAC Imports
+from pac import Read
 from pac import Segment
 from pac import Measure
 from pac import Plot
 
-# Input and output locations (don't change):
-ifl = '/home/chawlahpc2adm/pacInput/particleSegmentationForHamid/'
-ofl = '/home/chawlahpc2adm/pacOutput/particleSegmentationForHamid/newAnalysis-2021-10-04/'
+
+# Standard imports
+import numpy as np
+
+#-----------------------------------USER Input start---------------------------------------------*
+#------------------------------------------------------------------------------------------------*
+
+# Input and output locations: 
+ifl = '/home/eg/pacInput/fgmInput/'
+ofl = '/home/eg/pacOutput/fgmOutput/'
 
 # FileNames and output file prefix
-dataFile = ifl + 'segmented2_cropped.tif'
-dataName = 'FGM3-ML_200x200x200zyx_20h_rr08' 
+fileName = 'segmented2_cropped.tif'		# Name of binarized tiff file
+dataName = 'FGM3-DES_20h_rr08'			# Prefix for output files - name it smartly
+dataFile = ifl + fileName				# The file and location that will be read the bin data 
+
+# Calibration
+calVal = 0.01135						# mm/vox - keep this as 1 to get sizes in voxel units 
+
+# Subvolume extraction from scan
+globalZStart = 100 						# The upper end of the first slice in Z direction 
+globalZEnd = 1000						# The lower end of the last slice in Z direction 
+
+csStartX = 100							# Top-left corner X value - check from imageJ
+csStartY = 100 							# Top left corner Y value - check from imageJ
+
+subVolumeEdgeLength = 3					# Length (mm units) of the cubical subvolume 
+
+numberOfSubVolumes = 5 					# Number of subvolumes to analyze between gobal Z limits
+
+# Analysis parameters
+edmHVal = 2								# Minimum peak size when locating local maxima in EDM
+radiusRatioVal = 0.8					# Ratio of area radius to smaller particle radius
+
+#------------------------------------------------------------------------------------------------*
+#------------------------------------USER Input end----------------------------------------------*
 
 
-for subVolumes in volumes:
+
+#--------------------------------------------CODE------------------------------------------------*
+
+# Identify Z values of each slice
+upperZFirstSubVolume = globalZStart
+upperZLastSubVolume = globalZEnd - ( subVolumeEdgeLength//calVal ) 
+upperZSubVolumeList = np.linspace(upperZFirstSubVolume, upperZLastSubVolume, numberOfSubVolumes) 
+
+# Analyze subvolumes corresponding to each z-slice
+# This for loop does it one by one - make parallel
+for subVolumeNumber in range( 0, numberOfSubVolumes ):
+	print( '\n\n\nSubvolume number ' + str( subVolumeNumber + 1 ) )
+
 	# Extract subvolume from the total volume
+	subVolumeBinMap = Read.extractSubregionFromTiffSequence( folderDir=dataFile , 
+																Z, 
+																Y, 
+																X, 
+																lngt, 
+																calib, 
+																reference='topLeft',
+																invImg=False, 
+																saveImg=False, 
+																outputDir='', 
+																sampleName='XXX')
 
 	# Segment the subvolume using updated watershed + error correction
+	#subVolumeEDM = 
+	#subVolumeEDMPeaks = 
+	#subvolumeLabMap = 
+	#subvolumeCorLabMap = 
+	#subvolumeNoEdgeCorLabMap = 	
 
 	# Compute and save particle size distributions
-
+	#particleSizeArray = 
+	
 	# Compute and save aspect ratio distributions
+	#aspectRatioSiCParticles = 
 
 	# Compute and save particle orientations
+	#sicParticleOrtsArray = 
 
 	# Plot size distribution, aspect ratio, particle orientation
 
+#--------------------------------------------CODE------------------------------------------------*
 
 
 ##--------------------------Extra code --------------------------------------------#
