@@ -1,4 +1,5 @@
 """ 2021-10-06 SiC paper code - EG
+
 This code takes the Segmented (binarized) data from the DES scan or the ML code and then:
 - Extract subvolumes from the binarized dataset
 - Segments the dataset to get individual particles
@@ -7,6 +8,7 @@ This code takes the Segmented (binarized) data from the DES scan or the ML code 
 - Plots the particle orientation
 - Plot particle size distribution
 - Plot particle aspect ratio
+
 """
 
 # PAC Imports
@@ -14,7 +16,6 @@ from pac import Read
 from pac import Segment
 from pac import Measure
 from pac import Plot
-
 
 # Standard imports
 import numpy as np
@@ -67,17 +68,18 @@ for subVolumeNumber in range( 0, numberOfSubVolumes ):
 	print( '\n\n\nSubvolume number ' + str( subVolumeNumber + 1 ) )
 
 	# Extract subvolume from the total volume
-	subVolumeBinMap = Read.extractSubregionFromTiffSequence( folderDir=dataFile , 
-																Z, 
-																Y, 
-																X, 
-																lngt, 
-																calib, 
-																reference='topLeft',
-																invImg=False, 
-																saveImg=False, 
-																outputDir='', 
-																sampleName='XXX')
+	subVolumeBinMap = Read.extractSubregionFromTiffSequence(folderDir=dataFile , 
+															Z, 
+															Y, 
+															X, 
+															lngt, 
+															calib, 
+															zReference='low',
+															xyReference='topLeft',
+															invImg=False, 
+															saveImg=False, 
+															outputDir='', 
+															sampleName='XXX')
 
 	# Segment the subvolume using updated watershed + error correction
 	#subVolumeEDM = 
