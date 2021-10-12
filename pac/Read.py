@@ -75,12 +75,13 @@ def extractSubregionFromTiffSequence( folderDir, Z, Y, X, lngt, calib, reference
 		Path to storage of the filtered image
 	sampleName : str
 		name of the sample used for the analysis, default to sampleX
-	
+
 	Output
 	------
 	subregion : unsigned integer ndarray
 		3D numpy array of extracted subregion.
 	"""
+
 	upperSlice = Z + int( ( lngt / 2 ) / calib)
 	lowerSlice = Z - int( ( lngt / 2 ) / calib )
 
@@ -89,67 +90,64 @@ def extractSubregionFromTiffSequence( folderDir, Z, Y, X, lngt, calib, reference
 		bottomRow = int(Y) + int(lngt/calib)
 		leftCol = int(X)
 		rightCol = int(X) + int(lngt/calib)
-	
+
 	elif reference == 'center':
 		topRow = int(Y) - int(lngt/calib)//2
 		bottomRow = int(Y) + int(lngt/calib)//2
 		leftCol = int(X) - int(lngt/calib)//2
 		rightCol = int(X) + int(lngt/calib)//2
-	
+
 	print( '\n\nReading files from: ' + folderDir )
 	searchString = folderDir + '/*tif'
 	searchString2 = folderDir + '/*tiff'
-	
+
 	fileList1 = glob.glob(searchString)
 	fileList2 = glob.glob(searchString2)
-	
+
 	if len(fileList1)>len(fileList2):
 		fileList = fileList1
 		fileList.sort()
+
 	else:
 		fileList = fileList2
 		fileList.sort()
-	
+
 	numTiffFilesInFolder = len(fileList)
 	numTiffFilesToRead = ( upperSlice - lowerSlice)
-	
+
 	print( 'Number of files in the folder %d' % numTiffFilesInFolder )
 	print( 'Number of files to read %d' % numTiffFilesToRead )
 	print( '\t' + str( round( lowerSlice ) ) + '-' + str( round(upperSlice) ) )
-	
+
 	tempFile = tiffy.imread( str( fileList[ 0 ] ) )
 	rows = tempFile.shape[ 0 ]
 	columns = tempFile.shape[ 1 ]
 	del tempFile
-	
+
 	gliMap = np.empty( ( numTiffFilesToRead, rows, columns ) )
-	
+
 	for i in range( lowerSlice , upperSlice ):
 		gliMap[ i - lowerSlice ] = tiffy.imread ( fileList [ i ] )
 		print('Read ' + str( i - lowerSlice + 1 ) + '/' + str( numTiffFilesToRead ) + ' files...')
-	
+
 	if invImg == True: gliMap = invertImage(gliMap)
 	print( '\nFinished reading files...' )
-	
+
 	croppedGLIMap = gliMap[ :, topRow : bottomRow, leftCol : rightCol ]
 	if saveImg == True: 
 		if VERBOSE: print('\nSaving gli subregion map...')
 		tiffy.imsave( outputDir + sampleName + '-gliMap.tif',croppedGLIMap.astype('uint16') )
-	
+
 	return croppedGLIMap
 
-def extractSubregionFromTiffFile( fileDir,
-									Z, Y, X, lngt, 
-									calib, 
-									zReference = 'middle', 
-									xyreference='topLeft', 
-									invImg=False, 
-									saveImg=False, 
-									outputDir='', 
-									sampleName='XXX' ):
+def extractSubregionFromTiffFile( fileDir, Z, Y, X, lngt,
+									calib, zReference = 'middle',
+									xyreference='topLeft',
+									invImg=False, saveImg=False,
+									outputDir='', sampleName='XXX' ):
 	"""This function reads data from a single tiff stack
 	The entire image is read and a cubic subregion specified by the user is returned
-	
+
 	Parameter
 	----------
 	fileDir : str
@@ -181,13 +179,13 @@ def extractSubregionFromTiffFile( fileDir,
 		Path to storage of the filtered image
 	sampleName : str
 		name of the sample used for the analysis, default to sampleX
-	
+
 	Output
 	------
 	subregion : unsigned integer ndarray
 		3D numpy array of extracted subregion.
 	"""
-	
+
 	# zReference options
 	if zReference == 'center':
 		upperSlice = Z + int( ( lngt / 2 ) / calib )
@@ -207,24 +205,24 @@ def extractSubregionFromTiffFile( fileDir,
 		bottomRow = int(Y) + int(lngt/calib)
 		leftCol = int(X)
 		rightCol = int(X) + int(lngt/calib)
-	
+
 	elif reference == 'center':
 		topRow = int(Y) - int(lngt/calib)//2
 		bottomRow = int(Y) + int(lngt/calib)//2
 		leftCol = int(X) - int(lngt/calib)//2
 		rightCol = int(X) + int(lngt/calib)//2
-	
+
 	gliMap = tiffy.imread( fileDir )
-	
+
 	if invImg == True: gliMap = invertImage(gliMap)
 	print( '\nFinished reading files...' )
-	
+
 	croppedGLIMap = gliMap[ lowerSlice : upperSlice, topRow : bottomRow, leftCol : rightCol ]
-	
+
 	if saveImg == True: 
 		if VERBOSE: print('\nSaving gli subregion map...')
 		tiffy.imsave( outputDir + sampleName + '-gliMap.tif',croppedGLIMap.astype('uint16') )
-	
+
 	return croppedGLIMap
 
 def invertImage( gliMapToInvert ):
@@ -232,5 +230,3 @@ def invertImage( gliMapToInvert ):
 	"""
 	invertedGLIMap = np.flip(gliMapToInvert,axis=1)
 	return invertedGLIMap
-
-
