@@ -142,7 +142,7 @@ def extractSubregionFromTiffSequence( folderDir, Z, Y, X, lngt, calib, reference
 
 def extractSubregionFromTiffFile( fileDir, Z, Y, X, lngt,
 									calib, zReference = 'middle',
-									xyreference='topLeft',
+									xyReference='topLeft',
 									invImg=False, saveImg=False,
 									outputDir='', sampleName='XXX' ):
 	"""This function reads data from a single tiff stack
@@ -188,25 +188,25 @@ def extractSubregionFromTiffFile( fileDir, Z, Y, X, lngt,
 
 	# zReference options
 	if zReference == 'center':
-		upperSlice = Z + int( ( lngt / 2 ) / calib )
-		lowerSlice = Z - int( ( lngt / 2 ) / calib )
+		upperSlice = int(Z) + int( ( lngt / 2 ) / calib )
+		lowerSlice = int(Z) - int( ( lngt / 2 ) / calib )
 
 	elif zReference == 'low':
-		upperSlice = Z + int( lngt / calib ) 
-		lowerslice = Z 
+		upperSlice = int(Z) + int( lngt / calib ) 
+		lowerSlice = int(Z) 
 
 	elif zReference == 'high':
-		upperSlice = Z
-		lowerSlice = Z - int( lngt / calib )
+		upperSlice = int(Z)
+		lowerSlice = int(Z) - int( lngt / calib )
 
 	# xyRefence options
-	if reference == 'topLeft':
+	if xyReference == 'topLeft':
 		topRow = int(Y)
 		bottomRow = int(Y) + int(lngt/calib)
 		leftCol = int(X)
 		rightCol = int(X) + int(lngt/calib)
 
-	elif reference == 'center':
+	elif xyReference == 'center':
 		topRow = int(Y) - int(lngt/calib)//2
 		bottomRow = int(Y) + int(lngt/calib)//2
 		leftCol = int(X) - int(lngt/calib)//2
@@ -217,11 +217,11 @@ def extractSubregionFromTiffFile( fileDir, Z, Y, X, lngt,
 	if invImg == True: gliMap = invertImage(gliMap)
 	print( '\nFinished reading files...' )
 
-	croppedGLIMap = gliMap[ lowerSlice : upperSlice, topRow : bottomRow, leftCol : rightCol ]
+	croppedGLIMap = gliMap[ lowerSlice : upperSlice + 1, topRow : bottomRow + 1, leftCol : rightCol + 1 ]
 
 	if saveImg == True: 
 		if VERBOSE: print('\nSaving gli subregion map...')
-		tiffy.imsave( outputDir + sampleName + '-gliMap.tif',croppedGLIMap.astype('uint16') )
+		tiffy.imsave( outputDir + sampleName + '-subMap.tif',croppedGLIMap.astype('uint16') )
 
 	return croppedGLIMap
 

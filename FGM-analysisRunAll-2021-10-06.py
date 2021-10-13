@@ -22,31 +22,31 @@ import numpy as np
 #------------------------------------------------------------------------------------------------*
 
 # Input and output locations: 
-ifl = '/home/eg/pacInput/fgmInput/'
-ofl = '/home/eg/pacOutput/fgmOutput/'
+ifl = '/home/chawlahpc2adm/pacInput/FGM-3_DES/3umDatset/'
+ofl = '/home/chawlahpc2adm/pacOutput/FGM-3_DES/3umDataset/'
 
 # FileNames and output file prefix
-fileName = 'segmented2_cropped.tif'			# Name of binarized tiff file
-dataName = 'FGM3-DES_20h_rr08'				# Prefix for output files - name it smartly
-dataFile = ifl + fileName					# The file and location that will be read the bin data
+fileName = 'SiC_Particles__CMASK_CROP-2021-10-13.tif'			# Name of binarized tiff file
+dataName = 'FGM3-DES_3um_10h_rr08'								# Prefix for output files - name it smartly
+dataFile = ifl + fileName										# The file and location that will be read the bin data
 
 # Calibration
-calVal = 0.01135							# mm/vox - keep this as 1 to get sizes in voxel units
+calVal = 1														# mm/vox - keep this as 1 to get sizes in voxel units
 
 # Subvolume extraction from scan
-globalZStart = 100 							# The upper end of the first slice in Z direction
-globalZEnd = 1000							# The lower end of the last slice in Z direction
+globalZStart = 145 												# The upper end of the first slice in Z direction
+globalZEnd = 756												# The lower end of the last slice in Z direction
 
-csStartX = 100								# Top-left corner X value - check from imageJ
-csStartY = 100 								# Top left corner Y value - check from imageJ
+csStartX = 110													# Top-left corner X value - check from imageJ
+csStartY = 100 													# Top left corner Y value - check from imageJ
 
-subVolumeEdgeLength = 3						# Length (mm units) of the cubical subvolume
+subVolumeEdgeLength = 200										# Length (calibrated units) of the cubical subvolume
 
-numberOfSubVolumes = 5 						# Number of subvolumes to analyze between gobal Z limits
+numberOfSubVolumes = 5 											# Number of subvolumes to analyze between gobal Z limits
 
 # Analysis parameters
-edmHVal = 2									# Minimum peak size when locating local maxima in EDM
-radiusRatioVal = 0.8						# Ratio of area radius to smaller particle radius
+edmHVal = 1														# Minimum peak size when locating local maxima in EDM
+radiusRatioVal = 0.8											# Ratio of area radius to smaller particle radius
 
 #------------------------------------------------------------------------------------------------*
 #------------------------------------USER Input end----------------------------------------------*
@@ -61,42 +61,45 @@ upperZLastSubVolume = globalZEnd - ( subVolumeEdgeLength//calVal )
 upperZSubVolumeList = np.linspace(upperZFirstSubVolume, upperZLastSubVolume, numberOfSubVolumes) 
 
 # Analyze subvolumes corresponding to each z-slice
+
+#TODO: Parallelize this loop  - check joblib - https://stackoverflow.com/questions/9786102/how-do-i-parallelize-a-simple-python-loop
+
 for subVolumeNumber in range( 0, numberOfSubVolumes ):
-	print( '\n\n\nSubvolume number ' + str( subVolumeNumber + 1 ) ) + '/' + str(NumberOfSubVolumes)
+	print( '\n\n\nSubvolume number ' + str( subVolumeNumber + 1 ) + '/' + str(numberOfSubVolumes) )
 
 	zSlice = upperZSubVolumeList[subVolumeNumber]
 
-	subVolumeBinMap = Read.extractSubregionFromTiffSequence(folderDir=dataFile,
-															Z=zSlice,
-															Y=csStartY,
-															X=csStartX,
-															lngt=subVolumeEdgeLength,
-															calib=calVal,
-															zReference='low',
-															xyReference='topLeft',
-															invImg=False,
-															saveImg=True,
-															outputDir=ofl,
-															sampleName=dataName)
+	subVolumeBinMap = Read.extractSubregionFromTiffFile(fileDir=dataFile,
+														Z=zSlice,
+														Y=csStartY,
+														X=csStartX,
+														lngt=subVolumeEdgeLength,
+														calib=calVal,
+														zReference='low',
+														xyReference='topLeft',
+														invImg=False,
+														saveImg=True,
+														outputDir=ofl,
+														sampleName=(dataName+'-'+str(subVolumeNumber)))
 
-	edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
+	edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=subVolumeBinMap,
 												scaleUp = int(1),
 												saveImg=True,
-												sampleName=dataName,
+												sampleName=dataName+'-'+str(subVolumeNumber),
 												outputDir=ofl )
 
 	edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
-													h=2, # Decrease this to capture more ptcls
-													sampleName=dataName,
+													h=edmHVal,
+													sampleName=dataName+'-'+str(subVolumeNumber),
 													saveImg=True,
 													outputDir=ofl )
 
-	labMap = Segment.segmentUsingWatershed( binaryMapToSeg=binMap,
+	labMap = Segment.segmentUsingWatershed( binaryMapToSeg=subVolumeBinMap,
 											edmMapForTopo=edmMap,
 											edmPeaksForSeed=edmPeaksMap,
-											sampleName=dataName,
+											sampleName=dataName+'-'+str(subVolumeNumber),
 											saveImg=True,
-											outputDir=ofl)
+											outputDir=ofl,
 											addWatershedLine=False)
 
 	corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
@@ -105,26 +108,26 @@ for subVolumeNumber in range( 0, numberOfSubVolumes ):
 														considerEdgeLabels=True,
 														checkForSmallParticles=True,
 														radiusCheck=True,
-														radiusRatioLimit=0.80,
-														sampleName=dataName,
+														radiusRatioLimit=radiusRatioVal,
+														sampleName=dataName+'-'+str(subVolumeNumber),
 														saveImg=True,
 														outputDir=ofl )
 
 	noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLabMap,
 												pad=0,
-												sampleName=dataName,
+												sampleName=dataName+'-'+str(subVolumeNumber),
 												saveImg=True,
 												outputDir=ofl)
 
 	Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis = noEdgeCorLabMap,
 									calibrationFactor=calVal,
 									saveData=True,
-									sampleName=dataName,
+									sampleName=dataName+'-'+str(subVolumeNumber),
 									outputDir=ofl )
 
 	ortsTable = Measure.getPrincipalAxesOrtTable( labelMapForParticleOrientation = noEdgeCorLabMap,
 													saveData=True,
-													sampleName=dataName,
+													sampleName=dataName+'-'+str(subVolumeNumber),
 													outputDir=ofl)
 
 	Plot.plotOrientationsSPAM( ortsTable[:,1:],
@@ -139,7 +142,7 @@ for subVolumeNumber in range( 0, numberOfSubVolumes ):
 								title="",
 								subtitle={"points":"","bins":""},
 								saveFigPath=ofl,
-								sampleName=dataName,
+								sampleName=dataName+'-'+str(subVolumeNumber),
 								figXSize = 12,
 								figYSize = 4.8,
 								figFontSize = 15,
