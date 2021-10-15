@@ -48,6 +48,8 @@ pacMan uses the following libraries:
 - matplotlib
 - spam
 - glob
+- numba
+- tomopy
 
 # Speeding up the code
 - Numba for numpy manipulations (future)

@@ -13,100 +13,106 @@ from uncertainties import ufloat
 from uncertainties.umath import *
 from pac import Segment
 
-VERBOSE = True      # Show all the text when running the functions
-TESTING = True      # Set to False before release
+VERBOSE = True				# Show all the text when running the functions
+TESTING = True				# Set to False before release
 
-def getPSDAll( labelledMap , calibrationFactor=1.0, getEqsp=True, getCaMax=True, getCaMed=True, getCaMin=True, getFeretMax=True, getFeretMin=True, saveData=True, sampleName='', outputDir=''):
-    """This module returns the paricle size distribution for the 6 size
-    parameters commonly used to quantify particle size.
 
-    The reason this module exists is because different size parameters capture
-    the size of the different sands more accurately. The parameter that best
-    captures the size distribution obtained from sieve analysis should generally
-    be used. The appropriate parameter depends on the shape of the particle.
+def getPSDAll( labelledMap , calibrationFactor=1.0, getEqsp=True, getCaMax=True,
+				getCaMed=True, getCaMin=True, getFeretMax=True, getFeretMin=True,
+				saveData=True, sampleName='', outputDir=''):
+	"""This module returns the paricle size distribution for the 6 size
+	parameters commonly used to quantify particle size.
 
-    As particles crush, the parameter that best captures the size of the
-    particles may change. Generally the "minimum feret diameter" works quite well
-    in all cases.
+	The reason this module exists is because different size parameters capture
+	the size of the different sands more accurately. The parameter that best
+	captures the size distribution obtained from sieve analysis should generally
+	be used. The appropriate parameter depends on the shape of the particle.
 
-    Parameters
-    ----------
-    labelledMap : unsigned integer ndarray
+	As particles crush, the parameter that best captures the size of the
+	particles may change. Generally the "minimum feret diameter" works quite well
+	in all cases.
 
-    calibrationFactor : float
+	Parameters
+	----------
+	labelledMap : unsigned integer ndarray
 
-    getEqsp : bool
+	calibrationFactor : float
 
-    getCaMax : bool
+	getEqsp : bool
 
-    getCaMed : bool
+	getCaMax : bool
 
-    getCaMin : bool
+	getCaMed : bool
 
-    getFeretMax : bool
+	getCaMin : bool
 
-    getFeretMin : bool
+	getFeretMax : bool
 
-    saveData : bool
+	getFeretMin : bool
 
-    sampleName : string
+	saveData : bool
 
-    outputDir : string
+	sampleName : string
 
-    Return
-    ------
-    psdEqsp : floats n by 2 array
+	outputDir : string
 
-    psdCaMax : floats n by 2 array
+	Return
+	------
+	psdEqsp : floats n by 2 array
 
-    psdCaMed : floats n by 2 array
+	psdCaMax : floats n by 2 array
 
-    psdCaMin : floats n by 2 array
+	psdCaMed : floats n by 2 array
 
-    psdFeretMax : floats n by 2 array
+	psdCaMin : floats n by 2 array
 
-    psdFeretMin : floats n by 2 array
+	psdFeretMax : floats n by 2 array
 
-    """
-    psArray = getParticleSizeArray( labelledMap,
-                                    calibrationFactor=calibrationFactor,
-                                    saveData=saveData,
-                                    sampleName=sampleName,
-                                    outputDir=outPutDir)
+	psdFeretMin : floats n by 2 array
 
-    psdEqsp = getParticleSizeDistribution( psArray, sizeParam='eqsp',
-                                           sampleName=sampleName,
-                                           saveData=saveData,
-                                           outputDir=outputDir )
+	"""
 
-    psdCaMax = getParticleSizeDistribution( psArray, sizeParam='caMax',
-                                            sampleName=sampleName,
-                                            saveData=saveData,
-                                            outputDir=outputDir )
+	psArray = getParticleSizeArray( labelledMap,
+									calibrationFactor=calibrationFactor,
+									saveData=saveData,
+									sampleName=sampleName,
+									outputDir=outPutDir)
 
-    psdCaMed = getParticleSizeDistribution( psArray, sizeParam='caMed',
-                                            sampleName=sampleName,
-                                            saveData=saveData,
-                                            outputDir=outputDir )
+	psdEqsp = getParticleSizeDistribution( psArray, sizeParam='eqsp',
+											sampleName=sampleName,
+											saveData=saveData,
+											outputDir=outputDir )
 
-    psdCaMin = getParticleSizeDistribution( psArray, sizeParam='caMin',
-                                            sampleName=sampleName,
-                                            saveData=saveData,
-                                            outputDir=outputDir )
+	psdCaMax = getParticleSizeDistribution( psArray, sizeParam='caMax',
+											sampleName=sampleName,
+											saveData=saveData,
+											outputDir=outputDir )
 
-    psdFeretMax = getParticleSizeDistribution( psArray, sizeParam='feretMax',
-                                               sampleName=sampleName,
-                                               saveData=saveData,
-                                               outputDir=outputDir )
+	psdCaMed = getParticleSizeDistribution( psArray, sizeParam='caMed',
+											sampleName=sampleName,
+											saveData=saveData,
+											outputDir=outputDir )
 
-    psdFeretMin = getParticleSizeDistribution( psArray, sizeParam='feretMin',
-                                               sampleName=sampleName,
-                                               saveData=saveData,
-                                               outputDir=outputDir )
+	psdCaMin = getParticleSizeDistribution( psArray, sizeParam='caMin',
+											sampleName=sampleName,
+											saveData=saveData,
+											outputDir=outputDir )
 
-    return psdEqsp, psdCaMax, psdCaMed, psdCaMin, psdFeretMax, psdFeretMin
+	psdFeretMax = getParticleSizeDistribution( psArray, sizeParam='feretMax',
+												sampleName=sampleName,
+												saveData=saveData,
+												outputDir=outputDir )
 
-def getParticleSizeArray( labelledMapForParticleSizeAnalysis, calibrationFactor=1, saveData=False, sampleName='', outputDir=''):
+	psdFeretMin = getParticleSizeDistribution( psArray, sizeParam='feretMin',
+												sampleName=sampleName,
+												saveData=saveData,
+												outputDir=outputDir )
+
+	return psdEqsp, psdCaMax, psdCaMed, psdCaMin, psdFeretMax, psdFeretMin
+
+
+def getParticleSizeArray( labelledMapForParticleSizeAnalysis, calibrationFactor=1,
+							saveData=False, sampleName='', outputDir=''):
     """Computes particle size parameters for all the labels in the segmented data
 
     Parameters
@@ -227,7 +233,6 @@ def getPrincipalAxesOrtTable( labelMapForParticleOrientation, saveData=False, sa
     # [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
     return particleOrientationDataSummary
 
-	
 def getMajorPrincipalAxesOrt( labelMap, label ):
     """Computes the orientation of the principal axes along which the particle has the "largest length"
     The eigen vector corresponding to the largest eigenvalue is the vector along which the point cloud of the particle has the largest length.
