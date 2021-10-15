@@ -1,33 +1,35 @@
 # pacMan
+
 (ParticleAnalysisCodeMadebyanAmatureNoob)
 
-This code is for the analysis of XCT data.
+This code is for the analysis of tomography data.
+The code can read, segment, and analyze tomography data from a multitude of
+sources.
+
 The main functionalities include:
 - Reading and cropping XCT data
 - Filtering the XCT data
 - Segmenting the XCT data (binarization and watershed)
-- Computing particle size from segmented data
-- Computing particle size distribution
-- Computing relative breakage parameters
-- Computing interparticle contact orientations
+- Computing feature size from segmented data
+- Computing feature size distribution
+- Computing feature contact orientations
 - Computing fabric tensors
-- Generating pretty plots
 
 There are 5 modules that do these things:
-- Reader
+- Read
 - Filter
 - Segment
 - Measure
 - Plot
 
-## Reader
-This module reads XCT file data and extracts cubical subregions for analysis.
+## Read
+This module reads tomography data and extracts cubical subregions for analysis.
 
 ## Filter
-This module iteratively filters the XCT data using non-local means filter.
+This module iteratively filters the tomography data using non-local means filter.
 
 ## Segment
-This module segments the XCT data using a watershed algo and corrects over segmentation.
+This module segments the data using a watershed algo and corrects over segmentation.
 
 ## Measure
 This module measures the particle size parameters and interparticle contacts.
