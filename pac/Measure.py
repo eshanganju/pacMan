@@ -113,350 +113,355 @@ def getPSDAll( labelledMap , calibrationFactor=1.0, getEqsp=True, getCaMax=True,
 
 def getParticleSizeArray( labelledMapForParticleSizeAnalysis, calibrationFactor=1,
 							saveData=False, sampleName='', outputDir=''):
-    """Computes particle size parameters for all the labels in the segmented data
+	"""Computes particle size parameters for all the labels in the segmented data
 
-    Parameters
-    ----------
-    labelledMapForParticleSizeAnalysis : unsigned integer ndarray
+	Parameters
+	----------
+	labelledMapForParticleSizeAnalysis : unsigned integer ndarray
 
-    calibrationFactor : float
+	calibrationFactor : float
 
-    saveData : bool
+	saveData : bool
 
-    sampleName : string
+	sampleName : string
 
-    outputDir : string
+	outputDir : string
 
-    Return:
-    particleSizeDataSummary : unsigned float ndarray
-        Particle size array containing columns
-        [0] Label index, [1] Volume, [2] Eqsp, [3] Centroidal - max,
-        [4] Centroidal - med, [5] Centroidal - min, [6] Feret-max X, [7] Feret -min X
-    """
-    numberOfParticles = int( labelledMapForParticleSizeAnalysis.max() )
+	Return:
+	particleSizeDataSummary : unsigned float ndarray
+	    Particle size array containing columns
+	    [0] Label index, [1] Volume, [2] Eqsp, [3] Centroidal - max,
+	    [4] Centroidal - med, [5] Centroidal - min, [6] Feret-max X, [7] Feret -min X
+	"""
+	numberOfParticles = int( labelledMapForParticleSizeAnalysis.max() )
 
-    particleSizeDataSummary = np.zeros( ( numberOfParticles + 1 , 8 ) )
-    print( '\nStarting measurement of particles' )
-    print( '------------------------------------*' )
+	particleSizeDataSummary = np.zeros( ( numberOfParticles + 1 , 8 ) )
+	print( '\nStarting measurement of particles' )
+	print( '------------------------------------*' )
 
-    for particleNum in range( 1, numberOfParticles + 1 ):
-        print( "Computing size of", particleNum, "/", numberOfParticles, "particle" )
-        particleSizeDataSummary[particleNum, 0] = particleNum
+	for particleNum in range( 1, numberOfParticles + 1 ):
+		print( "Computing size of", particleNum, "/", numberOfParticles, "particle" )
+		particleSizeDataSummary[particleNum, 0] = particleNum
 
-        # Equivalent sphere diameter
-        vol, eqspDia = getEqspDia( labelMap=labelledMapForParticleSizeAnalysis, label=int(particleNum) )
-        particleSizeDataSummary[particleNum, 1] = vol * (calibrationFactor**3)
-        particleSizeDataSummary[particleNum, 2] = eqspDia * calibrationFactor
+		# Equivalent sphere diameter
+		vol, eqspDia = getEqspDia( labelMap=labelledMapForParticleSizeAnalysis, label=int(particleNum) )
+		particleSizeDataSummary[particleNum, 1] = vol * (calibrationFactor**3)
+		particleSizeDataSummary[particleNum, 2] = eqspDia * calibrationFactor
 
-        # Centroidal axes lengths
-        caMax, caMed, caMin = getPrincipalAxesLengths( labelMap=labelledMapForParticleSizeAnalysis,label=int(particleNum) )
-        particleSizeDataSummary[particleNum, 3] = caMax * calibrationFactor
-        particleSizeDataSummary[particleNum, 4] = caMed * calibrationFactor
-        particleSizeDataSummary[particleNum, 5] = caMin * calibrationFactor
+		# Centroidal axes lengths
+		caMax, caMed, caMin = getPrincipalAxesLengths( labelMap=labelledMapForParticleSizeAnalysis,label=int(particleNum) )
+		particleSizeDataSummary[particleNum, 3] = caMax * calibrationFactor
+		particleSizeDataSummary[particleNum, 4] = caMed * calibrationFactor
+		particleSizeDataSummary[particleNum, 5] = caMin * calibrationFactor
 
-        # TODO: Fix the feret diameter issue
-        """
-        The SPAM code runs and gives error in the apply transformation part of the code
-        """
+		# TODO: Fix the feret diameter issue
+		"""
+		The SPAM code runs and gives error in the apply transformation part of the code
+		"""
 
-        # Feret diameters
-        # feretMax, feretMin = getMinMaxFeretDia( labelMap=labelledMapForParticleSizeAnalysis,
-        #                                         label=int(particleNum), numOrts=100, numRots=10)
+		# Feret diameters
+		# feretMax, feretMin = getMinMaxFeretDia( labelMap=labelledMapForParticleSizeAnalysis,
+		#                                         label=int(particleNum), numOrts=100, numRots=10)
 
-        #feretDia = getFeretDiametersSPAM( lab=labelledMapForParticleSizeAnalysis,
-        #                                  labelList=int(particleNum)  )
+		#feretDia = getFeretDiametersSPAM( lab=labelledMapForParticleSizeAnalysis,
+		#                                  labelList=int(particleNum)  )
 
-        #feretMax = feretDia [0,0]
-        #feretMin = feretDia [0,1]
+		#feretMax = feretDia [0,0]
+		#feretMin = feretDia [0,1]
 
-        #particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
-        #particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
+		#particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
+		#particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
 
-    # Removing the extra zero in the summary (first row)
-    particleSizeDataSummary = np.delete( particleSizeDataSummary, 0, 0 )
+	# Removing the extra zero in the summary (first row)
+	particleSizeDataSummary = np.delete( particleSizeDataSummary, 0, 0 )
 
-    if saveData == True:
-        if VERBOSE:  print('\nSaving particle size list...')
-        np.savetxt( outputDir + sampleName + '-particleSizeList.csv',particleSizeDataSummary, delimiter=',')
+	if saveData == True:
+		if VERBOSE:  print('\nSaving particle size list...')
+		np.savetxt( outputDir + sampleName + '-particleSizeList.csv',particleSizeDataSummary, delimiter=',')
 
-    # [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
-    return particleSizeDataSummary
+	# [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
+	return particleSizeDataSummary
+
 
 def getEqspDia( labelMap, label ):
-    """Calculates the equivalent sphere diameter of a particle in px units
+	"""Calculates the equivalent sphere diameter of a particle in px units
 
-    The equivalent sphere diameter is the diameter of the sphere with
-    the same volume as the partcle
+	The equivalent sphere diameter is the diameter of the sphere with
+	the same volume as the partcle
 
-    Parameters
-    ----------
-    labelMap : unsigned integer ndarray
+	Parameters
+	----------
+	labelMap : unsigned integer ndarray
 
-    label : unsigned integer
+	label : unsigned integer
 
-    Return
-    ------
-    volume : integer
+	Return
+	------
+	volume : integer
 
-    eqspLabelDia : float
+	eqspLabelDia : float
 
-    """
-    labOnlyMap = np.zeros_like( labelMap )
-    labOnlyMap[np.where(labelMap == label)] = 1
-    volume = labOnlyMap.sum()
-    eqspLabelDia = (6*volume/(math.pi))**(1/3)
+	"""
+	labOnlyMap = np.zeros_like( labelMap )
+	labOnlyMap[np.where(labelMap == label)] = 1
+	volume = labOnlyMap.sum()
+	eqspLabelDia = (6*volume/(math.pi))**(1/3)
 
-    return volume, eqspLabelDia
-    
+	return volume, eqspLabelDia
+
+
 def getPrincipalAxesOrtTable( labelMapForParticleOrientation, saveData=False, sampleName='', outputDir=''):
-    """Computes a table of the major axes of the particles - orientation of the particles long axis 
-    """
-    numberOfParticles = int( labelMapForParticleOrientation.max() )
-    particleOrientationDataSummary = np.zeros( ( numberOfParticles + 1 , 4 ) )  # This is needed because of ZYX + the particle number
+	"""Computes a table of the major axes of the particles - orientation of the particles long axis 
+	"""
+	numberOfParticles = int( labelMapForParticleOrientation.max() )
+	particleOrientationDataSummary = np.zeros( ( numberOfParticles + 1 , 4 ) )  # This is needed because of ZYX + the particle number
+	
+	for particleNum in range( 1, numberOfParticles + 1 ):
+		print( "Computing orientation of", particleNum, "/", numberOfParticles, "particle" )
+		particleOrientationDataSummary[particleNum, 0] = particleNum
+		ortZZ, ortYY, ortXX = getMajorPrincipalAxesOrt( labelMap=labelMapForParticleOrientation, label=int(particleNum) )
+		particleOrientationDataSummary[particleNum, 1] = ortZZ
+		particleOrientationDataSummary[particleNum, 2] = ortYY
+		particleOrientationDataSummary[particleNum, 3] = ortXX
 
-    for particleNum in range( 1, numberOfParticles + 1 ):
-        print( "Computing orientation of", particleNum, "/", numberOfParticles, "particle" )
-        particleOrientationDataSummary[particleNum, 0] = particleNum
+	# Removing the extra zero in the summary (first row)
+	particleOrientationDataSummary = np.delete( particleOrientationDataSummary, 0, 0 )
 
-        ortZZ, ortYY, ortXX = getMajorPrincipalAxesOrt( labelMap=labelMapForParticleOrientation, label=int(particleNum) )
-        particleOrientationDataSummary[particleNum, 1] = ortZZ
-        particleOrientationDataSummary[particleNum, 2] = ortYY
-        particleOrientationDataSummary[particleNum, 3] = ortXX
+	# Saving files
+	if saveData == True:
+		if VERBOSE:  print('\nSaving particle ort list...')
+		np.savetxt( outputDir + sampleName + '-particleOrtList.csv',particleOrientationDataSummary, delimiter=',')
 
-    # Removing the extra zero in the summary (first row)
-    particleOrientationDataSummary = np.delete( particleOrientationDataSummary, 0, 0 )
+	# [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
+	return particleOrientationDataSummary
 
-    if saveData == True:
-        if VERBOSE:  print('\nSaving particle ort list...')
-        np.savetxt( outputDir + sampleName + '-particleOrtList.csv',particleOrientationDataSummary, delimiter=',')
-
-    # [ Label, Volume(vx), Size0(px or mm), Size1(px or mm), Size2(px or mm), Size3(px or mm), Size4(px or mm), Size5(px or mm)]
-    return particleOrientationDataSummary
 
 def getMajorPrincipalAxesOrt( labelMap, label ):
-    """Computes the orientation of the principal axes along which the particle has the "largest length"
-    The eigen vector corresponding to the largest eigenvalue is the vector along which the point cloud of the particle has the largest length.
-    """
-    zyxofLabel = getZYXLocationOfLabel(labelMap,label)
+	"""Computes the orientation of the principal axes along which the particle has the "largest length"
+	The eigen vector corresponding to the largest eigenvalue is the vector along which the point cloud of the particle has the largest length.
+	"""
+	zyxofLabel = getZYXLocationOfLabel(labelMap,label)
 
-    covarianceMatrix = np.cov( zyxofLabel.T )
+	covarianceMatrix = np.cov( zyxofLabel.T )
 
-    eigval, eigvec = np.linalg.eig( covarianceMatrix )
+	eigval, eigvec = np.linalg.eig( covarianceMatrix )
 
-    # Eigenvector corresponding to max eigenvalue
-    maxEigvalEigvecIndex = int(np.argmax(eigval))
-    
-    ortZZ = eigvec[0,maxEigvalEigvecIndex]
-    ortYY = eigvec[1,maxEigvalEigvecIndex]
-    ortXX = eigvec[2,maxEigvalEigvecIndex]
+	# Eigenvector corresponding to max eigenvalue
+	maxEigvalEigvecIndex = int(np.argmax(eigval))
 
-    return ortZZ, ortYY, ortXX
+	ortZZ = eigvec[0,maxEigvalEigvecIndex]
+	ortYY = eigvec[1,maxEigvalEigvecIndex]
+	ortXX = eigvec[2,maxEigvalEigvecIndex]
+
+	return ortZZ, ortYY, ortXX
+
 
 def getPrincipalAxesLengths( labelMap, label ):
-    """Computes the principal axes lengths of the particle in px units
-    
-    Parameters
-    ----------
-    labelMap : unsigned integer ndarray
+	"""Computes the principal axes lengths of the particle in px units
+	
+	Parameters
+	----------
+	labelMap : unsigned integer ndarray
+	
+	label : unsigned integer
+	
+	Return
+	------
+	centroidalAxesLengthMax : unsigned float
+	
+	centroidalAxesLengthMed : unsigned float
+	
+	centroidalAxesLengthMin : unsigned float
+	"""
+	zyxofLabel = getZYXLocationOfLabel(labelMap,label)
+	
+	covarianceMatrix = np.cov( zyxofLabel.T )
+	print('\tobtained COV matrix')
+	eigval, eigvec = np.linalg.eig( covarianceMatrix )
+	print('\tobtained eigvectors matrix')
+	meanZ, meanY, meanX = getCenterOfGravityFromZYXLocations( zyxLocationData=zyxofLabel )
+	
+	meanMatrix = np.zeros_like( zyxofLabel )
+	
+	meanMatrix[ :, 0 ] = meanZ
+	meanMatrix[ :, 1 ] = meanY
+	meanMatrix[ :, 2 ] = meanX
+	
+	centeredLocationData = zyxofLabel - meanMatrix
+	
+	rotationMatrix = np.zeros( ( 3, 3 ) )
+	
+	rotationMatrix[ :, 0 ] = eigvec[ 0 ]
+	rotationMatrix[ :, 1 ] = eigvec[ 1 ]
+	rotationMatrix[ :, 2 ] = eigvec[ 2 ]
+	
+	rotCentPointCloud = ( np.matmul( rotationMatrix, centeredLocationData.T ) ).T
+	
+	caDims = np.zeros( ( 3, 1 ) )
+	caDims[ 0 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 0 ].min()
+	caDims[ 1 ] = rotCentPointCloud[ :, 1 ].max() - rotCentPointCloud[ :, 1 ].min()
+	caDims[ 2 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 2 ].min()
+	
+	centroidalAxesLengthMax = max( caDims )[ 0 ]
+	centroidalAxesLengthMin = min( caDims )[ 0 ]
+	centroidalAxesLengthMed = statistics.median( caDims )[ 0 ]
+	return centroidalAxesLengthMax, centroidalAxesLengthMed, centroidalAxesLengthMin
 
-    label : unsigned integer
-
-    Return
-    ------
-    centroidalAxesLengthMax : unsigned float
-
-    centroidalAxesLengthMed : unsigned float
-
-    centroidalAxesLengthMin : unsigned float
-    """
-    zyxofLabel = getZYXLocationOfLabel(labelMap,label)
-
-    covarianceMatrix = np.cov( zyxofLabel.T )
-    print('\tobtained COV matrix')
-    eigval, eigvec = np.linalg.eig( covarianceMatrix )
-    print('\tobtained eigvectors matrix')
-    meanZ, meanY, meanX = getCenterOfGravityFromZYXLocations( zyxLocationData=zyxofLabel )
-
-    meanMatrix = np.zeros_like( zyxofLabel )
-
-    meanMatrix[ :, 0 ] = meanZ
-    meanMatrix[ :, 1 ] = meanY
-    meanMatrix[ :, 2 ] = meanX
-
-    centeredLocationData = zyxofLabel - meanMatrix
-
-    rotationMatrix = np.zeros( ( 3, 3 ) )
-
-    rotationMatrix[ :, 0 ] = eigvec[ 0 ]
-    rotationMatrix[ :, 1 ] = eigvec[ 1 ]
-    rotationMatrix[ :, 2 ] = eigvec[ 2 ]
-
-    rotCentPointCloud = ( np.matmul( rotationMatrix, centeredLocationData.T ) ).T
-
-    caDims = np.zeros( ( 3, 1 ) )
-    caDims[ 0 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 0 ].min()
-    caDims[ 1 ] = rotCentPointCloud[ :, 1 ].max() - rotCentPointCloud[ :, 1 ].min()
-    caDims[ 2 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 2 ].min()
-
-    centroidalAxesLengthMax = max( caDims )[ 0 ]
-    centroidalAxesLengthMin = min( caDims )[ 0 ]
-    centroidalAxesLengthMed = statistics.median( caDims )[ 0 ]
-    return centroidalAxesLengthMax, centroidalAxesLengthMed, centroidalAxesLengthMin
 
 def _getMinMaxFeretDiaSPAM( labelMap, label, numOrts=100 ):
-    """Computes the min and max feret diameter using the spam library
+	"""Computes the min and max feret diameter using the spam library
 
-    Parameters
-    ----------
-    labelMap : unsigned integer ndarray
-    label : unsigned integer
-    numOrts : unsigned integer
-        number of orientations along which the feret diameters are measured
+	Parameters
+	----------
+	labelMap : unsigned integer ndarray
+	label : unsigned integer
+	numOrts : unsigned integer
+	    number of orientations along which the feret diameters are measured
 
-    Return
-    ------
-    feretMax : unsigned float
-    feretMin : unsigned float
-    """
-    labOneOnly = np.zeros_like( labelMap )
-    labOneOnly[ np.where( labelMap == label ) ] = 1
-    feretDims, feretOrts = slab._feretDiameters( labOneOnly, numberOfOrientations=numOrts )
+	Return
+	------
+	feretMax : unsigned float
+	feretMin : unsigned float
+	"""
 
-    feretMax = feretDims[1,0] # Indexing start at 1 cuz spam.feret measures the 0 index - void space
-    feretMin = feretDims[1,1] # ^^
-    return feretMax, feretMin
+	labOneOnly = np.zeros_like( labelMap )
+	labOneOnly[ np.where( labelMap == label ) ] = 1
+	feretDims, feretOrts = slab._feretDiameters( labOneOnly, numberOfOrientations=numOrts )
+
+	feretMax = feretDims[1,0] # Indexing start at 1 cuz spam.feret measures the 0 index - void space
+	feretMin = feretDims[1,1] # ^^
+	return feretMax, feretMin
+
 
 def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
-    """Computes the minimum and the maximum feret diameters of a particle
+	"""Computes the minimum and the maximum feret diameters of a particle
+	
+	The voxels of the particle are rotated along different unit vectors,
+	which are obtained from the method proposed by Saff and Kuijlaar.
+	After rotation, the lengths of the particle along the 3 axes are
+	measured and the minimum and the maximum lengths measured are returned
+	
+	Parameters
+	----------
+	labelMap : unsigned integer ndarray
+	
+	label : unsigned integer
+	
+	numOrts: unsigned integer
+	    number of orientations about which particle will be rotated
+	
+	numRots: unsigned integer
+	    number of rotation angles about each orientation
+	
+	Return
+	------
+	minFeretDia : float
+	
+	maxFeretDia : float
+	
+	NOTES
+	-----
+	
+	This code giced smaller particle sizes than the SPAM code. All analysis is reverted back to SPAM code till this issue is fixed. 
+	"""
+	if TESTING: print('\nChecking feret diameters of ' + str(np.round(label)) + '/' + str( np.round( labelMap.max() ) ) )
+	
+	zyxLocations = getZYXLocationOfLabel(labelMap, label).astype('float')
+	
+	cogZ, cogY, cogX = getCenterOfGravityFromZYXLocations ( zyxLocationData=zyxLocations )
+	
+	surfaceOnlyLabMap = getSurfaceVoxelsofParticle(labelMap, label, returnWithLabel = True)
+	
+	# zyxSurfaceLocations = getZYXLocationOfLabel(surfaceOnlyLabMap, label)
+	zyxSurfaceLocations = zyxLocations
+	print(zyxSurfaceLocations)
+	
+	meanMatrix = np.zeros_like(zyxSurfaceLocations)
+	meanMatrix[:,0] = cogZ
+	meanMatrix[:,1] = cogY
+	meanMatrix[:,2] = cogX
+	centeredZYXSurfaceLocations = zyxSurfaceLocations - meanMatrix
+	
+	unitVectors = getOrientationUsingSandK( numberOfOrientations=numOrts)
+	anglesInRad = np.arange( 0, math.pi+0.00001, math.pi/numRots )
+	
+	if TESTING:
+		print('Orientaions in radians:')
+		print(anglesInRad)
+	
+	minFeretDiameter = 0
+	maxFeretDiameter = 0
+	
+	for i in range(0,unitVectors.shape[0]):
+		if TESTING: print('\tChecking along orientation: ' + str(unitVectors[i]))
+		a = unitVectors[ i, 0 ]
+		b = unitVectors[ i, 1 ]
+		c = unitVectors[ i, 2 ]
+		d = ( b**2 + c**2 ) ** 0.5
 
-    The voxels of the particle are rotated along different unit vectors,
-    which are obtained from the method proposed by Saff and Kuijlaar.
-    After rotation, the lengths of the particle along the 3 axes are
-    measured and the minimum and the maximum lengths measured are returned
+		Rz = np.identity(3)
+		Rz[ 1, 1 ] = c/d
+		Rz[ 1, 2 ] = -b/d
+		Rz[ 2, 1 ] = b/d
+		Rz[ 2, 2 ] = c/d
 
-    Parameters
-    ----------
-    labelMap : unsigned integer ndarray
+		RzInv = np.identity(3)
+		RzInv[ 1, 1 ] = c/d
+		RzInv[ 1, 2 ] = b/d
+		RzInv[ 2, 1 ] = -b/d
+		RzInv[ 2, 2 ] = c/d
 
-    label : unsigned integer
+		Ry = np.identity(3)
+		Ry[ 0, 0 ] = d
+		Ry[ 0, 2 ] = -a
+		Ry[ 2, 0 ] = a
+		Ry[ 2, 2 ] = d
 
-    numOrts: unsigned integer
-        number of orientations about which particle will be rotated
+		RyInv = np.identity(3)
+		RyInv[ 0, 0 ] = d
+		RyInv[ 0, 2 ] = a
+		RyInv[ 2, 0 ] = d
+		RyInv[ 2, 2 ] = -a
 
-    numRots: unsigned integer
-        number of rotation angles about each orientation
+		preRotatedZYXSurfaceLocations = np.matmul( Ry, np.matmul( Rz, centeredZYXSurfaceLocations.T ) )
 
-    Return
-    ------
-    minFeretDia : float
+		for angle in anglesInRad:
+			if TESTING: print('\t\tChecking at rotation of ' + str(angle) + ' radians')
+			Rx = np.identity( 3 )
+			Rx[ 0, 0 ] = math.cos( angle )
+			Rx[ 0, 1 ] = -math.sin( angle )
+			Rx[ 1, 0 ] = math.sin( angle )
+			Rx[ 1, 1 ] = math.cos( angle )
 
-    maxFeretDia : float
+			rotatedZYXSurfaceLocations = np.matmul( Rx, preRotatedZYXSurfaceLocations )
+			correctedRotatedZYXSurfaceLocations = np.matmul( RzInv,np.matmul( RyInv, rotatedZYXSurfaceLocations ) )
 
-    NOTES
-    -----
+			sizeRange = np.zeros( ( 3, 1 ) )
+			# The one pixel value is added to account for the length of the pixel not considered
+			sizeRange[ 0, 0 ] = correctedRotatedZYXSurfaceLocations[ 0,: ].max() - correctedRotatedZYXSurfaceLocations[ 0, : ].min() + 1
+			sizeRange[ 1, 0 ] = correctedRotatedZYXSurfaceLocations[ 1,: ].max() - correctedRotatedZYXSurfaceLocations[ 1, : ].min() + 1
+			sizeRange[ 2, 0 ] = correctedRotatedZYXSurfaceLocations[ 2,: ].max() - correctedRotatedZYXSurfaceLocations[ 2, : ].min() + 1
 
-    This code giced smaller particle sizes than the SPAM code. All analysis is reverted back to SPAM code till this issue is fixed. 
-    """
-    if TESTING: print('\nChecking feret diameters of ' + str(np.round(label)) + '/' + str( np.round( labelMap.max() ) ) )
+			if minFeretDiameter != 0:
+				if minFeretDiameter > sizeRange.min():
+					minFeretDiameter = sizeRange.min()
+					if TESTING: print('\t\t\tUpdated minimum feret diameter to: ' + str(np.round(minFeretDiameter)))
 
-    zyxLocations = getZYXLocationOfLabel(labelMap, label).astype('float')
+			if maxFeretDiameter != 0:
+				if maxFeretDiameter < sizeRange.max():
+					maxFeretDiameter = sizeRange.max()
+					if TESTING: print('\t\t\tUpdated max feret diameter to: ' + str(np.round(maxFeretDiameter)))
 
-    cogZ, cogY, cogX = getCenterOfGravityFromZYXLocations ( zyxLocationData=zyxLocations )
+			if minFeretDiameter == 0:
+				minFeretDiameter = min( sizeRange )
+				if TESTING: print('\t\t\tInitial minimum feret diameter: ' + str(np.round(minFeretDiameter)))
 
-    surfaceOnlyLabMap = getSurfaceVoxelsofParticle(labelMap, label, returnWithLabel = True)
+			if maxFeretDiameter == 0:
+				maxFeretDiameter = max( sizeRange )
+				if TESTING: print('\t\t\tInitial max feret diameter: ' + str(np.round(maxFeretDiameter)))
 
-    # zyxSurfaceLocations = getZYXLocationOfLabel(surfaceOnlyLabMap, label)
-    zyxSurfaceLocations = zyxLocations
-    print(zyxSurfaceLocations)
+	return maxFeretDiameter,  minFeretDiameter
 
-    meanMatrix = np.zeros_like(zyxSurfaceLocations)
-    meanMatrix[:,0] = cogZ
-    meanMatrix[:,1] = cogY
-    meanMatrix[:,2] = cogX
-    centeredZYXSurfaceLocations = zyxSurfaceLocations - meanMatrix
-
-    unitVectors = getOrientationUsingSandK( numberOfOrientations=numOrts)
-    anglesInRad = np.arange( 0, math.pi+0.00001, math.pi/numRots )
-
-    if TESTING:
-        print('Orientaions in radians:')
-        print(anglesInRad)
-
-    minFeretDiameter = 0
-    maxFeretDiameter = 0
-
-    for i in range(0,unitVectors.shape[0]):
-        if TESTING: print('\tChecking along orientation: ' + str(unitVectors[i]))
-        a = unitVectors[ i, 0 ]
-        b = unitVectors[ i, 1 ]
-        c = unitVectors[ i, 2 ]
-        d = ( b**2 + c**2 ) ** 0.5
-
-        Rz = np.identity(3)
-        Rz[ 1, 1 ] = c/d
-        Rz[ 1, 2 ] = -b/d
-        Rz[ 2, 1 ] = b/d
-        Rz[ 2, 2 ] = c/d
-
-        RzInv = np.identity(3)
-        RzInv[ 1, 1 ] = c/d
-        RzInv[ 1, 2 ] = b/d
-        RzInv[ 2, 1 ] = -b/d
-        RzInv[ 2, 2 ] = c/d
-
-        Ry = np.identity(3)
-        Ry[ 0, 0 ] = d
-        Ry[ 0, 2 ] = -a
-        Ry[ 2, 0 ] = a
-        Ry[ 2, 2 ] = d
-
-        RyInv = np.identity(3)
-        RyInv[ 0, 0 ] = d
-        RyInv[ 0, 2 ] = a
-        RyInv[ 2, 0 ] = d
-        RyInv[ 2, 2 ] = -a
-
-        preRotatedZYXSurfaceLocations = np.matmul( Ry, np.matmul( Rz, centeredZYXSurfaceLocations.T ) )
-
-        for angle in anglesInRad:
-            if TESTING: print('\t\tChecking at rotation of ' + str(angle) + ' radians')
-            Rx = np.identity( 3 )
-            Rx[ 0, 0 ] = math.cos( angle )
-            Rx[ 0, 1 ] = -math.sin( angle )
-            Rx[ 1, 0 ] = math.sin( angle )
-            Rx[ 1, 1 ] = math.cos( angle )
-
-            rotatedZYXSurfaceLocations = np.matmul( Rx, preRotatedZYXSurfaceLocations )
-            correctedRotatedZYXSurfaceLocations = np.matmul( RzInv,np.matmul( RyInv, rotatedZYXSurfaceLocations ) )
-
-            sizeRange = np.zeros( ( 3, 1 ) )
-            '''
-            THe one pixel value is added to account for hte length of hte pixel not considered
-            '''
-            sizeRange[ 0, 0 ] = correctedRotatedZYXSurfaceLocations[ 0,: ].max() - correctedRotatedZYXSurfaceLocations[ 0, : ].min() + 1
-            sizeRange[ 1, 0 ] = correctedRotatedZYXSurfaceLocations[ 1,: ].max() - correctedRotatedZYXSurfaceLocations[ 1, : ].min() + 1
-            sizeRange[ 2, 0 ] = correctedRotatedZYXSurfaceLocations[ 2,: ].max() - correctedRotatedZYXSurfaceLocations[ 2, : ].min() + 1
-
-            if minFeretDiameter != 0:
-                if minFeretDiameter > sizeRange.min():
-                    minFeretDiameter = sizeRange.min()
-                    if TESTING: print('\t\t\tUpdated minimum feret diameter to: ' + str(np.round(minFeretDiameter)))
-
-            if maxFeretDiameter != 0:
-                if maxFeretDiameter < sizeRange.max():
-                    maxFeretDiameter = sizeRange.max()
-                    if TESTING: print('\t\t\tUpdated max feret diameter to: ' + str(np.round(maxFeretDiameter)))
-
-            if minFeretDiameter == 0:
-                minFeretDiameter = min( sizeRange )
-                if TESTING: print('\t\t\tInitial minimum feret diameter: ' + str(np.round(minFeretDiameter)))
-
-
-            if maxFeretDiameter == 0:
-                maxFeretDiameter = max( sizeRange )
-                if TESTING: print('\t\t\tInitial max feret diameter: ' + str(np.round(maxFeretDiameter)))
-
-    return maxFeretDiameter,  minFeretDiameter
 
 def getCenterOfGravityFromZYXLocations( zyxLocationData ):
     """Calculates the center of gravity of the particle from the
