@@ -163,14 +163,14 @@ def getParticleSizeArray( labelledMapForParticleSizeAnalysis, calibrationFactor=
 		# feretMax, feretMin = getMinMaxFeretDia( labelMap=labelledMapForParticleSizeAnalysis,
 		#                                         label=int(particleNum), numOrts=100, numRots=10)
 
-		#feretDia = getFeretDiametersSPAM( lab=labelledMapForParticleSizeAnalysis,
-		#                                  labelList=int(particleNum)  )
+		feretDia = getFeretDiametersSPAM( lab=labelledMapForParticleSizeAnalysis,
+		                                  labelList=int(particleNum)  )
 
-		#feretMax = feretDia [0,0]
-		#feretMin = feretDia [0,1]
+		feretMax = feretDia [0,0]
+		feretMin = feretDia [0,1]
 
-		#particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
-		#particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
+		particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
+		particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
 
 	# Removing the extra zero in the summary (first row)
 	particleSizeDataSummary = np.delete( particleSizeDataSummary, 0, 0 )
