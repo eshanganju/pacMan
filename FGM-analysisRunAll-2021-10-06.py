@@ -106,19 +106,26 @@ for subVolumeNumber in range( 0, numberOfSubVolumes ):
 														pad=int(2),
 														areaLimit=700,
 														considerEdgeLabels=True,
-														checkForSmallParticles=True,
+														checkForSmallParticles=False,
 														radiusCheck=True,
 														radiusRatioLimit=radiusRatioVal,
 														sampleName=dataName+'-'+str(subVolumeNumber),
 														saveImg=True,
 														outputDir=ofl )
 
-	noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLabMap,
-												pad=0,
-												sampleName=dataName+'-'+str(subVolumeNumber),
-												saveImg=True,
-												outputDir=ofl)
+	sprCorLabMap = Segment.removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 85, 
+													saveImg=True, sampleName=dataName+'-'+str(subVolumeNumber, outputDir=ofl)
 
+	noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=sprCorLabMap,pad=0,
+												sampleName=dataName+'-'+str(subVolumeNumber),
+												saveImg=True, outputDir=ofl)
+
+	Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis = noEdgeCorLabMap,
+									calibrationFactor=calVal,
+									saveData=True,
+									sampleName=dataName+'-'+str(subVolumeNumber),
+									outputDir=ofl )
+	
 	Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis = noEdgeCorLabMap,
 									calibrationFactor=calVal,
 									saveData=True,

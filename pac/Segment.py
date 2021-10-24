@@ -427,7 +427,10 @@ def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5, saveImg=F
 
     return edmPeakMarkers
 
-def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, considerEdgeLabels=True,checkForSmallParticles = True, radiusCheck=True, radiusRatioLimit=0.5, sampleName='', saveImg=True, outputDir=''):
+def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, considerEdgeLabels=True,
+                                checkForSmallParticles = True, voxelVolumeThreshold=1000,
+                                radiusCheck=True, radiusRatioLimit=0.5, 
+                                sampleName='', saveImg=True, outputDir=''):
     """Corrects over segmentation caused by incorrect edm peak selection
 
     Also remmoves small particle smaller than the obsevable threshold
@@ -607,9 +610,10 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, consi
 
     # Checking for small particles
     if checkForSmallParticles == True:
-        correctedCleanedLabelMap = removeSmallParticles( correctedLabelMap )
+        correctedCleanedLabelMap = removeSmallParticles( correctedLabelMap,  )
         solidVolumeWithSmallParticles, solidVolumeWithoutSmallParticles, volumeLoss, percentLoss = computeVolumeLoss( labelledMapWithSmallParticles=correctedLabelMap, 
                                                                                                                       labelledMapWithoutSmallParticles=correctedCleanedLabelMap,
+                                                                                                                      voxelCountThreshold=voxelVolumeThreshold,
                                                                                                                       saveFile=True, 
                                                                                                                       sampleName=sampleName, 
                                                                                                                       outputDir=outputDir)
@@ -712,7 +716,7 @@ def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 1000, saveI
 
     if saveImg == True:
         print('\nSaving labelled map with small particles removed')
-        tiffy.imsave(outputDir+sampleName+'-noSmallCorLabMap.tif',labMapUpdated.astype('uint16'))
+        tiffy.imsave(outputDir+sampleName+'-noSmallPtclCorLabMap.tif',labMapUpdated.astype('uint16'))
 
     return labMapUpdated
 
