@@ -54,4 +54,10 @@ pacMan uses the following libraries:
 # Speeding up the code
 - Numba for numpy manipulations (future)
 
+# Additional features to add
+- Surface area calculation
+	- Use with marching cubes
+	- compute edge connectivity
+	- convex hull 
+
 
