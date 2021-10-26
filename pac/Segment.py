@@ -21,8 +21,8 @@ from pac import Measure
 VERBOSE = True
 TESTING = True
 
-def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,
-							sampleName='',saveImg=True,outputDir='',addWatershedLine=False):
+def segmentUsingWatershed( binaryMapToSeg, edmMapForTopo, edmPeaksForSeed, addWatershedLine=False,
+							sampleName='', saveImg=True, outputDir='' ):
 	"""Simple function that uses skimage watershed and saves a copy of the segmented image
 
 	Parameters
