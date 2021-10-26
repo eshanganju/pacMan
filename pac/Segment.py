@@ -21,35 +21,36 @@ from pac import Measure
 VERBOSE = True
 TESTING = True
 
-def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,sampleName='',saveImg=True,outputDir='',addWatershedLine=False):
-    """Simple function that uses skimage watershed and saves a copy of the segmented image
+def segmentUsingWatershed(binaryMapToSeg,edmMapForTopo,edmPeaksForSeed,
+							sampleName='',saveImg=True,outputDir='',addWatershedLine=False):
+	"""Simple function that uses skimage watershed and saves a copy of the segmented image
 
-    Parameters
-    ----------
-    binaryMapToSeg : ndarray
-    edmMapForTopo : ndarray
-    edmPeaksForSeed : ndarray
-    sampleName : string
-    saveImg : bool
-    outputDir : string
+	Parameters
+	----------
+	binaryMapToSeg : ndarray
+	edmMapForTopo : ndarray
+	edmPeaksForSeed : ndarray
+	sampleName : string
+	saveImg : bool
+	outputDir : string
 
-    Return
-    ------
-    labMap : ndarray
-        labelled map with each particle assigned a separate integer value
-    """
-    if VERBOSE:
-        print('\nStarting segmentation using watershed')
-        print('-----------------------------------------*')
+	Return
+	------
+	labMap : ndarray
+		labelled map with each particle assigned a separate integer value
+	"""
+	if VERBOSE:
+		print('\nStarting segmentation using watershed')
+		print('-----------------------------------------*')
 
-    # This is using the skimage.segmentation watershed algorithm. There is no watershed line as the default is set to false.
-    labMap = wsd(-edmMapForTopo,markers=edmPeaksForSeed,mask=binaryMapToSeg, watershed_line=addWatershedLine)
+	# This is using the skimage.segmentation watershed algorithm. There is no watershed line as the default is set to false.
+	labMap = wsd(-edmMapForTopo,markers=edmPeaksForSeed,mask=binaryMapToSeg, watershed_line=addWatershedLine)
 
-    if saveImg == True:
-        if VERBOSE: print('\nSaving lab map...')
-        tiffy.imsave(outputDir+sampleName+'-labMap.tif',labMap.astype('uint16'))
+	if saveImg == True:
+		if VERBOSE: print('\nSaving lab map...')
+		tiffy.imsave(outputDir+sampleName+'-labMap.tif',labMap.astype('uint16'))
 
-    return labMap.astype('uint16')
+	return labMap.astype('uint16')
 
 def binarizeAccordingToOtsu( gliMapToBinarize, returnThresholdVal=True, sampleName='', saveImg=True, saveData=True, outputDir='' ):
     """Function to binarize GLI map according to OTSUs algorithm
@@ -888,3 +889,46 @@ def removeLabelAndUpdate( labMap,label ):
     updatedLabMap = moveLabelsUp(labMap,label)
     return updatedLabMap
 
+def fixMissingLabels (labMap, sampleName='', saveImg='', outputDir=''):
+	"""Code checks for missing labels and then updated the labels in the label map
+
+	Parameters
+	----------
+	labMap: ndArray containing the label map
+	sampleName: str name of the samples
+	saveImg: bool if True, the data is saved
+	outputdir: str location of the outputlocation
+
+	Returns
+	-------
+	correctedLabMap: ndArray label map with no missing labels
+	"""
+	print('\nCorrecting missing labels')
+	incorrectLabelsArray = np.arange( 1, labMap.max() + 1, dtype='uint16' )
+	correctLabelsArray = np.unique(labMap)
+
+	missingLabels = np.zeros( (incorrectLabelsArray.shape[0] - correctLabelsArray.shape[0] + 1 ), dtype='uint16')
+	missingLabelPos = 0
+
+	# Checking the missing labels
+	for num in incorrectLabelsArray:
+		if num in incorrectLabelsArray: None
+	else:
+		print(str(num) + 'missing')
+		missingLabels[missingLabelPos]=num
+
+	missingLabels = np.flip( missingLabels )
+
+	for missingLabel in missingLabels: labMap = removeLabelAndUpdate(labMap,missingLabel)
+
+	correctedLabMap = labMap
+
+	if VERBOSE:
+		print('-------------')
+		print('Complete')
+
+	if saveImg == True:
+		print('\nSaving corrected labelMap with missing labels removed')
+		tiffy.imsave(outputDir+sampleName+'-labMap-missingLabelsCorrected.tif',correctedLabMap.astype('uint16'))
+
+	return correctedLabMap
