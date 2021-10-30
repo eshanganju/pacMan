@@ -59,5 +59,3 @@ pacMan uses the following libraries:
 	- Use with marching cubes
 	- compute edge connectivity
 	- convex hull 
-
-
