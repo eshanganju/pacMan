@@ -23,25 +23,27 @@ import matplotlib		# Color map - for orientation plots
 #------------------------------------------------------------------------------------------------*
 
 # Input and output locations: 
-ifl = '/home/chawlahpc2adm/pacInput/FGM-3_DES/3umDatset/'
-ofl = '/home/chawlahpc2adm/pacOutput/FGM-3_DES/3umDataset/'
+ifl = '/home/chawlahpc2adm/pacInput/particleSegmentationForHamid/'
+ofl = '/home/chawlahpc2adm/pacOutput/FGM-3_DES/1_3umDataset/'
+
+
 
 # FileNames and output file prefix
-fileName = 'SiC_Particles__CMASK_CROP-2021-10-13.tif'			# Name of binarized tiff file
-dataName = 'FGM3-DES_3um_10h_rr08'								# Prefix for output files - name it smartly
+fileName = 'segmented2.tif'										# Name of binarized tiff file
+dataName = 'FGM3-ML_1_3um_10h_rr08'								# Prefix for output files - name it smartly
 dataFile = ifl + fileName										# The file and location that will be read the bin data
 
 # Calibration
 calVal = 1														# mm/vox - keep this as 1 to get sizes in voxel units
 
 # Subvolume extraction from scan
-globalZStart = 145 												# The upper end of the first slice in Z direction
-globalZEnd = 756												# The lower end of the last slice in Z direction
+globalZStart = 40 												# The upper end of the first slice in Z direction
+globalZEnd = 2170												# The lower end of the last slice in Z direction
 
-csStartX = 110													# Top-left corner X value - check from imageJ
-csStartY = 100 													# Top left corner Y value - check from imageJ
+csStartX = 0													# Top-left corner X value - check from imageJ
+csStartY = 105 													# Top left corner Y value - check from imageJ
 
-subVolumeEdgeLength = 200										# Length (calibrated units) of the cubical subvolume
+subVolumeEdgeLength = 288										# Length (calibrated units) of the cubical subvolume
 
 numberOfSubVolumes = 5 											# Number of subvolumes to analyze between gobal Z limits
 
@@ -79,20 +81,20 @@ for subVolumeNumber in range( 1, numberOfSubVolumes ):
 														zReference='low',
 														xyReference='topLeft',
 														invImg=False,
-														saveImg=True,
+														saveImg=False,
 														outputDir=ofl,
 														sampleName=(dataName+'-'+str(subVolumeNumber)))
 
 	edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=subVolumeBinMap,
 												scaleUp = int(1),
-												saveImg=True,
+												saveImg=False,
 												sampleName=dataName+'-'+str(subVolumeNumber),
 												outputDir=ofl )
 
 	edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
 													h=edmHVal,
 													sampleName=dataName+'-'+str(subVolumeNumber),
-													saveImg=True,
+													saveImg=False,
 													outputDir=ofl )
 
 	labMap = Segment.segmentUsingWatershed( binaryMapToSeg=subVolumeBinMap,
@@ -107,26 +109,19 @@ for subVolumeNumber in range( 1, numberOfSubVolumes ):
 														pad=int(2),
 														areaLimit=700,
 														considerEdgeLabels=True,
-														checkForSmallParticles=False,
+														checkForSmallParticles=True,
 														radiusCheck=True,
 														radiusRatioLimit=radiusRatioVal,
 														sampleName=dataName+'-'+str(subVolumeNumber),
 														saveImg=True,
 														outputDir=ofl )
 
-	sprCorLabMap = Segment.removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 85, 
-													saveImg=True, sampleName=dataName+'-'+str(subVolumeNumber, outputDir=ofl)
-
-	noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=sprCorLabMap,pad=0,
+	noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLabMap,
+												pad=0,
 												sampleName=dataName+'-'+str(subVolumeNumber),
-												saveImg=True, outputDir=ofl)
+												saveImg=True,
+												outputDir=ofl)
 
-	Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis = noEdgeCorLabMap,
-									calibrationFactor=calVal,
-									saveData=True,
-									sampleName=dataName+'-'+str(subVolumeNumber),
-									outputDir=ofl )
-	
 	Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis = noEdgeCorLabMap,
 									calibrationFactor=calVal,
 									saveData=True,

@@ -26,11 +26,11 @@ ofl = '/home/chawlahpc2adm/Desktop/Daniel/RAMpowder/Output/'
 
 # Change name of the file here
 dataFile = ifl + 'Binarized AA7050RAM2 Powder Large Area 643x643x969.tif'
-dataName = 'Al_643x643x(200-400)zyx_8h_rr09' # Change this to have different output file names
+dataName = 'Al_643x643x969_zyx_5h_rr09' # Change this to have different output file names
 
 #Reading binary data
 #binMap = tf.imread(dataFile)[800:1000]
-binMap = tf.imread(dataFile) [200:400]
+binMap = tf.imread(dataFile) [1:969]
 
 # Getting EDM
 edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
@@ -62,7 +62,7 @@ corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
 	                                      considerEdgeLabels=True,
 	                                      checkForSmallParticles=True,
 	                                      radiusCheck=True,
-	                                      radiusRatioLimit=0.95, # Lower - more aggressive merging
+	                                      radiusRatioLimit=0.9, # Lower - more aggressive merging
 	                                      sampleName=dataName,
 	                                      saveImg=True,
 	                                      outputDir=ofl )
