@@ -12,6 +12,7 @@ from uncertainties import unumpy as unp
 from uncertainties import ufloat
 from uncertainties.umath import *
 from pac import Segment
+from skimage.measure import marching_cubes, mesh_surface_area
 
 VERBOSE = True				# Show all the text when running the functions
 TESTING = True				# Set to False before release
@@ -909,7 +910,7 @@ def getAreaUnderPSDCurve( psd, maxSize=0.0, minSize=0.075, minOrZero='min'):
 		areaTotal = areaRectangle + areaTriangle
 		areaUnderCurve = areaUnderCurve + areaTotal
 
-    return areaUnderCurve
+	return areaUnderCurve
 
 
 def getContactNormalsSPAM( labelMap, method='randomWalker', saveData=True, sampleName='', outputDir='', keepPositive='Y'):
@@ -1335,3 +1336,85 @@ def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass
 
 	if returnOrts == True: return feretDiameters,feretOrientations
 	if returnOrts == False: return feretDiameters
+	
+	
+def computeSphericities(labMap, sampleName='', saveData=True, fixMissingLables=True, outputDir=''):
+	"""This function computes sphericities of all the particles in the volume
+	
+	Sphericity S is defined as:
+		S = pi^(1/3) * (6 * Vp)^(2/3) / Ap
+	where Vp is the volume of the particle and Ap is the surface area of the particle.
+	
+	The Volume of the particle is the volume of the all the voxels that make up the particle - thats easy call computeVolumeOfLabel
+	
+	The surface area of the particle is difficult. Just counting the outermost voxels is no good - can lead to undercounting of the surface areas. 
+	The outer surface of the particle can be meshed, using tiny little obedient marching-cubes (https://scikit-image.org/docs/dev/auto_examples/edges/plot_marching_cubes.html).
+	The area of the meshed surface can then be computed as the area of mesh elements.
+		
+	Parameters
+	----------
+	labMap
+	
+	sampleName
+	
+	saveData=True
+	
+	fixMissingLables
+	
+	outputDir
+	
+	Returns
+	-------
+	sphericityArray: ndArray containing the label number of the particle, the surface area of the particle, the volume of the particle, and the computed sphericity
+	
+	"""
+	if fixMissingLables == True: correctedVolumeToAnalyze = Segment.fixMissingLabels(labMap=labMap, sampleName=sampleName, saveImg=saveData, outputDir=outputDir)
+	else: correctedVolumeToAnalyze = labMap
+	
+	numberOfParticles = correctedVolumeToAnalyze.max()
+	sphericityArray = np.zeros( ( numberOfParticles,4 ) )
+	
+	for ptclNo in range( 1, numberOfParticles + 1 ):
+		if VERBOSE: print( 'Checking particle ' + str (ptclNo) + '/' + str(numberOfParticles) )
+		areaP = computeSurfaceAreaOfLabel( correctedVolumeToAnalyze, ptclNo )
+		volP = computeVolumeOfLabel( correctedVolumeToAnalyze, ptclNo )
+		sphericityP = ( ( math.pi )**( 1/3 ) ) * ( ( 6 * volP )**( 2/3 ) ) / areaP
+		if VERBOSE: print( '\tA=' + str( np.round( areaP ) ) + ', V=' + str( np.round( volP ) ) +  ', S=' + str( np.round( sphericityP , 2) ) )
+		sphericityArray[ ptclNo - 1, 0 ] = ptclNo 	
+		sphericityArray[ ptclNo - 1, 1 ] = areaP
+		sphericityArray[ ptclNo - 1, 2 ] = volP
+		sphericityArray[ ptclNo - 1, 3 ] = sphericityP
+		
+	if saveData==True: np.savetxt( outputDir + sampleName + '-particleSphericities.csv',sphericityArray, delimiter=',')
+	
+	return sphericityArray
+
+
+def computeSurfaceAreaOfLabel(labMap, label):
+	"""This fucntion computes the surface area of the particle. It first computes the surface mesh (triagular elements) of the particle with the desired label,
+	then it adds the area of the triangles of the mesh to get the surface area (if there are internal cavities, it will add the areas of those as well)
+	
+	
+	
+	
+	"""
+	maskedLabel = np.zeros_like(labMap)
+	maskedLabel[np.where(labMap == label)] = 1
+	
+	verts, faces, normals, values = marching_cubes( maskedLabel )
+	surfaceArea = mesh_surface_area( verts, faces )
+	
+	return surfaceArea
+	
+	
+def calculateInternalPorosity():
+	"""
+	"""
+
+def calculate effectivesphericity():
+	"""
+	"""
+	
+	
+	
+	

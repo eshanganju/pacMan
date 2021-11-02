@@ -915,7 +915,7 @@ def removeLabelAndUpdate( labMap,label ):
 	return updatedLabMap
 
 
-def fixMissingLabels (labMap, sampleName='', saveImg='', outputDir=''):
+def fixMissingLabels(labMap, sampleName='', saveImg='', outputDir=''):
 	"""Code checks for missing labels and then updated the labels in the label map
 
 	Parameters
