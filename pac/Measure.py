@@ -1352,10 +1352,20 @@ def computeSphericities(labMap, sampleName='', saveData=True, fixMissingLables=T
 		
 	Parameters
 	----------
+	labMap
 	
+	sampleName
+	
+	saveData=True
+	
+	fixMissingLables
+	
+	outputDir
 	
 	Returns
 	-------
+	sphericityArray: ndArray containing the label number of the particle, the surface area of the particle, the volume of the particle, and the computed sphericity
+	
 	"""
 	if fixMissingLables == True: correctedVolumeToAnalyze = Segment.fixMissingLabels(labMap=labMap, sampleName=sampleName, saveImg=saveData, outputDir=outputDir)
 	else: correctedVolumeToAnalyze = labMap
@@ -1380,7 +1390,12 @@ def computeSphericities(labMap, sampleName='', saveData=True, fixMissingLables=T
 
 
 def computeSurfaceAreaOfLabel(labMap, label):
-	"""
+	"""This fucntion computes the surface area of the particle. It first computes the surface mesh (triagular elements) of the particle with the desired label,
+	then it adds the area of the triangles of the mesh to get the surface area (if there are internal cavities, it will add the areas of those as well)
+	
+	
+	
+	
 	"""
 	maskedLabel = np.zeros_like(labMap)
 	maskedLabel[np.where(labMap == label)] = 1
@@ -1389,6 +1404,15 @@ def computeSurfaceAreaOfLabel(labMap, label):
 	surfaceArea = mesh_surface_area( verts, faces )
 	
 	return surfaceArea
+	
+	
+def calculateInternalPorosity():
+	"""
+	"""
+
+def calculate effectivesphericity():
+	"""
+	"""
 	
 	
 	
