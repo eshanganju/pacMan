@@ -1336,8 +1336,8 @@ def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass
 
 	if returnOrts == True: return feretDiameters,feretOrientations
 	if returnOrts == False: return feretDiameters
-	
-	
+
+
 def computeSphericities(labMap, sampleName='', saveData=True, fixMissingLables=True, outputDir=''):
 	"""This function computes sphericities of all the particles in the volume
 	
@@ -1393,10 +1393,15 @@ def computeSphericities(labMap, sampleName='', saveData=True, fixMissingLables=T
 def computeSurfaceAreaOfLabel(labMap, label):
 	"""This fucntion computes the surface area of the particle. It first computes the surface mesh (triagular elements) of the particle with the desired label,
 	then it adds the area of the triangles of the mesh to get the surface area (if there are internal cavities, it will add the areas of those as well)
-	
-	
-	
-	
+
+	Parameters
+	----------
+	labMap: ndArray of the volume
+	label: int label number that needs to be analyzed
+
+	Returns
+	-------
+	surfaceArea: float with the area of the trangular faces making up the mesh
 	"""
 	maskedLabel = np.zeros_like(labMap)
 	maskedLabel[np.where(labMap == label)] = 1
@@ -1405,8 +1410,8 @@ def computeSurfaceAreaOfLabel(labMap, label):
 	surfaceArea = mesh_surface_area( verts, faces )
 	
 	return surfaceArea
-	
-	
+
+
 def calculateInternalPorosity():
 	"""
 	"""
@@ -1414,7 +1419,3 @@ def calculateInternalPorosity():
 def calculate effectivesphericity():
 	"""
 	"""
-	
-	
-	
-	
