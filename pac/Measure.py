@@ -1391,8 +1391,9 @@ def computeSphericities(labMap, sampleName='', saveData=True, fixMissingLables=T
 
 
 def computeSurfaceAreaOfLabel(labMap, label):
-	"""This fucntion computes the surface area of the particle. It first computes the surface mesh (triagular elements) of the particle with the desired label,
-	then it adds the area of the triangles of the mesh to get the surface area (if there are internal cavities, it will add the areas of those as well)
+	"""This function computes the surface area of the particle. It first computes the surface mesh (triagular elements) of 
+	the particle with the desired label, then it adds the area of the triangles of the mesh to get the surface area 
+	(if there are internal cavities, it will add the areas of those as well)
 
 	Parameters
 	----------
