@@ -1131,7 +1131,8 @@ def getCoordinationNumberList( labelledMap, excludeEdgeLabels=True ):
 
 
 # TODO: This is messy - needs to be cleaned
-def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass=None, numberOfOrientations=100, margin=0, interpolationOrder=0, returnOrts = False):
+def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass=None, numberOfOrientations=100,
+							margin=0, interpolationOrder=0, returnOrts = False):
 	"""
 	Calculates (binary) feret diameters (caliper lengths) over a number of equally-spaced orientations
 	and returns the maximum and minimum values, as well as the orientation they were found in.
