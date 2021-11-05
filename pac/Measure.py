@@ -1417,6 +1417,6 @@ def calculateInternalPorosity():
 	"""
 	"""
 
-def calculate effectivesphericity():
+def calculateeffectivesphericity():
 	"""
 	"""

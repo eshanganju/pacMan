@@ -14,6 +14,8 @@ import numpy as np
 import spam.label as slab
 import time
 import math
+from skimage.measure import marching_cubes, mesh_surface_area
+from stl import mesh
 
 from pac import Measure
 
@@ -958,3 +960,63 @@ def fixMissingLabels(labMap, sampleName='', saveImg='', outputDir=''):
 		tiffy.imsave(outputDir+sampleName+'-labMap-missingLabelsCorrected.tif',correctedLabMap.astype('uint16'))
 
 	return correctedLabMap
+	
+def generateAndSaveStlFilesFromLabelList( labMap, labels=[], padding=10, stepSize = 1, sampleName='', outputDir='' ):
+	"""Check generateAndSaveStlFile
+	"""
+	if labels==[]: return(0)
+	
+	for label in labels:
+		generateAndSaveStlFile( labMap=labMap, label=label, padding=padding, stepSize=stepSize, sampleName=sampleName, outputDir=outputDir)
+	
+def generateAndSaveStlFile(labMap, label, padding=10, stepSize = 1, sampleName='', outputDir=''):
+	"""This extracts particle corresponding to a label, generate a surface for it, and save the particle as an *.stl file for visualization
+		.stl files can be visalized using paraview
+	
+	Parameters
+	----------
+	labMap: ndArray the entire labelled map
+	
+	label: int the label you want to visualize
+	
+	padding: int the spacing (in pixels) you want to have around your particle
+	
+	stepSize: the smoothness you want - 1 is not smoothening, higher numbers give more smoothening
+	
+	sampleName: str name of the sample
+	
+	outputDirectory: str location where you want the output
+	
+	Results
+	-------
+	no returns, but it will save an *.stl in the outputDir location
+	
+	"""
+	print('Generating stl for label: ' + str(label) )
+	
+	maxLabel = labMap.max()
+
+	if label > maxLabel: 
+		print('Chosen label not present in the data')
+		return(0)
+	
+	loc = np.where(labMap == label)
+	croppedLabMap = labMap[loc[0].min():loc[0].max(),\
+							loc[1].min():loc[1].max(),\
+							loc[2].min():loc[2].max()]
+							
+	croppedLabMap[np.where(croppedLabMap != label)] = 0
+
+	paddedCroppedLabMap = applyPaddingToLabelledMap(croppedLabMap,pad=10)
+	paddedCroppedLabMap = paddedCroppedLabMap // paddedCroppedLabMap.max()
+
+	verts, faces, normals, values = marching_cubes( paddedCroppedLabMap, step_size=stepSize)
+
+	volume = mesh.Mesh(np.zeros(faces.shape[0], dtype=mesh.Mesh.dtype))
+	
+	for i, f in enumerate(faces):
+		for j in range(3):
+			volume.vectors[i][j] = verts[f[j],:]
+    		
+	sampleName = outputDir + sampleName + '-' + str(label) + '.stl'
+	volume.save(sampleName) 
