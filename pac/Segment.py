@@ -16,6 +16,7 @@ import time
 import math
 from skimage.measure import marching_cubes, mesh_surface_area
 from stl import mesh
+import trimesh
 
 from pac import Measure
 
@@ -1012,11 +1013,9 @@ def generateAndSaveStlFile(labMap, label, padding=10, stepSize = 1, sampleName='
 
 	verts, faces, normals, values = marching_cubes( paddedCroppedLabMap, step_size=stepSize)
 
-	volume = mesh.Mesh(np.zeros(faces.shape[0], dtype=mesh.Mesh.dtype))
+	mesh = trimesh.Trimesh(verts,faces)
 	
-	for i, f in enumerate(faces):
-		for j in range(3):
-			volume.vectors[i][j] = verts[f[j],:]
+	smoothMesh = trimesh.smoothing.filter_humphrey(mesh)
     		
 	sampleName = outputDir + sampleName + '-' + str(label) + '.stl'
-	volume.save(sampleName) 
+	smoothMesh.export(sampleName) 
