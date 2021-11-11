@@ -207,7 +207,7 @@ def plotOrientationsSPAM(orientations_zyx,
 		ax.plot( projection_theta_r[:,0], projection_theta_r[:,1] , '.', markersize=pointMarkerSize )
 
 		if plot == "points":
-		plt.show()
+			plt.show()
 
 	if plot == "bins" or plot == "both":
 		import matplotlib.patches
@@ -286,7 +286,7 @@ def plotOrientationsSPAM(orientations_zyx,
 			# --- Angular bins                                                 ---
 			for angularBin in range( numberOfAngularBinsPerRing[ringNumber] ):
 
-			bars.append( [ angularBin*deltaThetaRad - deltaThetaRad/2.0, plottingRadii[ ringNumber ], deltaThetaRad ] )
+				bars.append( [ angularBin*deltaThetaRad - deltaThetaRad/2.0, plottingRadii[ ringNumber ], deltaThetaRad ] )
 				#bars.append( ax.bar( angularBin*deltaThetaRad - deltaThetaRad/2.0, plottingRadii[ ringNumber ], deltaThetaRad, bottom=0.0 ) )
 
 				# Add the number of vectors counted for this bin
@@ -417,6 +417,7 @@ def _projectOrientations(projection, coordSystem, vector):
 
 
 def plotLabelPropertyMap( lableMap, propertyToPlot='volume', sliceNumber=0,
-							sampleName='',saveImg=True,outputDir='',)
+							sampleName='',saveImg=True,outputDir=''):
 	"""Plot a slice of the tomography and color the particles with the chosen property
 	"""
+	print('pffft')

@@ -627,10 +627,9 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, consi
 
 	# Checking for small particles
 	if checkForSmallParticles == True:
-		correctedCleanedLabelMap = removeSmallParticles( correctedLabelMap,  )
+		correctedCleanedLabelMap = removeSmallParticles( correctedLabelMap, voxelCountThreshold=voxelVolumeThreshold )
 		solidVolumeWithSmallParticles, solidVolumeWithoutSmallParticles, volumeLoss, percentLoss = computeVolumeLoss( labelledMapWithSmallParticles=correctedLabelMap, 
 																														labelledMapWithoutSmallParticles=correctedCleanedLabelMap,
-																														voxelCountThreshold=voxelVolumeThreshold,
 																														saveFile=True, 
 																														sampleName=sampleName, 
 																														outputDir=outputDir)
