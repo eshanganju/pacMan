@@ -24,13 +24,13 @@ import matplotlib		# Color map - for orientation plots
 
 # Input and output locations: 
 ifl = '/home/eg/Desktop/SicData-2021-10-17/NewAnalysis/ML/'
-ofl = '/home/eg/pacOutput/FGM-3-2021-11-11-Analysis/ML/'
+ofl = '/home/eg/pacOutput/FGM-3-2021-11-11-Analysis/ML/10_09_AllPtcl/'
 
 
 
 # FileNames and output file prefix
 fileName = 'segmented2.tif'										# Name of binarized tiff file
-dataName = 'FGM3-ML_1_3um_10h_rr08'								# Prefix for output files - name it smartly
+dataName = 'FGM3-ML_1_3um_10h_rr09_all'								# Prefix for output files - name it smartly
 dataFile = ifl + fileName										# The file and location that will be read the bin data
 
 # Calibration
@@ -46,8 +46,8 @@ subVolumeEdgeLength = 288										# Length (calibrated units) of the cubical su
 numberOfSubVolumes = 1 											# Number of subvolumes to analyze between gobal Z limits
 
 # Analysis parameters
-edmHVal = 1														# Minimum peak size when locating local maxima in EDM
-radiusRatioVal = 0.8											# Ratio of area radius to smaller particle radius
+edmHVal = 1 													# Minimum peak size when locating local maxima in EDM
+radiusRatioVal = 0.9											# Ratio of area radius to smaller particle radius
 
 #------------------------------------------------------------------------------------------------*
 #------------------------------------USER Input end----------------------------------------------*
@@ -96,8 +96,8 @@ corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
 													pad=int(2),
 													areaLimit=700,
 													considerEdgeLabels=True,
-													checkForSmallParticles=True,
-													voxelVolumeThreshold=598,
+													checkForSmallParticles=False,
+													voxelVolumeThreshold=200,
 													radiusCheck=True,
 													radiusRatioLimit=radiusRatioVal,
 													sampleName=dataName,
@@ -140,6 +140,8 @@ Plot.plotOrientationsSPAM( ortsTable[:,1:],
 							figYSize = 4.8,
 							figFontSize = 15,
 							labelName = 'Number of particles')
+
+
 
 #------------------------------------------------------------------------------------------------*
 #--------------------------------------------CODE------------------------------------------------*

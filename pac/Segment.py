@@ -960,7 +960,8 @@ def fixMissingLabels(labMap, sampleName='', saveImg='', outputDir=''):
 		tiffy.imsave(outputDir+sampleName+'-labMap-missingLabelsCorrected.tif',correctedLabMap.astype('uint16'))
 
 	return correctedLabMap
-	
+
+
 def generateAndSaveStlFilesFromLabelList( labMap, labels=[], padding=10, stepSize = 1, sampleName='', outputDir='' ):
 	"""Check generateAndSaveStlFile
 	"""
@@ -968,6 +969,7 @@ def generateAndSaveStlFilesFromLabelList( labMap, labels=[], padding=10, stepSiz
 	
 	for label in labels:
 		generateAndSaveStlFile( labMap=labMap, label=label, padding=padding, stepSize=stepSize, sampleName=sampleName, outputDir=outputDir)
+
 	
 def generateAndSaveStlFile(labMap, label, padding=10, stepSize = 1, sampleName='', outputDir=''):
 	"""This extracts particle corresponding to a label, generate a surface for it, and save the particle as an *.stl file for visualization

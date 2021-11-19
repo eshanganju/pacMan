@@ -277,9 +277,9 @@ def getPrincipalAxesLengths( labelMap, label ):
 	zyxofLabel = getZYXLocationOfLabel(labelMap,label)
 	
 	covarianceMatrix = np.cov( zyxofLabel.T )
-	print('\tobtained COV matrix')
+	#print('\tobtained COV matrix')
 	eigval, eigvec = np.linalg.eig( covarianceMatrix )
-	print('\tobtained eigvectors matrix')
+	#print('\tobtained eigvectors matrix')
 	meanZ, meanY, meanX = getCenterOfGravityFromZYXLocations( zyxLocationData=zyxofLabel )
 	
 	meanMatrix = np.zeros_like( zyxofLabel )
@@ -301,7 +301,7 @@ def getPrincipalAxesLengths( labelMap, label ):
 	caDims = np.zeros( ( 3, 1 ) )
 	caDims[ 0 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 0 ].min()
 	caDims[ 1 ] = rotCentPointCloud[ :, 1 ].max() - rotCentPointCloud[ :, 1 ].min()
-	caDims[ 2 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 2 ].min()
+	caDims[ 2 ] = rotCentPointCloud[ :, 2 ].max() - rotCentPointCloud[ :, 2 ].min()
 	
 	centroidalAxesLengthMax = max( caDims )[ 0 ]
 	centroidalAxesLengthMin = min( caDims )[ 0 ]
@@ -1193,7 +1193,7 @@ def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass
 	import spam.plotting as splt
 	import spam.deformation as sdef
 
-	print(1)
+	#print(1)
 
 	labelType = '<u4'
 	lab = lab.astype(labelType)
@@ -1231,7 +1231,7 @@ def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass
 		else:
 			i+=1
 
-	print(2)
+	#print(2)
 
 	# Compute rotation of trial orientations onto z-axis
 	rot_axes = np.cross(testOrientations,[1.,0.,0.])
@@ -1248,11 +1248,11 @@ def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass
 
 	Phi_inv = np.linalg.inv(Phi)
 
-	print(3)
+	#print(3)
 
 	# Loop through all labels provided in labelList. Note that labels might not be in order.
 	for labelIndex in range(0,len(labelList)):
-		print(4)
+		#print(4)
 
 		label = labelList[labelIndex]
 
@@ -1288,19 +1288,19 @@ def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass
 								np.array([0.,1.,0.]),
 								np.array([0.,0.,1.])][index_min]
 
-			print(5)
+			#print(5)
 
 			for orientationIndex in range(0,len(testOrientations)):
 				# Apply rotation matrix about centre of mass of particle
 				subvol_centreOfMass = spam.label.centresOfMass(subvol)
 
-				print('\t Ort ' + str(orientationIndex) + ' 5-1')
+				#print('\t Ort ' + str(orientationIndex) + ' 5-1')
 				subvol_transformed = spam.DIC.applyPhi(subvol,
 														Phi = Phi[orientationIndex],
 														PhiCentre = subvol_centreOfMass[1],
 														interpolationOrder=interpolationOrder)
 
-				print('\t Ort ' + str(orientationIndex) + ' 5-2')
+				#print('\t Ort ' + str(orientationIndex) + ' 5-2')
 
 				# Use bounding box of transformed subvolume to calculate particle widths in 3 directions
 				subvol_transformed_BB = spam.label.boundingBoxes(subvol_transformed > 0.5)
@@ -1308,7 +1308,7 @@ def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass
 				yWidth = subvol_transformed_BB[1,3] - subvol_transformed_BB[1,2] + 1
 				xWidth = subvol_transformed_BB[1,5] - subvol_transformed_BB[1,4] + 1
 
-				print('\t Ort ' + str(orientationIndex) + ' 5-3')
+				#print('\t Ort ' + str(orientationIndex) + ' 5-3')
 
 				# Check if higher than previous DMax or lower than previous DMin
 				index_max = np.argmax([DMax,zWidth,yWidth,xWidth])
@@ -1327,12 +1327,12 @@ def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass
 									np.matmul(Phi_inv[orientationIndex,:3,:3],np.array([0,1,0])),
 									np.matmul(Phi_inv[orientationIndex,:3,:3],np.array([0,0,1]))][index_min]
 
-				print(6)
+				#print(6)
 
 			feretDiameters[labelIndex,:] = [DMax,DMin]
 			feretOrientations[labelIndex,:] = np.concatenate([maxOrientation,minOrientation])
 
-	print(7)
+	#print(7)
 
 	if returnOrts == True: return feretDiameters,feretOrientations
 	if returnOrts == False: return feretDiameters
@@ -1416,6 +1416,7 @@ def computeSurfaceAreaOfLabel(labMap, label):
 def calculateInternalPorosity():
 	"""
 	"""
+
 
 def calculateeffectivesphericity():
 	"""

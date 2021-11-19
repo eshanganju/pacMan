@@ -18,18 +18,17 @@ from pac import Plot
 # Standard imports
 import numpy as np		# Called to create array of subvolume starting points
 import matplotlib		# Color map - for orientation plots
-import tifffile as tf
 
 #-----------------------------------USER Input start---------------------------------------------*
 #------------------------------------------------------------------------------------------------*
 
 # Input and output locations: 
 ifl = '/home/eg/Desktop/SicData-2021-10-17/NewAnalysis/DES/'
-ofl = '/home/eg/pacOutput/FGM-3-2021-11-11-Analysis/DES/'
+ofl = '/home/eg/pacOutput/FGM-3-2021-11-11-Analysis/DES/05_092_AllPtcl/'
 
 # FileNames and output file prefix
 fileName = 'SiC_2_CMASK.tif'									# Name of binarized tiff file
-dataName = 'FGM3-DES_3um_10h_rr08_Tip_allPtcl'					# Prefix for output files - name it smartly
+dataName = 'FGM3-DES_3um_05h_rr092_all'							# Prefix for output files - name it smartly
 dataFile = ifl + fileName										# The file and location that will be read the bin data
 
 # Calibration
@@ -43,8 +42,8 @@ csStartY = 140 													# Top left corner Y value - check from imageJ
 subVolumeEdgeLength = 171									 	# Length (calibrated units) of the cubical subvolume
 
 # Analysis parameters
-edmHVal = 1														# Minimum peak size when locating local maxima in EDM
-radiusRatioVal = 0.8											# Ratio of area radius to smaller particle radius
+edmHVal = 0.5 													# Minimum peak size when locating local maxima in EDM
+radiusRatioVal = 0.92											# Ratio of area radius to smaller particle radius
 
 #------------------------------------------------------------------------------------------------*
 #------------------------------------USER Input end----------------------------------------------*
@@ -94,7 +93,7 @@ corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
 													areaLimit=700,
 													considerEdgeLabels=True,
 													checkForSmallParticles=True,
-													voxelVolumeThreshold=125,
+													voxelVolumeThreshold=50,
 													radiusCheck=True,
 													radiusRatioLimit=radiusRatioVal,
 													sampleName=dataName,
