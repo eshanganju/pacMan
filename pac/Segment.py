@@ -8,7 +8,7 @@ from skimage.morphology import local_maxima as localMaxima
 from skimage.morphology import h_maxima as hmax
 from skimage.segmentation import watershed as wsd
 from skimage.filters import threshold_otsu
-import tifffile as tiffy
+import tifffile as tf
 import matplotlib.pyplot as plt
 import numpy as np
 import spam.label as slab
@@ -51,7 +51,7 @@ def segmentUsingWatershed( binaryMapToSeg, edmMapForTopo, edmPeaksForSeed, addWa
 
 	if saveImg == True:
 		if VERBOSE: print('\nSaving lab map...')
-		tiffy.imsave(outputDir+sampleName+'-labMap.tif',labMap.astype('uint16'))
+		tf.imsave(outputDir+sampleName+'-labMap.tif',labMap.astype('uint16'))
 
 	return labMap.astype('uint16')
 
@@ -99,7 +99,7 @@ def binarizeAccordingToOtsu( gliMapToBinarize, returnThresholdVal=True,
 
 	if saveImg == True:
 		if VERBOSE: print('\nSaving binary map...')
-		tiffy.imsave( outputDir + sampleName + '-binaryMap.tif', binaryMap.astype('uint16'))
+		tf.imsave( outputDir + sampleName + '-binaryMap.tif', binaryMap.astype('uint16'))
 
 	if saveData == True:
 		otsuThresholdFileName = outputDir+sampleName+'-otsuThreshold.txt'
@@ -153,7 +153,7 @@ def binarizeAccordingToUserThreshold( gliMapToBinarize, userThreshold=0.0, retur
 
 	if saveImg == True:
 		if VERBOSE: print('\nSaving binary map...')
-		tiffy.imsave( outputDir + sampleName + '-binaryMap.tif', binaryMap.astype('uint16'))
+		tf.imsave( outputDir + sampleName + '-binaryMap.tif', binaryMap.astype('uint16'))
 
 	if saveData == True:
 		utFileName = outputDir + sampleName + '-userThreshold.txt'
@@ -257,7 +257,7 @@ def binarizeAccordingToDensity( gliMapToBinarize , measuredVoidRatio = 0.0, retu
 
 	if saveImg == True:
 		if VERBOSE: print('\nSaving binary map...')
-		tiffy.imsave( outputDir + sampleName + '-binaryMap.tif',currentBinaryMap.astype('uint16'))
+		tf.imsave( outputDir + sampleName + '-binaryMap.tif',currentBinaryMap.astype('uint16'))
 
 	if saveData == True:
 		densityBasedThresholdTextFileName = outputDir +  sampleName + '-densityBasedThreshold.txt'
@@ -381,7 +381,7 @@ def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1),
 
 	if saveImg == True:
 		if VERBOSE: print('\nSaving EDM map...')
-		tiffy.imsave(outputDir + sampleName + '-edm.tif',edMap)
+		tf.imsave(outputDir + sampleName + '-edm.tif',edMap)
 
 	return edMap
 
@@ -439,7 +439,7 @@ def obtainLocalMaximaMarkers( edMapForPeaks , method = 'hlocal' , h=5,
 
 	if saveImg == True:
 		if VERBOSE: print('\nSaving EDM peaks map...')
-		tiffy.imsave( outputDir + sampleName + '-edmPeaks.tif', edmPeakMarkers.astype('uint16'))
+		tf.imsave( outputDir + sampleName + '-edmPeaks.tif', edmPeakMarkers.astype('uint16'))
 
 	return edmPeakMarkers
 
@@ -638,7 +638,7 @@ def fixErrorsInSegmentation( labelledMapForOSCorr, pad=2, areaLimit = 700, consi
 
 	if saveImg == True:
 		print('\nSaving corrected labelled map...')
-		tiffy.imsave(outputDir+sampleName+'-correctedLabelMap.tif',correctedCleanedLabelMap.astype('uint16'))
+		tf.imsave(outputDir+sampleName+'-correctedLabelMap.tif',correctedCleanedLabelMap.astype('uint16'))
 
 	return correctedCleanedLabelMap
 
@@ -738,7 +738,7 @@ def removeSmallParticles( labMapWithSmallPtcl, voxelCountThreshold = 1000,
 
 	if saveImg == True:
 		print('\nSaving labelled map with small particles removed')
-		tiffy.imsave(outputDir+sampleName+'-noSmallPtclCorLabMap.tif',labMapUpdated.astype('uint16'))
+		tf.imsave(outputDir+sampleName+'-noSmallPtclCorLabMap.tif',labMapUpdated.astype('uint16'))
 
 	return labMapUpdated
 
@@ -821,7 +821,7 @@ def removeEdgeLabels( labelledMapForEdgeLabelRemoval, pad=0,
 
 	if saveImg == True:
 		print('\nSaving corrected label map...')
-		tiffy.imsave(outputDir+sampleName+'-noEdgeCorrectedLabelMap.tif', labMap.astype('uint16'))
+		tf.imsave(outputDir+sampleName+'-noEdgeCorrectedLabelMap.tif', labMap.astype('uint16'))
 
 	return labMap
 
@@ -957,7 +957,7 @@ def fixMissingLabels(labMap, sampleName='', saveImg='', outputDir=''):
 
 	if saveImg == True:
 		print('\nSaving corrected labelMap with missing labels removed')
-		tiffy.imsave(outputDir+sampleName+'-labMap-missingLabelsCorrected.tif',correctedLabMap.astype('uint16'))
+		tf.imsave(outputDir+sampleName+'-labMap-missingLabelsCorrected.tif',correctedLabMap.astype('uint16'))
 
 	return correctedLabMap
 
@@ -971,7 +971,7 @@ def generateAndSaveStlFilesFromLabelList( labMap, labels=[], padding=10, stepSiz
 		generateAndSaveStlFile( labMap=labMap, label=label, padding=padding, stepSize=stepSize, sampleName=sampleName, outputDir=outputDir)
 
 	
-def generateAndSaveStlFile(labMap, label, padding=10, stepSize = 1, sampleName='', outputDir=''):
+def generateAndSaveStlFile(labMap, label, padding=10, stepSize = 1, saveImg=True, sampleName='', outputDir=''):
 	"""This extracts particle corresponding to a label, generate a surface for it, and save the particle as an *.stl file for visualization
 		.stl files can be visalized using paraview
 	
@@ -1020,3 +1020,74 @@ def generateAndSaveStlFile(labMap, label, padding=10, stepSize = 1, sampleName='
     		
 	sampleName = outputDir + sampleName + '-' + str(label) + '.stl'
 	smoothMesh.export(sampleName) 
+
+
+def generateInPlaceStlFile(labMap, stepSize = 1, saveImg=True, sampleName='', outputDir=''):
+	"""Generate in place stl
+	"""
+	print('Generating stl' )
+	
+	verts, faces, normals, values = marching_cubes( labMap, step_size=stepSize)
+
+	mesh = trimesh.Trimesh(verts,faces)
+	
+	smoothMesh = trimesh.smoothing.filter_humphrey(mesh)
+    		
+	sampleName = outputDir + sampleName + '.stl'
+	smoothMesh.export(sampleName) 
+
+
+def hideParticlesAccordingToSizeAndMakeSTLs(labMap, minSize=10, maxSize=100,  saveImg=True, sampleName='', outputDir=''):
+	"""Checks Label map and hides the labels with size in the (minSize,maxSize) range
+
+	The output is a label map and an stl map with
+	"""
+	
+	cleanedLabelMap=labMap 
+
+	numberOfLabels=labMap.max()
+
+	for label in range(1,numberOfLabels+1):
+		print('Processing ' + str(label) + '/' + str(numberOfLabels) )
+		vol, sizeOfLabel=Measure.getEqspDia( labelMap=labMap, label=label )
+		if ((sizeOfLabel<=minSize) or (sizeOfLabel>=maxSize)): cleanedLabelMap[np.where(cleanedLabelMap == label)] = 0
+		else: None
+
+	unitCleanedLabelMap = cleanedLabelMap
+	unitCleanedLabelMap[np.where(unitCleanedLabelMap != 0)] = 1
+	
+	fileNameCleaned = outputDir + sampleName + '-min' + str(minSize) + 'max' + str(maxSize) + '.tif'
+	fileNameCleanedUnit = outputDir + sampleName + '-min' + str(minSize) + 'max' + str(maxSize) + '-UNIT' + '.tif'
+
+	if saveImg == True:
+		tf.imsave( fileNameCleanedUnit,unitCleanedLabelMap )
+		tf.imsave( fileNameCleaned,cleanedLabelMap )
+
+	generateInPlaceStlFile( labMap=unitCleanedLabelMap, stepSize = 1, saveImg=True, sampleName=(sampleName+'-EQSP'+str(minSize)+'-EQSP'+str(maxSize)), outputDir=outputDir )
+
+
+def hideParticlesAccordingToAspectRatioAndMakeSTLs(labMap, minAR=1, maxAR=5,  saveImg=True, sampleName='', outputDir=''):
+	"""
+	"""
+	cleanedLabelMap=labMap
+
+	numberOfLabels=labMap.max()
+
+	for label in range(1,numberOfLabels+1):
+		print('Processing ' + str(label) + '/' + str(numberOfLabels) )
+		caMax,caMed,caMin=Measure.getPrincipalAxesLengths( labelMap=labMap, label=label )
+		AR=caMax/caMin
+		if ((AR<=minAR) or (AR>=maxAR)): cleanedLabelMap[np.where(cleanedLabelMap == label)] = 0
+		else: None
+
+	unitCleanedLabelMap = cleanedLabelMap
+	unitCleanedLabelMap[np.where(unitCleanedLabelMap != 0)] = 1
+
+	fileNameCleaned = outputDir + sampleName + '-minAR' + str(minAR) + 'maxAR' + str(maxAR) + '.tif'
+	fileNameCleanedUnit = outputDir + sampleName + '-minAR' + str(minAR) + 'maxAR' + str(maxAR) + '-UNIT' + '.tif'
+
+	if saveImg == True:
+		tf.imsave( fileNameCleanedUnit,unitCleanedLabelMap )
+		tf.imsave( fileNameCleaned,cleanedLabelMap )
+
+	generateInPlaceStlFile( labMap=unitCleanedLabelMap, stepSize = 1, saveImg=True, sampleName=(sampleName+'-AR'+str(minAR)+'-AR'+str(maxAR)), outputDir=outputDir )
