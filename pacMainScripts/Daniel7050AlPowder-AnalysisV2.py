@@ -15,19 +15,22 @@ import tifffile as tf
 from pac import Segment
 from pac import Measure
 from pac import Plot
+import matplotlib
 
 # Input and output locations (don't change):
 
-ifl = '/home/chawlahpc2adm/pacInput/particleSegmentationForHamid/'
-ofl = '/home/chawlahpc2adm/pacOutput/particleSegmentationForHamid/newAnalysis-2021-10-04/'
+
+ifl = '/home/chawlahpc2adm/Desktop/Daniel/RAMpowder/Input/'
+ofl = '/home/chawlahpc2adm/Desktop/Daniel/RAMpowder/Output/'
 
 
 # Change name of the file here
-dataFile = ifl + 'segmented2_cropped.tif'
-dataName = 'FGM3-ML_200x200x200zyx_20h_rr08' # Change this to have different output file names
+dataFile = ifl + 'Binarized AA7050RAM2 Powder Large Area 643x643x969.tif'
+dataName = 'Al_643x643x(200-400)zyx_8h_rr09' # Change this to have different output file names
 
 #Reading binary data
-binMap = tf.imread(dataFile)[800:1000]
+#binMap = tf.imread(dataFile)[800:1000]
+binMap = tf.imread(dataFile) [200:400]
 
 # Getting EDM
 edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
@@ -38,7 +41,7 @@ edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
 
 # Getting peaks of EDM	                                        
 edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
-	                                         h=2, # Decrease this to capture more ptcls
+	                                         h=5, # Decrease this to capture more ptcls
 	                                         sampleName=dataName,
 	                                         saveImg=True,
 	                                         outputDir=ofl )
@@ -59,7 +62,7 @@ corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
 	                                      considerEdgeLabels=True,
 	                                      checkForSmallParticles=True,
 	                                      radiusCheck=True,
-	                                      radiusRatioLimit=0.80, # Lower - more aggressive merging
+	                                      radiusRatioLimit=0.95, # Lower - more aggressive merging
 	                                      sampleName=dataName,
 	                                      saveImg=True,
 	                                      outputDir=ofl )
