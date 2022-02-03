@@ -11,10 +11,10 @@ import time
 VERBOSE = True
 TESTING = True
 
-def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=None,
-					saveImg=False,outputDir='',sampleName='sampleX',loop=True):
+def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=None,saveImg=False,outputDir='',sampleName='sampleX',loop=True):
 	"""This function takes in a unfiltered grey level and filters it using non-local means (nlm) filter
 	This function loops over nlm parameters till user accepts the filtered image.
+
 	The nlm filter removes noise with minimal effect on grey-level edges.
 
 	Parameters
@@ -221,5 +221,12 @@ def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=None,
 	f.close()
 
 	if saveImg == True: tiffy.imsave(outputDir+sampleName+'-filteredGLIMap.tif',filteredMap.astype('uint16'))
+
+	return filteredMap
+
+def filterUsingMedian(gli, bitDepth=16,pSize=3,outputDir='',sampleName='',loop=True):
+	"""
+	"""
+	filteredMap = gli
 
 	return filteredMap

@@ -7,12 +7,15 @@ import statistics
 import scipy
 from numba import jit
 from scipy.ndimage import binary_erosion as erode
+from scipy.ndimage import binary_fill_holes
 import spam.label as slab
 from uncertainties import unumpy as unp
 from uncertainties import ufloat
 from uncertainties.umath import *
 from pac import Segment
 from skimage.measure import marching_cubes, mesh_surface_area
+from scipy.ndimage.morphology import distance_transform_edt as edt
+from scipy.spatial import ConvexHull
 
 VERBOSE = True				# Show all the text when running the functions
 TESTING = True				# Set to False before release
@@ -21,7 +24,7 @@ TESTING = True				# Set to False before release
 def getPSDAll( labelledMap , calibrationFactor=1.0, getEqsp=True, getCaMax=True,
 				getCaMed=True, getCaMin=True, getFeretMax=True, getFeretMin=True,
 				saveData=True, sampleName='', outputDir=''):
-	"""This module returns the paricle size distribution for the 6 size
+	"""This module returns the particle size distribution for the 6 size
 	parameters commonly used to quantify particle size.
 
 	The reason this module exists is because different size parameters capture
@@ -131,48 +134,63 @@ def getParticleSizeArray( labelledMapForParticleSizeAnalysis, calibrationFactor=
 	Return:
 	particleSizeDataSummary : unsigned float ndarray
 	    Particle size array containing columns
-	    [0] Label index, [1] Volume, [2] Eqsp, [3] Centroidal - max,
-	    [4] Centroidal - med, [5] Centroidal - min, [6] Feret-max X, [7] Feret -min X
+	    [0] Label index, [1] Volume, [2] Equivalent Spherical Diameter, [3] Surface Area,
+	    [4] Sphericity, [5] Centroidal - max, [6] Centroidal - med, [7] Centroidal - min,
+	    [8] Convex volume, [9] Concave volume, [10] Overlapped volume 
 	"""
 	numberOfParticles = int( labelledMapForParticleSizeAnalysis.max() )
 
-	particleSizeDataSummary = np.zeros( ( numberOfParticles + 1 , 8 ) )
+	particleSizeDataSummary = np.zeros( ( numberOfParticles + 1 , 14 ) ) 
+	#particleSizeDataSummary[0,:] = ['Label index', 'Volume (um^3)', 'Equivalent Diameter (um)', 'Surface Area (um^2)', 'Sphericity', 'Centroidal Max (um)',\
+	#'Centroidal Med (um)', 'Centroidal Min (um)', 'Convex volume (um^3)', 'Concave Volume (um^3)', 'Overlapped Volume (um^3)', 'Irregularity Parameter', \
+	#'Convex Area (um^2)', 'Convex Volume (um^3)']
+	
+	
 	print( '\nStarting measurement of particles' )
 	print( '------------------------------------*' )
-
+	
+	
 	for particleNum in range( 1, numberOfParticles + 1 ):
-		print( "Computing size of", particleNum, "/", numberOfParticles, "particle" )
+		print( "Computing size of", particleNum, "/", numberOfParticles, "particles" )
+		
+		croppedLabelMap = getCroppedLabelMap( labelMap=labelledMapForParticleSizeAnalysis, label=particleNum, pad=0 )
+		
+		# Fill data summary
+		
 		particleSizeDataSummary[particleNum, 0] = particleNum
 
 		# Equivalent sphere diameter
-		vol, eqspDia = getEqspDia( labelMap=labelledMapForParticleSizeAnalysis, label=int(particleNum) )
+		vol, eqspDia = getEqspDia( labelMap=croppedLabelMap, label=int(particleNum) )
 		particleSizeDataSummary[particleNum, 1] = vol * (calibrationFactor**3)
 		particleSizeDataSummary[particleNum, 2] = eqspDia * calibrationFactor
+		
+		# Surface area
+		surfA = computeSurfaceAreaOfLabel( labMap=croppedLabelMap, label=int(particleNum) )
+		sphericityP = ( ( math.pi )**( 1/3 ) ) * ( ( 6 * vol )**( 2/3 ) ) / surfA
+		particleSizeDataSummary[particleNum, 3] = surfA * (calibrationFactor**2)
+		particleSizeDataSummary[particleNum, 4] = sphericityP
 
 		# Centroidal axes lengths
-		caMax, caMed, caMin = getPrincipalAxesLengths( labelMap=labelledMapForParticleSizeAnalysis,label=int(particleNum) )
-		particleSizeDataSummary[particleNum, 3] = caMax * calibrationFactor
-		particleSizeDataSummary[particleNum, 4] = caMed * calibrationFactor
-		particleSizeDataSummary[particleNum, 5] = caMin * calibrationFactor
+		caMax, caMed, caMin = getPrincipalAxesLengths( labelMap=croppedLabelMap,label=int(particleNum) )
+		particleSizeDataSummary[particleNum, 5] = caMax * calibrationFactor
+		particleSizeDataSummary[particleNum, 6] = caMed * calibrationFactor
+		particleSizeDataSummary[particleNum, 7] = caMin * calibrationFactor
 
-		# TODO: Fix the feret diameter issue
-		"""
-		The SPAM code runs and gives error in the apply transformation part of the code
-		"""
-
-		# Feret diameters
-		# feretMax, feretMin = getMinMaxFeretDia( labelMap=labelledMapForParticleSizeAnalysis,
-		#                                         label=int(particleNum), numOrts=100, numRots=10)
-
-		feretDia = getFeretDiametersSPAM( lab=labelledMapForParticleSizeAnalysis,
-		                                  labelList=int(particleNum)  )
-
-		feretMax = feretDia [0,0]
-		feretMin = feretDia [0,1]
-
-		particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
-		particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
-
+		# Ellipsoid comparison
+		croppedParticle, convex, concave, overlap, convexVol, concaveVol, overlapVol = calculateEllipsoidOverUnder( labelMap=croppedLabelMap,label=int(particleNum), scale=True )
+		particleSizeDataSummary[particleNum, 8] = convexVol * calibrationFactor**3
+		particleSizeDataSummary[particleNum, 9] = concaveVol * calibrationFactor**3
+		particleSizeDataSummary[particleNum, 10] = overlapVol * calibrationFactor**3
+		
+		# Irregularity parameter
+		irregularityParameter = getIrregularityParameter( labelMap=croppedLabelMap, label=int(particleNum) )
+		particleSizeDataSummary[particleNum, 11] = irregularityParameter
+		
+		# Convex hull statistics
+		convexArea, convexVolume = getConvexStatistics( labelMap=croppedLabelMap, label=int(particleNum) )
+		particleSizeDataSummary[particleNum, 12] = convexArea * calibrationFactor**2
+		particleSizeDataSummary[particleNum, 13] = convexVolume * calibrationFactor**3
+			
 	# Removing the extra zero in the summary (first row)
 	particleSizeDataSummary = np.delete( particleSizeDataSummary, 0, 0 )
 
@@ -212,7 +230,7 @@ def getEqspDia( labelMap, label ):
 
 
 def getPrincipalAxesOrtTable( labelMapForParticleOrientation, saveData=False, sampleName='', outputDir=''):
-	"""Computes a table of the major axes of the particles - orientation of the particles long axis
+	"""Computes a table of the major axes of the particles - orientation of the particles long axis 
 	"""
 	numberOfParticles = int( labelMapForParticleOrientation.max() )
 	particleOrientationDataSummary = np.zeros( ( numberOfParticles + 1 , 4 ) )  # This is needed because of ZYX + the particle number
@@ -277,9 +295,7 @@ def getPrincipalAxesLengths( labelMap, label ):
 	zyxofLabel = getZYXLocationOfLabel(labelMap,label)
 	
 	covarianceMatrix = np.cov( zyxofLabel.T )
-	#print('\tobtained COV matrix')
 	eigval, eigvec = np.linalg.eig( covarianceMatrix )
-	#print('\tobtained eigvectors matrix')
 	meanZ, meanY, meanX = getCenterOfGravityFromZYXLocations( zyxLocationData=zyxofLabel )
 	
 	meanMatrix = np.zeros_like( zyxofLabel )
@@ -301,7 +317,7 @@ def getPrincipalAxesLengths( labelMap, label ):
 	caDims = np.zeros( ( 3, 1 ) )
 	caDims[ 0 ] = rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 0 ].min()
 	caDims[ 1 ] = rotCentPointCloud[ :, 1 ].max() - rotCentPointCloud[ :, 1 ].min()
-	caDims[ 2 ] = rotCentPointCloud[ :, 2 ].max() - rotCentPointCloud[ :, 2 ].min()
+	caDims[ 2 ] = rotCentPointCloud[ :, 2 ].max() - rotCentPointCloud[ :, 2 ].min() 
 	
 	centroidalAxesLengthMax = max( caDims )[ 0 ]
 	centroidalAxesLengthMin = min( caDims )[ 0 ]
@@ -309,211 +325,29 @@ def getPrincipalAxesLengths( labelMap, label ):
 	return centroidalAxesLengthMax, centroidalAxesLengthMed, centroidalAxesLengthMin
 
 
-# TODO: This is messy - needs to be cleaned
-def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass=None, numberOfOrientations=100,
-							margin=0, interpolationOrder=0, returnOrts = False):
-	"""
-	Calculates (binary) feret diameters (caliper lengths) over a number of equally-spaced orientations
-	and returns the maximum and minimum values, as well as the orientation they were found in.
+def _getMinMaxFeretDiaSPAM( labelMap, label, numOrts=100 ):
+	"""Computes the min and max feret diameter using the spam library
 
 	Parameters
 	----------
-		lab : 3D array of integers
-			Labelled volume, with lab.max() labels
+	labelMap : unsigned integer ndarray
+	label : unsigned integer
+	numOrts : unsigned integer
+	    number of orientations along which the feret diameters are measured
 
-		labelList: list of ints, optional
-			List of labels for which to calculate feret diameters and orientations. Labels not in lab are ignored. Outputs are given in order of labelList.
-			If not defined (Default = None), a list is created from label 0 to lab.max()
-
-		boundingBoxes : lab.max()x6 array of ints, optional
-			Bounding boxes in format returned by ``boundingBoxes``.
-			If not defined (Default = None), it is recomputed by running ``boundingBoxes``
-
-		centresOfMass : lab.max()x3 array of floats, optional
-			Centres of mass in format returned by ``centresOfMass``.
-			If not defined (Default = None), it is recomputed by running ``centresOfMass``
-
-		numberOfOrientations : int, optional
-			Number of trial orientations in 3D to measure the caliper lengths in.
-			These are defined with a Saff and Kuijlaars Spiral.
-			Default = 100
-
-		margin : int, optional
-			Number of pixels by which to pad the bounding box length to apply as the margin in spam.label.getLabel().
-			Default = 0
-
-		interpolationOrder = int, optional
-			Interpolation order for rotating the object.
-			Default = 0
-
-	Returns
-	-------
-		feretDiameters : lab.max()x2 (or len(labelList)x2 if labelList is not None) array of integers
-			The max and min values of the caliper lengths of each labelled shape.
-			Expected accuracy is +- 1 pixel
-
-		feretOrientations : lab.max()x6 (or len(labelList)x6 if labelList is not None) array of floats
-			2 x Z,Y,X components of orientations of the max and min caliper lengths
-
-	Notes
-	-----
-		Function contributed by Estefan Garcia (Caltech, previously at Berkeley)
+	Return
+	------
+	feretMax : unsigned float
+	feretMin : unsigned float
 	"""
 
-	#Notes
-	#-------
-		#Must import spam.DIC to use this function because it utilizes the computePhi and applyPhi functions.
-		#This function currently runs in serial but can be improved to run in parallel.
+	labOneOnly = np.zeros_like( labelMap )
+	labOneOnly[ np.where( labelMap == label ) ] = 1
+	feretDims, feretOrts = slab._feretDiameters( labOneOnly, numberOfOrientations=numOrts )
 
-	import spam.DIC
-	import spam
-	import spam.label as slab
-	import spam.plotting as splt
-	import spam.deformation as sdef
-
-	#print(1)
-
-	labelType = '<u4'
-	lab = lab.astype(labelType)
-
-	if labelList is None:
-		labelList = list(range(0,lab.max()+1))
-		feretDiameters = np.zeros((lab.max() + 1, 2))
-		feretOrientations = np.zeros((lab.max()+1,6))
-
-	elif type(labelList) is not list and type(labelList) is not np.ndarray:
-		# Allow inputs to be ints or of type np.ndarray
-		labelList = [labelList]
-		feretDiameters = np.zeros((len(labelList),2))
-		feretOrientations = np.zeros((len(labelList),6))
-
-	else:
-		feretDiameters = np.zeros((len(labelList),2))
-		feretOrientations = np.zeros((len(labelList),6))
-
-	#print('Calculating Feret diameters for '+str(len(labelList))+' label(s).')
-
-	if boundingBoxes is None:
-		boundingBoxes = spam.label.boundingBoxes(lab)
-
-	if centresOfMass is None:
-		centresOfMass = spam.label.centresOfMass(lab, boundingBoxes=boundingBoxes)
-
-	# Define test orientations
-	testOrientations = splt.orientationPlotter.SaffAndKuijlaarsSpiral(4*numberOfOrientations)
-
-	i=0
-	while i < len(testOrientations):
-		if (testOrientations[i] < 0).any():
-			testOrientations = np.delete(testOrientations,i,axis=0)
-		else:
-			i+=1
-
-	#print(2)
-
-	# Compute rotation of trial orientations onto z-axis
-	rot_axes = np.cross(testOrientations,[1.,0.,0.])
-	rot_axes/=np.linalg.norm(rot_axes,axis=1,keepdims=True)
-	theta=np.reshape(np.rad2deg(np.arccos(np.dot(testOrientations,[1.,0.,0.]))),[len(testOrientations),1])
-
-	# Compute Phi and its inverse for all trial orientations
-	Phi = np.zeros((len(testOrientations),4,4))
-	transf_R = rot_axes*theta
-
-	for r in range(0,len(transf_R)):
-		transformation = {'r': transf_R[r]}
-		Phi[r] = sdef.deformationFunction.computePhi(transformation)
-
-	Phi_inv = np.linalg.inv(Phi)
-
-	#print(3)
-
-	# Loop through all labels provided in labelList. Note that labels might not be in order.
-	for labelIndex in range(0,len(labelList)):
-		#print(4)
-
-		label = labelList[labelIndex]
-
-		if label in lab and label > 0: #skip if label does not exist or if zero
-
-			particle = slab.label.getLabel(lab,
-											label,
-											boundingBoxes= boundingBoxes,
-											centresOfMass= centresOfMass,
-											extractCube= True,
-											margin= margin,
-											maskOtherLabels= True)
-
-			subvol = particle['subvol']
-
-			# Initialize DMin and DMax using the untransformed orientation
-			subvol_transformed_BB = spam.label.boundingBoxes(subvol > 0.5)
-			zWidth = subvol_transformed_BB[1,1] - subvol_transformed_BB[1,0] + 1
-			yWidth = subvol_transformed_BB[1,3] - subvol_transformed_BB[1,2] + 1
-			xWidth = subvol_transformed_BB[1,5] - subvol_transformed_BB[1,4] + 1
-
-			index_max = np.argmax([zWidth,yWidth,xWidth])
-			index_min = np.argmin([zWidth,yWidth,xWidth])
-
-			DMax = max([zWidth, yWidth, xWidth])
-			DMin = min([zWidth, yWidth, xWidth])
-
-			maxOrientation = [np.array([1.,0.,0.]),
-								np.array([0.,1.,0.]),
-								np.array([0.,0.,1.])][index_max]
-
-			minOrientation = [np.array([1.,0.,0.]),
-								np.array([0.,1.,0.]),
-								np.array([0.,0.,1.])][index_min]
-
-			#print(5)
-
-			for orientationIndex in range(0,len(testOrientations)):
-				# Apply rotation matrix about centre of mass of particle
-				subvol_centreOfMass = spam.label.centresOfMass(subvol)
-
-				#print('\t Ort ' + str(orientationIndex) + ' 5-1')
-				subvol_transformed = spam.DIC.applyPhi(subvol,
-														Phi = Phi[orientationIndex],
-														PhiCentre = subvol_centreOfMass[1],
-														interpolationOrder=interpolationOrder)
-
-				#print('\t Ort ' + str(orientationIndex) + ' 5-2')
-
-				# Use bounding box of transformed subvolume to calculate particle widths in 3 directions
-				subvol_transformed_BB = spam.label.boundingBoxes(subvol_transformed > 0.5)
-				zWidth = subvol_transformed_BB[1,1] - subvol_transformed_BB[1,0] + 1
-				yWidth = subvol_transformed_BB[1,3] - subvol_transformed_BB[1,2] + 1
-				xWidth = subvol_transformed_BB[1,5] - subvol_transformed_BB[1,4] + 1
-
-				#print('\t Ort ' + str(orientationIndex) + ' 5-3')
-
-				# Check if higher than previous DMax or lower than previous DMin
-				index_max = np.argmax([DMax,zWidth,yWidth,xWidth])
-				index_min = np.argmin([DMin,zWidth,yWidth,xWidth])
-				DMax = max([DMax,zWidth,yWidth,xWidth])
-				DMin = min([DMin,zWidth,yWidth,xWidth])
-
-				# Update orientations for DMax and DMin
-				maxOrientation = [maxOrientation,
-									testOrientations[orientationIndex],
-									np.matmul(Phi_inv[orientationIndex,:3,:3],np.array([0,1,0])),
-									np.matmul(Phi_inv[orientationIndex,:3,:3],np.array([0,0,1]))][index_max]
-
-				minOrientation = [minOrientation,
-									testOrientations[orientationIndex],
-									np.matmul(Phi_inv[orientationIndex,:3,:3],np.array([0,1,0])),
-									np.matmul(Phi_inv[orientationIndex,:3,:3],np.array([0,0,1]))][index_min]
-
-				#print(6)
-
-			feretDiameters[labelIndex,:] = [DMax,DMin]
-			feretOrientations[labelIndex,:] = np.concatenate([maxOrientation,minOrientation])
-
-	#print(7)
-
-	if returnOrts == True: return feretDiameters,feretOrientations
-	if returnOrts == False: return feretDiameters
+	feretMax = feretDims[1,0] # Indexing start at 1 cuz spam.feret measures the 0 index - void space
+	feretMin = feretDims[1,1] # ^^
+	return feretMax, feretMin
 
 
 def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
@@ -681,7 +515,7 @@ def getSurfaceVoxelsofParticle( labelMap, label, returnWithLabel = True):
 
 	This function extracts the surface voxels of the particles by eroding the
 	particle and then subtracting the eroded particle from the original
-	paritcle.
+	particle.
 
 	Parameters
 	----------
@@ -746,7 +580,7 @@ def getOrientationUsingSandK(numberOfOrientations=100):
 def getParticleSizeDistribution( psSummary, sizeParam='feretMin', sampleName='', saveData=True, outputDir='' ):
 	"""Generates the particle size distribution from list of labels and sizes
 
-	Different size parametres can be used to generate the grain size distribution.
+	Different size parametres can be used to generate the particle size distribution.
 	The size that most accurately matches the size distribution from the sieve
 	analysis should ideally be used for the assessment of particle size distribution
 
@@ -1228,7 +1062,7 @@ def fabricVariablesSpam( contactTable ):
 
 	Parameter
 	---------
-
+rotCentPointCloud
 	Return
 	------
 
@@ -1313,6 +1147,213 @@ def getCoordinationNumberList( labelledMap, excludeEdgeLabels=True ):
 	return coordinationNumberArray
 
 
+# TODO: This is messy - needs to be cleaned
+def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass=None, numberOfOrientations=100,
+							margin=0, interpolationOrder=0, returnOrts = False):
+	"""
+	Calculates (binary) feret diameters (caliper lengths) over a number of equally-spaced orientations
+	and returns the maximum and minimum values, as well as the orientation they were found in.
+
+	Parameters
+	----------
+		lab : 3D array of integers
+			Labelled volume, with lab.max() labels
+
+		labelList: list of ints, optional
+			List of labels for which to calculate feret diameters and orientations. Labels not in lab are ignored. Outputs are given in order of labelList.
+			If not defined (Default = None), a list is created from label 0 to lab.max()
+
+		boundingBoxes : lab.max()x6 array of ints, optional
+			Bounding boxes in format returned by ``boundingBoxes``.
+			If not defined (Default = None), it is recomputed by running ``boundingBoxes``
+
+		centresOfMass : lab.max()x3 array of floats, optional
+			Centres of mass in format returned by ``centresOfMass``.
+			If not defined (Default = None), it is recomputed by running ``centresOfMass``
+
+		numberOfOrientations : int, optional
+			Number of trial orientations in 3D to measure the caliper lengths in.
+			These are defined with a Saff and Kuijlaars Spiral.
+			Default = 100
+
+		margin : int, optional
+			Number of pixels by which to pad the bounding box length to apply as the margin in spam.label.getLabel().
+			Default = 0
+
+		interpolationOrder = int, optional
+			Interpolation order for rotating the object.
+			Default = 0
+
+	Returns
+	-------
+		feretDiameters : lab.max()x2 (or len(labelList)x2 if labelList is not None) array of integers
+			The max and min values of the caliper lengths of each labelled shape.
+			Expected accuracy is +- 1 pixel
+
+		feretOrientations : lab.max()x6 (or len(labelList)x6 if labelList is not None) array of floats
+			2 x Z,Y,X components of orientations of the max and min caliper lengths
+
+	Notes
+	-----
+		Function contributed by Estefan Garcia (Caltech, previously at Berkeley)
+	"""
+
+	#Notes
+	#-------
+		#Must import spam.DIC to use this function because it utilizes the computePhi and applyPhi functions.
+		#This function currently runs in serial but can be improved to run in parallel.
+
+	import spam.DIC
+	import spam
+	import spam.label as slab
+	import spam.plotting as splt
+	import spam.deformation as sdef
+
+	print(1)
+
+	labelType = '<u4'
+	lab = lab.astype(labelType)
+
+	if labelList is None:
+		labelList = list(range(0,lab.max()+1))
+		feretDiameters = np.zeros((lab.max() + 1, 2))
+		feretOrientations = np.zeros((lab.max()+1,6))
+
+	elif type(labelList) is not list and type(labelList) is not np.ndarray:
+		# Allow inputs to be ints or of type np.ndarray
+		labelList = [labelList]
+		feretDiameters = np.zeros((len(labelList),2))
+		feretOrientations = np.zeros((len(labelList),6))
+
+	else:
+		feretDiameters = np.zeros((len(labelList),2))
+		feretOrientations = np.zeros((len(labelList),6))
+
+	#print('Calculating Feret diameters for '+str(len(labelList))+' label(s).')
+
+	if boundingBoxes is None:
+		boundingBoxes = spam.label.boundingBoxes(lab)
+
+	if centresOfMass is None:
+		centresOfMass = spam.label.centresOfMass(lab, boundingBoxes=boundingBoxes)
+
+	# Define test orientations
+	testOrientations = splt.orientationPlotter.SaffAndKuijlaarsSpiral(4*numberOfOrientations)
+
+	i=0
+	while i < len(testOrientations):
+		if (testOrientations[i] < 0).any():
+			testOrientations = np.delete(testOrientations,i,axis=0)
+		else:
+			i+=1
+
+	print(2)
+
+	# Compute rotation of trial orientations onto z-axis
+	rot_axes = np.cross(testOrientations,[1.,0.,0.])
+	rot_axes/=np.linalg.norm(rot_axes,axis=1,keepdims=True)
+	theta=np.reshape(np.rad2deg(np.arccos(np.dot(testOrientations,[1.,0.,0.]))),[len(testOrientations),1])
+
+	# Compute Phi and its inverse for all trial orientations
+	Phi = np.zeros((len(testOrientations),4,4))
+	transf_R = rot_axes*theta
+
+	for r in range(0,len(transf_R)):
+		transformation = {'r': transf_R[r]}
+		Phi[r] = sdef.deformationFunction.computePhi(transformation)
+
+	Phi_inv = np.linalg.inv(Phi)
+
+	print(3)
+
+	# Loop through all labels provided in labelList. Note that labels might not be in order.
+	for labelIndex in range(0,len(labelList)):
+		print(4)
+
+		label = labelList[labelIndex]
+
+		if label in lab and label > 0: #skip if label does not exist or if zero
+
+			particle = slab.label.getLabel(lab,
+											label,
+											boundingBoxes= boundingBoxes,
+											centresOfMass= centresOfMass,
+											extractCube= True,
+											margin= margin,
+											maskOtherLabels= True)
+
+			subvol = particle['subvol']
+
+			# Initialize DMin and DMax using the untransformed orientation
+			subvol_transformed_BB = spam.label.boundingBoxes(subvol > 0.5)
+			zWidth = subvol_transformed_BB[1,1] - subvol_transformed_BB[1,0] + 1
+			yWidth = subvol_transformed_BB[1,3] - subvol_transformed_BB[1,2] + 1
+			xWidth = subvol_transformed_BB[1,5] - subvol_transformed_BB[1,4] + 1
+
+			index_max = np.argmax([zWidth,yWidth,xWidth])
+			index_min = np.argmin([zWidth,yWidth,xWidth])
+
+			DMax = max([zWidth, yWidth, xWidth])
+			DMin = min([zWidth, yWidth, xWidth])
+
+			maxOrientation = [np.array([1.,0.,0.]),
+								np.array([0.,1.,0.]),
+								np.array([0.,0.,1.])][index_max]
+
+			minOrientation = [np.array([1.,0.,0.]),
+								np.array([0.,1.,0.]),
+								np.array([0.,0.,1.])][index_min]
+
+			print(5)
+
+			for orientationIndex in range(0,len(testOrientations)):
+				# Apply rotation matrix about centre of mass of particle
+				subvol_centreOfMass = spam.label.centresOfMass(subvol)
+
+				print('\t Ort ' + str(orientationIndex) + ' 5-1')
+				subvol_transformed = spam.DIC.applyPhi(subvol,
+														Phi = Phi[orientationIndex],
+														PhiCentre = subvol_centreOfMass[1],
+														interpolationOrder=interpolationOrder)
+
+				print('\t Ort ' + str(orientationIndex) + ' 5-2')
+
+				# Use bounding box of transformed subvolume to calculate particle widths in 3 directions
+				subvol_transformed_BB = spam.label.boundingBoxes(subvol_transformed > 0.5)
+				zWidth = subvol_transformed_BB[1,1] - subvol_transformed_BB[1,0] + 1
+				yWidth = subvol_transformed_BB[1,3] - subvol_transformed_BB[1,2] + 1
+				xWidth = subvol_transformed_BB[1,5] - subvol_transformed_BB[1,4] + 1
+
+				print('\t Ort ' + str(orientationIndex) + ' 5-3')
+
+				# Check if higher than previous DMax or lower than previous DMin
+				index_max = np.argmax([DMax,zWidth,yWidth,xWidth])
+				index_min = np.argmin([DMin,zWidth,yWidth,xWidth])
+				DMax = max([DMax,zWidth,yWidth,xWidth])
+				DMin = min([DMin,zWidth,yWidth,xWidth])
+
+				# Update orientations for DMax and DMin
+				maxOrientation = [maxOrientation,
+									testOrientations[orientationIndex],
+									np.matmul(Phi_inv[orientationIndex,:3,:3],np.array([0,1,0])),
+									np.matmul(Phi_inv[orientationIndex,:3,:3],np.array([0,0,1]))][index_max]
+
+				minOrientation = [minOrientation,
+									testOrientations[orientationIndex],
+									np.matmul(Phi_inv[orientationIndex,:3,:3],np.array([0,1,0])),
+									np.matmul(Phi_inv[orientationIndex,:3,:3],np.array([0,0,1]))][index_min]
+
+				print(6)
+
+			feretDiameters[labelIndex,:] = [DMax,DMin]
+			feretOrientations[labelIndex,:] = np.concatenate([maxOrientation,minOrientation])
+
+	print(7)
+
+	if returnOrts == True: return feretDiameters,feretOrientations
+	if returnOrts == False: return feretDiameters
+
+
 def computeSphericities(labMap, sampleName='', saveData=True, fixMissingLables=True, outputDir=''):
 	"""This function computes sphericities of all the particles in the volume
 	
@@ -1392,7 +1433,292 @@ def calculateInternalPorosity():
 	"""
 	"""
 
-
 def calculateeffectivesphericity():
+	"""over under sphere
 	"""
+	
+def calculateEllipsoidOverUnder(labelMap, label, scale=True):
+	"""This function measures the relative convexity and concavity of a particle by fitting an ellipsoid to is centroidal axes and
+	measuring the volume differences between the two. It produces three values, corresponding to the volume of the particle outside
+	the ellipsoid, the amount of empty space inside the ellipsoid, and the overlapped volume between the two shapes.
+	
+	Parameters
+	----------
+	labMap: ndArray of the volume
+	label: int label number that needs to be analyzed
+	scale: bool determining if the volume of the fit ellipsoid will be scaled to match the particle
+	
+	Returns
+	---------
+	croppedParticle: ndarray of the particle of interest
+	convex: ndarray of the particle volume outside its fit ellipsoid
+	concave: ndarray of the empty volume inside the fit ellipsoid
+	overlap: ndarray of the particle inside its fit ellipsoid
+	convexVol: float with the volume of the particle outside the ellipsoid
+	cocaveVol: float with the volume of the empty space inside the ellipsoid
+	overlapVol: float with the volume of the particle inside the ellipsoid
 	"""
+	
+	#Repeat of particle normalization from getPrincipalAxesLengths
+	
+	zyxofLabel = getZYXLocationOfLabel(labelMap,label)
+	
+	covarianceMatrix = np.cov( zyxofLabel.T )
+	
+	eigval, eigvec = np.linalg.eig( covarianceMatrix )
+	
+	meanZ, meanY, meanX = getCenterOfGravityFromZYXLocations( zyxLocationData=zyxofLabel )
+
+	meanMatrix = np.zeros_like( zyxofLabel )
+
+	meanMatrix[ :, 0 ] = meanZ
+	meanMatrix[ :, 1 ] = meanY
+	meanMatrix[ :, 2 ] = meanX
+	
+	centeredLocationData = zyxofLabel - meanMatrix
+	
+	rotationMatrix = np.zeros( ( 3, 3 ) )
+	
+	rotationMatrix[ :, 0 ] = eigvec[ 0 ]
+	rotationMatrix[ :, 1 ] = eigvec[ 1 ]
+	rotationMatrix[ :, 2 ] = eigvec[ 2 ]
+	
+	rotCentPointCloud = ( np.matmul( rotationMatrix, centeredLocationData.T ) ).T #Particle now has 0,0,0 as its mean value and is oriented along orthogonal axes
+	
+	#Dimensions of particle cloud
+	cloudZ = int( rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 0 ].min() )
+	cloudY = int( rotCentPointCloud[ :, 1 ].max() - rotCentPointCloud[ :, 1 ].min() )
+	cloudX = int( rotCentPointCloud[ :, 2 ].max() - rotCentPointCloud[ :, 2 ].min() )
+		
+	#Padding chosen to match previous values; arbitrary
+	pad = 10
+	
+	#Create a "big enough" array to fit the particle, with an origin at its center
+	croppedParticle = np.zeros((2*(cloudZ+pad), 2*(cloudY+pad), 2*(cloudX+pad)))
+	originZ = int(((croppedParticle.shape[0])-1)/2)
+	originY = int(((croppedParticle.shape[1])-1)/2)
+	originX = int(((croppedParticle.shape[2])-1)/2)
+		
+	#Create the particle with its center of mass at the origin of the cropped array
+	
+	for n in np.arange(0,rotCentPointCloud.shape[0]-1):
+		croppedParticle[(math.floor( rotCentPointCloud[n,0] )+originZ,math.floor( rotCentPointCloud[n,1] )+originY,math.floor( rotCentPointCloud[n,2] )+originX)]=1
+		croppedParticle[(math.ceil( rotCentPointCloud[n,0] )+originZ,math.ceil( rotCentPointCloud[n,1] )+originY,math.ceil( rotCentPointCloud[n,2] )+originX)]=1
+	
+	croppedParticle = binary_fill_holes(croppedParticle).astype(int)
+	
+	#Determine axes of ellipsoid based on z,y,z particle axes
+	#Optionally, scale axes so particle and ellipsoid volumes are equal
+	if scale == True:
+		ellVol = math.pi * (4/3) * cloudZ/2 * cloudY/2 * cloudX/2
+		partVol = croppedParticle.sum()
+		R = (partVol / ellVol)**(1/3)
+		a = (cloudZ/2)*R
+		b = (cloudY/2)*R
+		c = (cloudX/2)*R
+	
+	elif scale ==False:
+		a = (cloudZ/2)
+		b = (cloudY/2)
+		c = (cloudX/2)
+		
+	#Generate ellipse with a,b,c dimensions defined by z,y,x axes
+	ellipsoid = createVoxelizedEllipsoid( particle = croppedParticle, a = a , b = b, c = c ) 
+	
+	#Compare ellipse and particle, producing volumes for each measured volume based on value difference between particle and ellipsoid
+	overlappedParticle = croppedParticle - ellipsoid
+	convex = np.zeros_like(croppedParticle)
+	convex[np.where(overlappedParticle == 1)] = 1
+	convexVol = convex.sum()
+	concave = np.zeros_like(croppedParticle)
+	concave[np.where(overlappedParticle == -3)] = 1
+	concaveVol = concave.sum()
+	overlap = np.zeros_like(croppedParticle)
+	overlap[np.where(overlappedParticle == -2)] = 1
+	overlapVol = overlap.sum()
+	
+	return croppedParticle.astype('uint16'), convex.astype('uint16'), concave.astype('uint16'), overlap.astype('uint16'), convexVol, concaveVol, overlapVol
+	
+def createVoxelizedEllipsoid( particle, a, b, c ):
+	"""This function generates an ellipsoid with its center of mass at the center of particle array and with axes
+	a, b, and c corresponding to the z, y, and x centroidal axes of the particle. Axes are oriented along orthogonal coordinates.
+	The values of the ellipse voxels are 1.
+	
+	Parameters
+	----------
+	particle: ndarray of volume of particle of interest. 
+	a: float with the length of the Z axis
+	b: float with the length of the Y axis
+	c: float with the length of the X axis
+	
+	Returns
+	---------
+	ellipsoid: ndarray of volume of fit ellipsoid
+	"""
+	
+	#Create space and origin equivalent to particle of interest
+	ellipsoid = np.zeros_like(particle)
+	originZ = int(((particle.shape[0])-1)/2)
+	originY = int(((particle.shape[1])-1)/2)
+	originX = int(((particle.shape[2])-1)/2)
+	
+	#For each X value along the length of the centroidal axis, create a range of Y values and draw Z as an arc over this range
+	xRange = range(int(-c),int(c+1))
+	for X in xRange:
+		Y = ((1-(X**2)/(c**2))*(b**2))**.5
+		yRange = range(int(-Y),int(Y+1))
+		for Y in yRange:
+			Z = ((1-(int(X)**2)/(c**2)-(int(Y)**2)/(b**2))*(a**2))**.5
+			if type(Z) == complex: Z = 0
+			if isnan(Z): Z = 0
+			Zhi = originZ+int(Z)+1
+			Zlo = originZ-int(Z)
+			ellipsoid[Zlo:Zhi,int(originY+Y),int(originX+X)]=3
+		
+	return ellipsoid
+	
+def getLargestInscribedSphere(labelMap, label):
+	"""This function uses the euclidian distance transform to calculate the distance to the nearest fluid(0) voxel for each voxel in a particle.
+	The maximum edt value is then assumed as the radius of the largest possible inscribed sphere for the particle.
+	
+	Note: Computationally intensive, recommend running cropLabelMap
+	
+	Parameters
+	----------
+	labMap: ndarray of the volume
+	label: integer of the label of interest
+	
+	Returns
+	inscribedDiameter: scalar of the diameter of the largest sphere which can be inscribed inside the particle
+	
+	"""
+	
+	distances=edt(labelMap)
+	
+	largestSphereRadius = distances.max()
+	inscribedDiameter = largestSphereRadius*2
+	
+	return inscribedDiameter
+	
+def getSmallestCircumscribedSphere(labelMap, label):
+	"""This function uses zyx coordinates of a particle's surface voxels to calculate the largest distance between voxels in a particle, 
+	assuming that this distance is the diameter of the smallest sphere which can circumscribed the particle fully.
+	
+	Parameters
+	----------
+	labMap: ndarray of the volume
+	label: integer of the label of interest
+	
+	Returns
+	----------
+	circumscribedDiameter: scalar of the diameter of the smallest sphere which can be circumscribed around the particle
+	
+	"""
+	#Construct an array of surface voxels, centered at the origin
+	
+	surfaceVoxels = getSurfaceVoxelsofParticle( labelMap, label, returnWithLabel = True)
+	
+	zyxofLabel = getZYXLocationOfLabel(surfaceVoxels,label)
+	
+	meanZ, meanY, meanX = getCenterOfGravityFromZYXLocations( zyxLocationData=zyxofLabel )
+
+	meanMatrix = np.zeros_like( zyxofLabel )
+
+	meanMatrix[ :, 0 ] = meanZ
+	meanMatrix[ :, 1 ] = meanY
+	meanMatrix[ :, 2 ] = meanX
+	
+	centeredLocationData = zyxofLabel - meanMatrix
+	
+	distanceData = np.zeros((centeredLocationData.shape[0],1))
+	distanceData[:,0] = (centeredLocationData[:,0]**2 + centeredLocationData[:,1]**2 + centeredLocationData[:,2]**2)**.5
+	
+	furthestVoxel = int( np.where( (distanceData[:,0] - distanceData[:,0].max()) == 0 )[0].min() )
+		
+	z = centeredLocationData[furthestVoxel,0]
+	y = centeredLocationData[furthestVoxel,1]
+	x = centeredLocationData[furthestVoxel,2]
+	
+	furthestVoxelLocation = np.zeros_like( centeredLocationData )
+	furthestVoxelLocation[:,0] = z
+	furthestVoxelLocation[:,1] = y
+	furthestVoxelLocation[:,2] = x
+	
+	comparisonMatrix = centeredLocationData - furthestVoxelLocation
+	diameters = np.zeros((centeredLocationData.shape[0],1))
+		
+	diameters = (comparisonMatrix[:,0]**2 + comparisonMatrix[:,1]**2 + comparisonMatrix[:,2]**2)**.5
+	
+	smallestSphereDiam = diameters.max()
+	
+	return smallestSphereDiam
+	
+def getIrregularityParameter(labelMap, label):
+	"""This function the maximum inscribed and minimum circumscribed spheres to calculate a 3D irregularity parameter.
+	
+	Parameters
+	----------
+	labMap: ndarray of the volume
+	label: integer of the label of interest
+	
+	Returns
+	----------
+	irregularityParameter: scalar of the irregularity parameter
+	
+	"""
+	
+	inscribed = getLargestInscribedSphere(labelMap, label)
+	circumscribed = getSmallestCircumscribedSphere(labelMap, label)
+	irregularityParameter = circumscribed / inscribed
+	
+	return irregularityParameter
+	
+def getConvexStatistics(labelMap, label):
+	"""This function uses SciPy's convex hull tool to construct a convex hull of a particle and returns its area and volume.
+	ConvexHull uses the Qhull library. Info on the computational geometry algorithm is available at www.qhull.org
+	
+	Parameters
+	----------
+	labMap: ndarray of the volume
+	label: integer of the label of interest
+	
+	Returns
+	----------
+	convexArea: scalar of the convex hull's surface area
+	convexVolume: scalar of the convex hull's volume
+	
+	"""
+	
+	coordinates = getZYXLocationOfLabel(labelMap, label)
+	hull = ConvexHull(coordinates)
+	convexArea = hull.area
+	convexVolume = hull.volume
+	
+	return convexArea, convexVolume
+	
+def getCroppedLabelMap(labelMap, label, pad=0):
+	"""This function reduces the label map to the label of interest
+	
+	Parameters
+	----------
+	labMap: ndarray of the volume
+	label: integer of the label of interest
+	pad: bool for optional padding using Segment.applyPaddingToLabelledMap
+	
+	Returns
+	----------
+	croppedLabMap: ndarray of the volume of the label map which contains the label of interest and optional padding
+		
+	"""
+	particle = np.zeros_like(labelMap)
+	particle[np.where(labelMap == label)]=label
+	loc = np.where(particle == label)
+	croppedLabMap = particle[ loc[0].min() : loc[0].max()+1,\
+							  loc[1].min() : loc[1].max()+1,\
+							  loc[2].min() : loc[2].max()+1 ] 
+	
+	if pad != 0:
+		croppedLabMap = Segment.applyPaddingToLabelledMap(croppedLabMap,pad) 
+	
+	return croppedLabMap
+	
