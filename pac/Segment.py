@@ -919,6 +919,27 @@ def removeLabelAndUpdate( labMap,label ):
 	updatedLabMap = moveLabelsUp(labMap,label)
 	return updatedLabMap
 
+def _filterSizeShapeOrt(labelMap, minSize=0, maxSize=0, minAR=0, maxAR=0, minIncl=0, maxIncl=0, sampleName='',saveImg=False,outputDir=''):
+		"""This code removes particles that are not within the min and max range
+		"""
+		# isolate label
+			# Compute size
+			# Check size
+				# pass: move to next
+				# fail:
+					# Compute shape
+					# Check shape
+						# pass: move to next
+						# fail:
+							# Compute inclination
+							# Check inclination
+								# pass: move to next
+								# fail: 
+									# remove particle
+									# update label
+
+
+
 
 def _resetLabelNumbering(labMap, sampleName='',saveImg=False, saveLabelKey=True, outputDir=''):
 	"""This function takes in a label map and resets the numbering of the labels to remove missing labels
@@ -943,16 +964,18 @@ def _resetLabelNumbering(labMap, sampleName='',saveImg=False, saveLabelKey=True,
 	print('\nCorrecting label indexing')
 	print('-------------------------\n')
 
-	firstLabel = 1
+	label = 1
 	lastLabel = labelMap.max()
 
-	for label in range( firstLabel, lastLabel + 1 ):
+	while label < lastLabel:
 
 		# Check if the label exists in correctedLabelMap
-		if label in correctedLabelMap: print('\t' + str(label) + ' ok')
+		if label in correctedLabelMap: 
+			print('\t' + str(label) + ' ok')
+			label = label + 1
 		
 		else:
-			print('\t' + str(label) + 'missing - moving labels up')
+			print('\t' + str(label) + ' missing - moving labels up')
 			correctedLabelMap = moveLabelsUp( labelMapToFix = correctedLabelMap, labelStartingWhichMoveUp = label )
 			lastLabel = lastLabel - 1
 
@@ -1020,7 +1043,7 @@ def _fixMissingLabels(labMap, sampleName='', saveImg='', outputDir=''):
 	return correctedLabMap
 
 
-def generateAndSaveStlFilesFromLabelList( labMap, labels=[], padding=10, stepSize = 1, sampleName='', outputDir='' ):
+def _generateAndSaveStlFilesFromLabelList( labMap, labels=[], padding=10, stepSize = 1, sampleName='', outputDir='' ):
 	"""Check generateAndSaveStlFile
 	"""
 	if labels==[]: return(0)
@@ -1029,7 +1052,7 @@ def generateAndSaveStlFilesFromLabelList( labMap, labels=[], padding=10, stepSiz
 		generateAndSaveStlFile( labMap=labMap, label=label, padding=padding, stepSize=stepSize, sampleName=sampleName, outputDir=outputDir)
 
 	
-def generateAndSaveStlFile(labMap, label, padding=10, stepSize = 1, saveImg=True, sampleName='', outputDir=''):
+def _generateAndSaveStlFile(labMap, label, padding=10, stepSize = 1, saveImg=True, sampleName='', outputDir=''):
 	"""This extracts particle corresponding to a label, generate a surface for it, and save the particle as an *.stl file for visualization
 		.stl files can be visalized using paraview
 	
@@ -1080,7 +1103,7 @@ def generateAndSaveStlFile(labMap, label, padding=10, stepSize = 1, saveImg=True
 	smoothMesh.export(sampleName) 
 
 
-def generateInPlaceStlFile(labMap, stepSize = 1, saveImg=True, sampleName='', outputDir=''):
+def _generateInPlaceStlFile(labMap, stepSize = 1, saveImg=True, sampleName='', outputDir=''):
 	"""Generate in place stl
 	"""
 	print('Generating stl' )
@@ -1095,7 +1118,7 @@ def generateInPlaceStlFile(labMap, stepSize = 1, saveImg=True, sampleName='', ou
 	smoothMesh.export(sampleName) 
 
 
-def hideParticlesAccordingToSizeAndMakeSTLs(labMap, minSize=10, maxSize=100,  saveImg=True, sampleName='', outputDir=''):
+def _hideParticlesAccordingToSizeAndMakeSTLs(labMap, minSize=10, maxSize=100,  saveImg=True, sampleName='', outputDir=''):
 	"""Checks Label map and hides the labels with size in the (minSize,maxSize) range
 
 	The output is a label map and an stl map with
@@ -1124,7 +1147,7 @@ def hideParticlesAccordingToSizeAndMakeSTLs(labMap, minSize=10, maxSize=100,  sa
 	generateInPlaceStlFile( labMap=unitCleanedLabelMap, stepSize = 1, saveImg=True, sampleName=(sampleName+'-EQSP'+str(minSize)+'-EQSP'+str(maxSize)), outputDir=outputDir )
 
 
-def hideParticlesAccordingToAspectRatioAndMakeSTLs(labMap, minAR=1, maxAR=5,  saveImg=True, sampleName='', outputDir=''):
+def _hideParticlesAccordingToAspectRatioAndMakeSTLs(labMap, minAR=1, maxAR=5,  saveImg=True, sampleName='', outputDir=''):
 	"""
 	"""
 	cleanedLabelMap=labMap
