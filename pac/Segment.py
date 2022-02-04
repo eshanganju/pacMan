@@ -1,4 +1,6 @@
 """Segment module carries out the setmentation of the XCT data
+
+any function with "_" prefix needs to be checked
 """
 
 from scipy.ndimage.morphology import distance_transform_edt as edt
@@ -23,6 +25,7 @@ from pac import Measure
 # This is to plot all the text when running the functions
 VERBOSE = True
 TESTING = True
+
 
 def segmentUsingWatershed( binaryMapToSeg, edmMapForTopo, edmPeaksForSeed, addWatershedLine=False,
 							sampleName='', saveImg=True, outputDir='' ):
@@ -917,8 +920,61 @@ def removeLabelAndUpdate( labMap,label ):
 	return updatedLabMap
 
 
-def fixMissingLabels(labMap, sampleName='', saveImg='', outputDir=''):
-	"""Code checks for missing labels and then updated the labels in the label map
+def _resetLabelNumbering(labMap, sampleName='',saveImg=False, saveLabelKey=True, outputDir=''):
+	"""This function takes in a label map and resets the numbering of the labels to remove missing labels
+
+	Parameters
+	----------
+		labMap: ndArray
+
+		sampleName: string
+
+		saveImage: bool
+
+		outputDir: string
+
+	Returns
+	-------
+
+
+	"""
+	correctedLabelMap = labMap
+
+	print('\nCorrecting label indexing')
+	print('-------------------------\n')
+
+	firstLabel = 1
+	lastLabel = labelMap.max()
+
+	for label in range( firstLabel, lastLabel + 1 ):
+
+		# Check if the label exists in correctedLabelMap
+		if label in correctedLabelMap: print('\t' + str(label) + ' ok')
+		
+		else:
+			print('\t' + str(label) + 'missing - moving labels up')
+			correctedLabelMap = moveLabelsUp( labelMapToFix = correctedLabelMap, labelStartingWhichMoveUp = label )
+			lastLabel = lastLabel - 1
+
+	if saveImg == True:
+		imgSaveName = outputDir + sampleName + '-resetLabMap.tif'
+		tf.imsave(imgSaveName,correctedLabelMap)
+	
+
+	if saveLabelKey == True:
+		originalLabeArray = np.unique( labMap )
+		currentLabelArray = np.unique( correctedLabelMap )
+		dictionaryOfArrays = np.array( ( originalLabelArray.shape[ 0 ] , 2 ) )
+		dictionaryOfArrays[:,0] = originalLabelArray
+		dictionaryOfArrays[:,1] = currentLabelArray
+		fileSaveName = outputDir + sampleName + '-arrayKey.txt'
+		np.savetxt(fileSaveName,dictionaryOfArrays,delimiter=',')	
+	
+	return correctedLabelMap
+
+
+def _fixMissingLabels(labMap, sampleName='', saveImg='', outputDir=''):
+	"""Code checks for missing labels and then resets the numbering the labels in the label map
 
 	Parameters
 	----------
@@ -932,6 +988,8 @@ def fixMissingLabels(labMap, sampleName='', saveImg='', outputDir=''):
 	correctedLabMap: ndArray label map with no missing labels
 	"""
 	print('\nCorrecting missing labels')
+	print('\n-------------------------')
+
 	incorrectLabelsArray = np.arange( 1, labMap.max() + 1, dtype='uint16' )
 	correctLabelsArray = np.unique(labMap)
 
