@@ -919,27 +919,105 @@ def removeLabelAndUpdate( labMap,label ):
 	updatedLabMap = moveLabelsUp(labMap,label)
 	return updatedLabMap
 
-def _filterSizeShapeOrt(labelMap, minSize=0, maxSize=0, minAR=0, maxAR=0, minIncl=0, maxIncl=0, sampleName='',saveImg=False,outputDir=''):
-		"""This code removes particles that are not within the min and max range
-		"""
-		# isolate label
-			# Compute size
-			# Check size
+
+def _filterSizeShapeOrt(labelMap, minSize=0, maxSize=0, minAR=0, maxAR=0, minIncl=0, maxIncl=0, ortDir='Z', sampleName='',saveImg=False,outputDir=''):
+	"""This function removes particles that are not within the min and max range of size, aspect ratio, and inclination wrt to one axis
+
+	Parameters
+	----------
+		labelMap: ndArray
+
+		minSize: float
+
+		maxSize: float
+
+		minAR: float
+
+		maxAR: float
+
+		minIncl: float (degrees)
+
+		maxIncl: float (degrees)
+
+		ortDir: str
+
+		sampleName: str
+
+		saveImg: bool
+
+		outputDir: str
+
+	Returns
+	-------
+		filteredLabelMap: ndArray
+
+	"""
+	filteredLabelMap = labMap
+	minLabel = 1
+	maxLabel = filteredLabelMap.max()
+	currentLabel = minLabel
+	
+	# isolate label
+	while currentLabel <= maxLabel:
+		
+		print( 'Checking label' + str( currentLabel ) )
+		
+		# Compute size (EqSpDi)
+		currentLabelSize = Measure.getEqspDia( labelMap=filteredLabelMap, label=currentLabel )
+		
+		# Check size
+		if ( (currentLabelSize >= minSize) and (currentLabelSize <= maxSize) ): 
+			# pass: move to next
+			print( '\tSize ok ' )
+			currentLabel = currentLabel + 1
+		
+		else: 
+			# fail:
+			# Compute shape
+			print( '\tSize not ok, checking aspect ratio.' )
+			maxLength, medLength, minLength = Measure.getPrincipalAxesLengths( labelMap = filteredLabelMap, label = currentLabel )
+			currentLabelAR = maxLength/minLength
+
+			# Check shape
+			if ( ( currentLabelAR >= minAR) and (currentLabelAR <= maxAR) ):
 				# pass: move to next
+				print( '\tAspect ratio ok.' )
+				currentLabel = currentLabel + 1
+
+			else:
 				# fail:
-					# Compute shape
-					# Check shape
-						# pass: move to next
-						# fail:
-							# Compute inclination
-							# Check inclination
-								# pass: move to next
-								# fail: 
-									# remove particle
-									# update label
+				# Compute inclination
+				print( '\tAspect ratio not ok, checking inclincation.' )
+				ortZZ, ortYY, ortXX = Measure.getMajorPrincipalAxesOrt( labelMap = filteredLabelMap, label = currentLabel )
+				if ortDir == 'Z': currentLabelIncl = np.arccos(ortZZ)
+				elif ortDir == 'Y': currentLabelIncl = np.arccos(ortYY)
+				elif ortDir == 'X': currentLabelIncl = np.arccos(ortXX)
+				
+				# Check inclination
+				if ( ( currentLabelIncl >= minIncl ) and ( currentLabelIncl <= maxIncl ) ):
+					# pass: move to next
+					print( '\tInclination ok ' )
+					currentLabel = currentLabel + 1
 
+				else:
+					# fail:
+					print('\tInclincation not ok, removing particle') 
+					
+					# remove particle
+					filteredLabelMap[ np.where( filteredLabelMap == currentLabel ) ] = 0
+			
+					# update label
+					filteredLabelMap = Segment.moveLabelsUp( labelMapToFix = filteredLabelMap, labelStartingWhichMoveUp = currentLabel )
+					
+					# update max label
+					maxLabel = filteredLabelMap.max()
 
+	if saveImg == True:
+		saveFileName = outputDir + sampleName + '-FilteredFor-Size-AR-Inclination.tif'
+		tf.imsave( saveFileName, filteredLabelMap )
 
+	return filteredLabelMap
+				
 
 def _resetLabelNumbering(labMap, sampleName='',saveImg=False, saveLabelKey=True, outputDir=''):
 	"""This function takes in a label map and resets the numbering of the labels to remove missing labels
