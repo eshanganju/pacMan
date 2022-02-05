@@ -952,6 +952,8 @@ def _resetLabelNumbering(labMap, sampleName='',saveImg=False, saveLabelKey=True,
 
 		saveImage: bool
 
+		saveLabelKey: bool
+
 		outputDir: string
 
 	Returns
