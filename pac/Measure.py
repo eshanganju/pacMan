@@ -1396,3 +1396,23 @@ def calculateInternalPorosity():
 def calculateeffectivesphericity():
 	"""
 	"""
+
+
+def _get2DEqCirDia():
+	"""
+	"""
+
+
+def _get2DAspectRatio():
+	"""
+	"""
+
+
+def _getGrainBoundaryMisorientations3D():
+	"""
+	""" 
+
+def _getGrainBoundaryMisorientations2D():
+	"""
+	"""
+
