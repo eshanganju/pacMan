@@ -101,6 +101,7 @@ def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=None,saveImg=False,o
 		filteredImage = restoration.denoise_nl_means( inputImage,
 														patch_size=pSize,
 														patch_distance=pDistance,
+														preserve_range=True,
 														h=hVal,
 														multichannel=False,
 														fast_mode=True,
