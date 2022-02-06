@@ -161,8 +161,8 @@ def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=None,saveImg=False,o
 			answer = input( "\n\nCheck files - are filter parameters suitable ([y]/n)?:" )
 			if answer == 'n':
 				print( "Enter new parameters: \n\n" )
-				patchSize = int( input( "Patch size (pixel): " ) )
-				patchDistance = int( input( "Patch distance (pixel):" ) )
+				pSize = int( input( "Patch size (pixel): " ) )
+				pDistance = int( input( "Patch distance (pixel):" ) )
 				hVal = float( input( "Cut-off pixel intensity: " ) )
 			else:
 				runSliceFilter = False
