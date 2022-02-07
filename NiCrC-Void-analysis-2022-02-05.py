@@ -23,8 +23,8 @@ ofl = '/home/chawlahpc2adm/Desktop/EG-NiCrC/output/'
 
 
 # FileNames and output file prefix
-fileName = 'NotchScanZoomIn-2022-01-25-8bit-650px-CrC-33-132.tif'	# Name of binarized tiff file
-dataName = 'CrC-Phase-1-95-Center'									# Prefix for output files - name it smartly
+fileName = 'NotchScanZoomIn-2022-01-25-8bit-650px-Void-0-32.tif'	# Name of binarized tiff file
+dataName = 'Void-Phase-2-60-Center'									# Prefix for output files - name it smartly
 dataFile = ifl + fileName											# The file and location that will be read the bin data
 
 # Subvolume extraction from scan
@@ -41,8 +41,8 @@ calVal = 1														# mm/vox - keep this as 1 to get sizes in voxel units
 
 
 # Analysis parameters
-edmHVal = 1 													# Minimum peak size when locating local maxima in EDM
-radiusRatioVal = 0.95											# Ratio of area radius to smaller particle radius
+edmHVal = 2 													# Minimum peak size when locating local maxima in EDM
+radiusRatioVal = 0.60											# Ratio of area radius to smaller particle radius
 
 #------------------------------------------------------------------------------------------------*
 #------------------------------------USER Input end----------------------------------------------*
