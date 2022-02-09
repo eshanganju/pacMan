@@ -920,7 +920,7 @@ def removeLabelAndUpdate( labMap,label ):
 	return updatedLabMap
 
 
-def _filterSizeShapeOrt(labelMap, minSize=0, maxSize=0, minAR=0, maxAR=0, minIncl=0, maxIncl=0, ortDir='Z', sampleName='',saveImg=False,outputDir=''):
+def _filterSizeShapeOrt(labMap, minSize=0, maxSize=0, minAR=0, maxAR=0, minIncl=0, maxIncl=0, ortDir='Z', sampleName='',saveImg=False,outputDir=''):
 	"""This function removes particles that are not within the min and max range of size, aspect ratio, and inclination wrt to one axis
 
 	Parameters
@@ -963,7 +963,7 @@ def _filterSizeShapeOrt(labelMap, minSize=0, maxSize=0, minAR=0, maxAR=0, minInc
 		print( 'Checking label' + str( currentLabel ) )
 		
 		# Compute size (EqSpDi)
-		currentLabelSize = Measure.getEqspDia( labelMap=filteredLabelMap, label=currentLabel )
+		vol, currentLabelSize = Measure.getEqspDia( labelMap=filteredLabelMap, label=currentLabel )
 		
 		# Check size
 		if ( (currentLabelSize >= minSize) and (currentLabelSize <= maxSize) ): 
@@ -1007,7 +1007,7 @@ def _filterSizeShapeOrt(labelMap, minSize=0, maxSize=0, minAR=0, maxAR=0, minInc
 					filteredLabelMap[ np.where( filteredLabelMap == currentLabel ) ] = 0
 			
 					# update label
-					filteredLabelMap = Segment.moveLabelsUp( labelMapToFix = filteredLabelMap, labelStartingWhichMoveUp = currentLabel )
+					filteredLabelMap = moveLabelsUp( labelMapToFix = filteredLabelMap, labelStartingWhichMoveUp = currentLabel )
 					
 					# update max label
 					maxLabel = filteredLabelMap.max()
