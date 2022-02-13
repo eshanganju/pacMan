@@ -1312,6 +1312,34 @@ def getCoordinationNumberList( labelledMap, excludeEdgeLabels=True ):
 
 	return coordinationNumberArray
 
+def _getSelectiveCoordinationNumberList(labelMap,labelBoundary=1,outputDir='',sampleName='',saveData=True):
+	"""Get coordination numbers of certain labels considering contacts with fixed label ranges
+	"""
+	print('Getting selective coordination number')
+	contactArray = np.zeros( ( labelBoundary - 1 , 2 ) )
+	label = 1
+
+	# For label smaller than labelBoundary
+	while label < labelBoundary:
+		print('\tChecking label ' + str(np.round(label)) + '/' + str(np.round(labelBoundary)))
+
+		# Remove labels that are not the label and not larger than label boundary
+		cleanedLabelMap = labelMap
+		cleanedLabelMap[ np.where( (labelMap != label) and (labelMap < labelBoundary) ) ] = 0
+		contLabels = slab.contacts.contactingLabels( lab=cleanedLabelMap, labelsList=label, 
+													 areas=False, boundingBoxes=None, centresOfMass=None)
+		numberOfContacts = len(contLabels)
+		contactArray[ label, 0 ] = label
+		contactArray[ label, 1 ] = numberOfContacts
+
+		# updated label Map
+		label = label + 1
+
+	if saveData == True:
+		saveFileName = outputDir + sampleName + '-contactingLabels'
+		np.savetxt(saveFileName,contactArray) 
+
+	return coordinationNumberArray
 
 def computeSphericities(labMap, sampleName='', saveData=True, fixMissingLables=True, outputDir=''):
 	"""This function computes sphericities of all the particles in the volume
