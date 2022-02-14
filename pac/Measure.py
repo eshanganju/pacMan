@@ -1314,23 +1314,40 @@ def getCoordinationNumberList( labelledMap, excludeEdgeLabels=True ):
 
 def _getSelectiveCoordinationNumberList(labelMap,labelBoundary=1,outputDir='',sampleName='',saveData=True):
 	"""Get coordination numbers of certain labels considering contacts with fixed label ranges
+	
+	Parameters
+	----------
+		labelMap: ndarray
+		labelBoundary: int
+		outputDir: string
+		sampleName: string
+		saveData: boolean
+	
+	
+	Return
+	------
+		contactArray: ndArray
 	"""
 	print('Getting selective coordination number')
-	contactArray = np.zeros( ( labelBoundary - 1 , 2 ) )
+	contactArray = np.zeros( ( labelBoundary-1 , 2 ) )
 	label = 1
 
 	# For label smaller than labelBoundary
 	while label < labelBoundary:
-		print('\tChecking label ' + str(np.round(label)) + '/' + str(np.round(labelBoundary)))
+		print('\tChecking label ' + str(np.round(label)) + '/' + str(np.round(labelBoundary-1)))
 
 		# Remove labels that are not the label and not larger than label boundary
 		cleanedLabelMap = labelMap
-		cleanedLabelMap[ np.where( (labelMap != label) and (labelMap < labelBoundary) ) ] = 0
-		contLabels = slab.contacts.contactingLabels( lab=cleanedLabelMap, labelsList=label, 
+		cleanedLabelMap[ np.where( np.logical_and( (labelMap != label) , (labelMap < labelBoundary) ) ) ] = 0
+		contLabels = slab.contacts.contactingLabels( lab=cleanedLabelMap, labels=label, 
 													 areas=False, boundingBoxes=None, centresOfMass=None)
+		
 		numberOfContacts = len(contLabels)
-		contactArray[ label, 0 ] = label
-		contactArray[ label, 1 ] = numberOfContacts
+		
+		print('\tContacts: ', numberOfContacts)
+		
+		contactArray[ label-1, 0 ] = label
+		contactArray[ label-1, 1 ] = numberOfContacts
 
 		# updated label Map
 		label = label + 1
@@ -1339,7 +1356,7 @@ def _getSelectiveCoordinationNumberList(labelMap,labelBoundary=1,outputDir='',sa
 		saveFileName = outputDir + sampleName + '-contactingLabels'
 		np.savetxt(saveFileName,contactArray) 
 
-	return coordinationNumberArray
+	return contactArray
 
 def computeSphericities(labMap, sampleName='', saveData=True, fixMissingLables=True, outputDir=''):
 	"""This function computes sphericities of all the particles in the volume
