@@ -1461,3 +1461,14 @@ def _getGrainBoundaryMisorientations2D():
 	"""
 	"""
 
+def _getFeretDiameterUsingQuaternions():
+	"""This computes the min max and median feret diameter of the particles
+	A list of unit vectors are selected
+	The particle is rotated about these axes using quartenions
+	The min, max and mediam values of the particle are obtained
+	"""
+	# Get array of unit vectors
+	# For each unit vector rotate particle around the vector a fixes number of times
+	# For each rotation, compute the length of the particle about x, y and z axes
+	# Keep a tally of all the lengths of the particle and obtain a distribution of particle sizes
+	# pass the feret distribution and extract min, max and median sizes.
