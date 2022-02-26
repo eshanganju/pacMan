@@ -15,7 +15,7 @@ from pac import Segment
 from skimage.measure import marching_cubes, mesh_surface_area
 
 VERBOSE = True				# Show all the text when running the functions
-TESTING = True				# Set to False before release
+TESTING = True				# Keep if TESTING == True: Print('') while testing in function with "_" prefix 
 
 
 def getPSDAll( labelledMap , calibrationFactor=1.0, getEqsp=True, getCaMax=True,
@@ -310,7 +310,7 @@ def getPrincipalAxesLengths( labelMap, label ):
 
 
 # TODO: This is messy - needs to be cleaned
-def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass=None, numberOfOrientations=100,
+def _getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass=None, numberOfOrientations=100,
 							margin=0, interpolationOrder=0, returnOrts = False):
 	"""
 	Calculates (binary) feret diameters (caliper lengths) over a number of equally-spaced orientations
@@ -1312,6 +1312,7 @@ def getCoordinationNumberList( labelledMap, excludeEdgeLabels=True ):
 
 	return coordinationNumberArray
 
+
 def _getSelectiveCoordinationNumberList(labelMap,labelBoundary=1,outputDir='',sampleName='',saveData=True):
 	"""Get coordination numbers of certain labels considering contacts with fixed label ranges
 	
@@ -1357,6 +1358,7 @@ def _getSelectiveCoordinationNumberList(labelMap,labelBoundary=1,outputDir='',sa
 		np.savetxt(saveFileName,contactArray) 
 
 	return contactArray
+
 
 def computeSphericities(labMap, sampleName='', saveData=True, fixMissingLables=True, outputDir=''):
 	"""This function computes sphericities of all the particles in the volume
@@ -1463,7 +1465,7 @@ def _getGrainBoundaryMisorientations2D():
 
 def _getFeretDiameterUsingQuaternions():
 	"""This computes the min max and median feret diameter of the particles
-	A list of unit vectors are selected
+	A list of unit vectors are selected - logspiral or saafAndKunjal?
 	The particle is rotated about these axes using quartenions
 	The min, max and mediam values of the particle are obtained
 	"""
@@ -1472,3 +1474,5 @@ def _getFeretDiameterUsingQuaternions():
 	# For each rotation, compute the length of the particle about x, y and z axes
 	# Keep a tally of all the lengths of the particle and obtain a distribution of particle sizes
 	# pass the feret distribution and extract min, max and median sizes.
+
+

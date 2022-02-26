@@ -11,7 +11,7 @@ import time
 VERBOSE = True
 TESTING = True
 
-def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=None,saveImg=False,outputDir='',sampleName='sampleX',loop=True):
+def filterUsingNlm(gli, bitDepth=16, pSize=3, pDistance=7, hVal=None, saveImg=False, outputDir='', sampleName='sampleX', loop=True):
 	"""This function takes in a unfiltered grey level and filters it using non-local means (nlm) filter
 	This function loops over nlm parameters till user accepts the filtered image.
 
@@ -50,7 +50,7 @@ def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=None,saveImg=False,o
 	"""
 
 	print('Starting non-local means filter')
-	print('------------------------------*\n\n')
+	print('-------------------------------\n\n')
 
 	gliMax = 2**bitDepth-1
 
@@ -225,9 +225,48 @@ def filterUsingNlm(gli,bitDepth=16,pSize=3,pDistance=7,hVal=None,saveImg=False,o
 
 	return filteredMap
 
-def filterUsingMedian(gli, bitDepth=16,pSize=3,outputDir='',sampleName='',loop=True):
+def _filterUsingMedian(gli, bitDepth=16, pSize=3, outputDir='',sampleName='',saveData=True,saveFilterParams=True,loop=True, slice='central'):
 	"""
+
+
+	Parameters
+	----------
+
+		slice: string; either 'central', 'upper', 'lower', 'allThree' to carry out intial filteration on a slice in the center, upper quartile, lower quartile, or all three positions.
+
+	Return
+	------
+		filteredMap: ndArray; numpy array the same size as the input image
+
 	"""
 	filteredMap = gli
 
+	# Print intial filtration settings
+
+	# Start loop
+		# Extract and filter slices of the image
+		# Show the images and noise removed + noise removal parameters
+
+		# Prepare image for filtration
+		filrationIsGood = False
+
+		# Loop if filtrationIsGood == False
+
+		# When filtrationIsGood == True
+			# Filter entire dataset in 3D using filter parameters
+			# Save filter parameters if saveFilterParams == True
+
+	# Return filtered dataset
 	return filteredMap
+
+
+
+
+
+
+
+
+
+
+
+
