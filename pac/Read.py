@@ -140,17 +140,13 @@ def extractSubregionFromTiffSequence( folderDir, Z, Y, X, lngt, calib, reference
 
 	return croppedGLIMap
 
-def extractSubregionFromTiffFile( fileDir, Z, Y, X, lngt,
-									calib, zReference = 'middle',
-									xyReference='topLeft',
-									invImg=False, saveImg=False,
-									outputDir='', sampleName='XXX' ):
+def extractSubregionFromTiffFile( fileLoc, Z, Y, X, lngt, calib, zReference = 'middle',xyReference='topLeft',invImg=False, saveImg=False,outputDir='', sampleName='' ):
 	"""This function reads data from a single tiff stack
 	The entire image is read and a cubic subregion specified by the user is returned
 
 	Parameter
 	----------
-	fileDir : str
+	fileLoc : str
 		location of the image stack
 	zReference : str
 		center - the Z location is the center
@@ -212,7 +208,7 @@ def extractSubregionFromTiffFile( fileDir, Z, Y, X, lngt,
 		leftCol = int(X) - int(lngt/calib)//2
 		rightCol = int(X) + int(lngt/calib)//2
 
-	gliMap = tiffy.imread( fileDir )
+	gliMap = tiffy.imread( fileLoc )
 
 	if invImg == True: gliMap = invertImage(gliMap)
 	print( '\nFinished reading files...' )
@@ -224,6 +220,52 @@ def extractSubregionFromTiffFile( fileDir, Z, Y, X, lngt,
 		tiffy.imsave( outputDir + sampleName + '-subMap.tif',croppedGLIMap.astype('uint16') )
 
 	return croppedGLIMap
+
+def _readTiffStack(fileLoc='',invImg=False,downSample=False,reduceBitDepth=False,initalBitDepth=0,finalBitDepth=0,saveImg=False,outputDir='',sampleName=''):
+	"""
+	"""
+	image = tf.imread(fileLoc)
+
+	# Down sample first
+	if downSample == True: image = _downSampleData(initalImageData=image,saveImg=False)
+
+	# reduce Bit Depth later
+	if reduceBitDepth == True: image = _reduceBitDepthData(image,saveImg=False)
+
+	# Save image - images will not be saved in the downSample and reduceBitDepth parts of the code
+	if saveImg=True:
+		print('... saving file.')
+
+		if downSample == True:
+
+			if reduceBitDepth == True:
+				saveFileName = sampleName+'-tiffStack-BitDepthReduced-DownSampled.tif'
+				tiffy.imwrite(saveFileName,image)
+
+			else:
+				saveFileName = sampleName+'-tiffStack-BitDepthReduced.tif'
+				tiffy.imwrite(saveFileName,image)
+		
+		else:
+			saveFileName = sampleName+'-tiffStack.tif'
+			tiffy.imwrite(saveFileName,image)
+
+		print('...file saved')
+
+	else: print('... No file saved')
+
+	return image
+
+
+
+def _downSampleData(initalImageData,saveImg=False,outputDir='',sampleName=''):
+	"""
+	"""
+
+def _reduceBitDepthData(intialImage,initalBitDepth=0,finalBitDepth=0,saveImg=False,outputDir='',sampleName=''):
+	"""
+	"""
+
 
 def invertImage( gliMapToInvert ):
 	"""Inverts the image  
