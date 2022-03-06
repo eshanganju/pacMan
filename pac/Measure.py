@@ -1440,39 +1440,312 @@ def calculateInternalPorosity():
 	"""
 
 
-def calculateeffectivesphericity():
+def _calculateInternalPorosity(labelMap, label):
 	"""
 	"""
+	
+	particle = np.zeros_like(labelMap)
+	particle[np.where(labelMap == label)] = 1
+	filledParticle=np.zeros_like(labelMap)
+	filledParticle[np.where(labelMap == label)] = 1
+	
+	filledParticle = binary_fill_holes(filledParticle).astype(int)
+		
+	voidVolume = filledParticle.sum() - particle.sum()
+	
+	return voidVolume
 
 
-def _get2DEqCirDia():
+def calculateEllipsoidOverUnder(labelMap, label, scale=True):
+	"""This function measures the relative convexity and concavity of a particle by fitting an ellipsoid to is centroidal axes and
+	measuring the volume differences between the two. It produces three values, corresponding to the volume of the particle outside
+	the ellipsoid, the amount of empty space inside the ellipsoid, and the overlapped volume between the two shapes.
+	
+	Parameters
+	----------
+	labMap: ndArray of the volume
+	label: int label number that needs to be analyzed
+	scale: bool determining if the volume of the fit ellipsoid will be scaled to match the particle
+	
+	Returns
+	---------
+	croppedParticle: ndarray of the particle of interest
+	convex: ndarray of the particle volume outside its fit ellipsoid
+	concave: ndarray of the empty volume inside the fit ellipsoid
+	overlap: ndarray of the particle inside its fit ellipsoid
+	convexVol: float with the volume of the particle outside the ellipsoid
+	cocaveVol: float with the volume of the empty space inside the ellipsoid
+	overlapVol: float with the volume of the particle inside the ellipsoid
 	"""
-	"""
+	
+	#Repeat of particle normalization from getPrincipalAxesLengths
+	
+	zyxofLabel = getZYXLocationOfLabel(labelMap,label)
+	
+	covarianceMatrix = np.cov( zyxofLabel.T )
+	
+	eigval, eigvec = np.linalg.eig( covarianceMatrix )
+	
+	meanZ, meanY, meanX = getCenterOfGravityFromZYXLocations( zyxLocationData=zyxofLabel )
+
+	meanMatrix = np.zeros_like( zyxofLabel )
+
+	meanMatrix[ :, 0 ] = meanZ
+	meanMatrix[ :, 1 ] = meanY
+	meanMatrix[ :, 2 ] = meanX
+	
+	centeredLocationData = zyxofLabel - meanMatrix
+	
+	rotationMatrix = np.zeros( ( 3, 3 ) )
+	
+	rotationMatrix[ :, 0 ] = eigvec[ 0 ]
+	rotationMatrix[ :, 1 ] = eigvec[ 1 ]
+	rotationMatrix[ :, 2 ] = eigvec[ 2 ]
+	
+	rotCentPointCloud = ( np.matmul( rotationMatrix, centeredLocationData.T ) ).T #Particle now has 0,0,0 as its mean value and is oriented along orthogonal axes
+	
+	#Dimensions of particle cloud
+	cloudZ = int( rotCentPointCloud[ :, 0 ].max() - rotCentPointCloud[ :, 0 ].min() )
+	cloudY = int( rotCentPointCloud[ :, 1 ].max() - rotCentPointCloud[ :, 1 ].min() )
+	cloudX = int( rotCentPointCloud[ :, 2 ].max() - rotCentPointCloud[ :, 2 ].min() )
+		
+	#Padding chosen to match previous values; arbitrary
+	pad = 10
+	
+	#Create a "big enough" array to fit the particle, with an origin at its center
+	croppedParticle = np.zeros((2*(cloudZ+pad), 2*(cloudY+pad), 2*(cloudX+pad)))
+	originZ = int(((croppedParticle.shape[0])-1)/2)
+	originY = int(((croppedParticle.shape[1])-1)/2)
+	originX = int(((croppedParticle.shape[2])-1)/2)
+		
+	#Create the particle with its center of mass at the origin of the cropped array
+	
+	for n in np.arange(0,rotCentPointCloud.shape[0]-1):
+		croppedParticle[(math.floor( rotCentPointCloud[n,0] )+originZ,math.floor( rotCentPointCloud[n,1] )+originY,math.floor( rotCentPointCloud[n,2] )+originX)]=1
+		croppedParticle[(math.ceil( rotCentPointCloud[n,0] )+originZ,math.ceil( rotCentPointCloud[n,1] )+originY,math.ceil( rotCentPointCloud[n,2] )+originX)]=1
+	
+	croppedParticle = binary_fill_holes(croppedParticle).astype(int)
+	
+	#Determine axes of ellipsoid based on z,y,z particle axes
+	#Optionally, scale axes so particle and ellipsoid volumes are equal
+	if scale == True:
+		ellVol = math.pi * (4/3) * cloudZ/2 * cloudY/2 * cloudX/2
+		partVol = croppedParticle.sum()
+		R = (partVol / ellVol)**(1/3)
+		a = (cloudZ/2)*R
+		b = (cloudY/2)*R
+		c = (cloudX/2)*R
+	
+	elif scale ==False:
+		a = (cloudZ/2)
+		b = (cloudY/2)
+		c = (cloudX/2)
+		
+	#Generate ellipse with a,b,c dimensions defined by z,y,x axes
+	ellipsoid = createVoxelizedEllipsoid( particle = croppedParticle, a = a , b = b, c = c ) 
+	
+	#Compare ellipse and particle, producing volumes for each measured volume based on value difference between particle and ellipsoid
+	overlappedParticle = croppedParticle - ellipsoid
+	convex = np.zeros_like(croppedParticle)
+	convex[np.where(overlappedParticle == 1)] = 1
+	convexVol = convex.sum()
+	concave = np.zeros_like(croppedParticle)
+	concave[np.where(overlappedParticle == -3)] = 1
+	concaveVol = concave.sum()
+	overlap = np.zeros_like(croppedParticle)
+	overlap[np.where(overlappedParticle == -2)] = 1
+	overlapVol = overlap.sum()
+	
+	return croppedParticle.astype('uint16'), convex.astype('uint16'), concave.astype('uint16'), overlap.astype('uint16'), convexVol, concaveVol, overlapVol
 
 
-def _get2DAspectRatio():
+def createVoxelizedEllipsoid( particle, a, b, c ):
+	"""This function generates an ellipsoid with its center of mass at the center of particle array and with axes
+	a, b, and c corresponding to the z, y, and x centroidal axes of the particle. Axes are oriented along orthogonal coordinates.
+	The values of the ellipse voxels are 1.
+	
+	Parameters
+	----------
+	particle: ndarray of volume of particle of interest. 
+	a: float with the length of the Z axis
+	b: float with the length of the Y axis
+	c: float with the length of the X axis
+	
+	Returns
+	---------
+	ellipsoid: ndarray of volume of fit ellipsoid
 	"""
-	"""
+	
+	#Create space and origin equivalent to particle of interest
+	ellipsoid = np.zeros_like(particle)
+	originZ = int(((particle.shape[0])-1)/2)
+	originY = int(((particle.shape[1])-1)/2)
+	originX = int(((particle.shape[2])-1)/2)
+	
+	#For each X value along the length of the centroidal axis, create a range of Y values and draw Z as an arc over this range
+	xRange = range(int(-c),int(c+1))
+	for X in xRange:
+		Y = ((1-(X**2)/(c**2))*(b**2))**.5
+		yRange = range(int(-Y),int(Y+1))
+		for Y in yRange:
+			Z = ((1-(int(X)**2)/(c**2)-(int(Y)**2)/(b**2))*(a**2))**.5
+			if type(Z) == complex: Z = 0
+			if isnan(Z): Z = 0
+			Zhi = originZ+int(Z)+1
+			Zlo = originZ-int(Z)
+			ellipsoid[Zlo:Zhi,int(originY+Y),int(originX+X)]=3
+		
+	return ellipsoid
 
 
-def _getGrainBoundaryMisorientations3D():
+def getLargestInscribedSphere(labelMap, label):
+	"""This function uses the euclidian distance transform to calculate the distance to the nearest fluid(0) voxel for each voxel in a particle.
+	The maximum edt value is then assumed as the radius of the largest possible inscribed sphere for the particle.
+	
+	Note: Computationally intensive, recommend running cropLabelMap
+	
+	Parameters
+	----------
+	labMap: ndarray of the volume
+	label: integer of the label of interest
+	
+	Returns
+	inscribedDiameter: scalar of the diameter of the largest sphere which can be inscribed inside the particle
+	
 	"""
-	""" 
+	
+	distances=edt(labelMap)
+	
+	largestSphereRadius = distances.max()
+	inscribedDiameter = largestSphereRadius*2
+	
+	return inscribedDiameter
 
-def _getGrainBoundaryMisorientations2D():
-	"""
-	"""
 
-def _getFeretDiameterUsingQuaternions():
-	"""This computes the min max and median feret diameter of the particles
-	A list of unit vectors are selected - logspiral or saafAndKunjal?
-	The particle is rotated about these axes using quartenions
-	The min, max and mediam values of the particle are obtained
+def getSmallestCircumscribedSphere(labelMap, label):
+	"""This function uses zyx coordinates of a particle's surface voxels to calculate the largest distance between voxels in a particle, 
+	assuming that this distance is the diameter of the smallest sphere which can circumscribed the particle fully.
+	
+	Parameters
+	----------
+	labMap: ndarray of the volume
+	label: integer of the label of interest
+	
+	Returns
+	----------
+	circumscribedDiameter: scalar of the diameter of the smallest sphere which can be circumscribed around the particle
+	
 	"""
-	# Get array of unit vectors
-	# For each unit vector rotate particle around the vector a fixes number of times
-	# For each rotation, compute the length of the particle about x, y and z axes
-	# Keep a tally of all the lengths of the particle and obtain a distribution of particle sizes
-	# pass the feret distribution and extract min, max and median sizes.
+	#Construct an array of surface voxels, centered at the origin
+	
+	surfaceVoxels = getSurfaceVoxelsofParticle( labelMap, label, returnWithLabel = True)
+	
+	zyxofLabel = getZYXLocationOfLabel(surfaceVoxels,label)
+	
+	meanZ, meanY, meanX = getCenterOfGravityFromZYXLocations( zyxLocationData=zyxofLabel )
+
+	meanMatrix = np.zeros_like( zyxofLabel )
+
+	meanMatrix[ :, 0 ] = meanZ
+	meanMatrix[ :, 1 ] = meanY
+	meanMatrix[ :, 2 ] = meanX
+	
+	centeredLocationData = zyxofLabel - meanMatrix
+	
+	distanceData = np.zeros((centeredLocationData.shape[0],1))
+	distanceData[:,0] = (centeredLocationData[:,0]**2 + centeredLocationData[:,1]**2 + centeredLocationData[:,2]**2)**.5
+	
+	furthestVoxel = int( np.where( (distanceData[:,0] - distanceData[:,0].max()) == 0 )[0].min() )
+		
+	z = centeredLocationData[furthestVoxel,0]
+	y = centeredLocationData[furthestVoxel,1]
+	x = centeredLocationData[furthestVoxel,2]
+	
+	furthestVoxelLocation = np.zeros_like( centeredLocationData )
+	furthestVoxelLocation[:,0] = z
+	furthestVoxelLocation[:,1] = y
+	furthestVoxelLocation[:,2] = x
+	
+	comparisonMatrix = centeredLocationData - furthestVoxelLocation
+	diameters = np.zeros((centeredLocationData.shape[0],1))
+		
+	diameters = (comparisonMatrix[:,0]**2 + comparisonMatrix[:,1]**2 + comparisonMatrix[:,2]**2)**.5
+	
+	smallestSphereDiam = diameters.max()
+	
+	return smallestSphereDiam
+
+≈
+def getIrregularityParameter(labelMap, label):
+	"""This function the maximum inscribed and minimum circumscribed spheres to calculate a 3D irregularity parameter.
+	
+	Parameters
+	----------
+	labMap: ndarray of the volume
+	label: integer of the label of interest
+	
+	Returns
+	----------
+	irregularityParameter: scalar of the irregularity parameter
+	
+	"""
+	
+	inscribed = getLargestInscribedSphere(labelMap, label)
+	circumscribed = getSmallestCircumscribedSphere(labelMap, label)
+	irregularityParameter = circumscribed / inscribed
+	
+	return irregularityParameter
+
+
+def getConvexStatistics(labelMap, label):
+	"""This function uses SciPy's convex hull tool to construct a convex hull of a particle and returns its area and volume.
+	ConvexHull uses the Qhull library. Info on the computational geometry algorithm is available at www.qhull.org
+	
+	Parameters
+	----------
+	labMap: ndarray of the volume
+	label: integer of the label of interest
+	
+	Returns
+	----------
+	convexArea: scalar of the convex hull's surface area
+	convexVolume: scalar of the convex hull's volume
+	
+	"""
+	
+	coordinates = getZYXLocationOfLabel(labelMap, label)
+	hull = ConvexHull(coordinates)
+	convexArea = hull.area
+	convexVolume = hull.volume
+	
+	return convexArea, convexVolume
+
+
+def getCroppedLabelMap(labelMap, label, pad=0):
+	"""This function reduces the label map to the label of interest
+	
+	Parameters
+	----------
+	labMap: ndarray of the volume
+	label: integer of the label of interest
+	pad: bool for optional padding using Segment.applyPaddingToLabelledMap
+	
+	Returns
+	----------
+	croppedLabMap: ndarray of the volume of the label map which contains the label of interest and optional padding
+		
+	"""
+	particle = np.zeros_like(labelMap)
+	particle[np.where(labelMap == label)]=label
+	loc = np.where(particle == label)
+	croppedLabMap = particle[ loc[0].min() : loc[0].max()+1,\
+							  loc[1].min() : loc[1].max()+1,\
+							  loc[2].min() : loc[2].max()+1 ] 
+	
+	if pad != 0:
+		croppedLabMap = Segment.applyPaddingToLabelledMap(croppedLabMap,pad) 
+	
+	return croppedLabMap
+
 
 
