@@ -233,7 +233,7 @@ def _readTiffStack(fileLoc='',invImg=False,downSample=False,reduceBitDepth=False
 	if reduceBitDepth == True: image = _reduceBitDepthData(image,saveImg=False)
 
 	# Save image - images will not be saved in the downSample and reduceBitDepth parts of the code
-	if saveImg=True:
+	if saveImg==True:
 		print('... saving file.')
 
 		if downSample == True:
