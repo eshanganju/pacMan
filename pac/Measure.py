@@ -1,4 +1,8 @@
 """Measure module: carries out measurements on the segmented data
+
+Authors:
+	Eshan Ganju
+	Daniel Sinclair
 """
 
 import numpy as np
@@ -1675,7 +1679,7 @@ def getSmallestCircumscribedSphere(labelMap, label):
 	
 	return smallestSphereDiam
 
-≈
+
 def getIrregularityParameter(labelMap, label):
 	"""This function the maximum inscribed and minimum circumscribed spheres to calculate a 3D irregularity parameter.
 	
