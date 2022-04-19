@@ -1164,9 +1164,9 @@ def _generateAndSaveStlFile(labMap, label, padding=10, stepSize = 1, saveImg=Tru
 		return(0)
 	
 	loc = np.where(labMap == label)
-	croppedLabMap = labMap[loc[0].min():loc[0].max(),\
-							loc[1].min():loc[1].max(),\
-							loc[2].min():loc[2].max()]
+	croppedLabMap = labMap[	loc[0].min():loc[0].max()+1,\
+							loc[1].min():loc[1].max()+1,\
+							loc[2].min():loc[2].max()+1]
 							
 	croppedLabMap[np.where(croppedLabMap != label)] = 0
 

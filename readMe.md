@@ -59,3 +59,4 @@ pacMan uses the following libraries:
 
 
 # Future updates
+- GPU processing

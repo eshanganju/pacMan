@@ -3,3 +3,4 @@ miscTempCode/**
 *.csv
 *.tiff
 *.tif
+*.DS_Store
