@@ -23,7 +23,7 @@ TESTING = True				# Keep if TESTING == True: Print('') while testing in function
 
 
 def getPSDAll( labelledMap , calibrationFactor=1.0, getEqsp=True, getCaMax=True,
-				getCaMed=True, getCaMin=True, getFeretMax=True, getFeretMin=True,)			
+				getCaMed=True, getCaMin=True, getFeretMax=True, getFeretMin=True,):			
 	"""This module returns the paricle size distribution for the 6 size
 	parameters commonly used to quantify particle size.
 

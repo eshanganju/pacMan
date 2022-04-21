@@ -22,15 +22,15 @@ ifl = '/home/chawlahpc2adm/Desktop/eshanganju/'
 ofl = '/home/chawlahpc2adm/Desktop/eshanganju/outPut/'
 
 # FileNames and output file prefix
-fileName = 'microFoam_3_Bin_crop-fillHoles.tif'					# Name of binarized tiff file
-dataName = 'microFoam3_H2_RR80'									# Prefix for output files - name it smartly
+fileName = 'microFoam_1_Bin_crop-fillHoles.tif'					# Name of binarized tiff file
+dataName = 'microFoam1_H3_RR80'									# Prefix for output files - name it smartly
 dataFile = ifl + fileName										# The file and location that will be read the bin data
 
 # Calibration
 calVal = 1														# mm/vox - keep this as 1 to get sizes in voxel units
 
 # Analysis parameters
-edmHVal = 2 													# Minimum peak size when locating local maxima in EDM
+edmHVal = 3 													# Minimum peak size when locating local maxima in EDM
 radiusRatioVal = 0.8											# Ratio of area radius to smaller particle radius
 
 #------------------------------------------------------------------------------------------------*
@@ -56,46 +56,49 @@ print('Running analysis')
 # 													outputDir=ofl,
 # 													sampleName=dataName)
 
-subVolumeBinMap = tf.imread(dataFile)//255
+# subVolumeBinMap = tf.imread(dataFile)//255
 
-edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=subVolumeBinMap,
-											scaleUp = int(1),
-											saveImg=True,
-											sampleName=dataName,
-											outputDir=ofl )
+# edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=subVolumeBinMap,
+# 											scaleUp = int(1),
+# 											saveImg=True,
+# 											sampleName=dataName,
+# 											outputDir=ofl )
 
 
-edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
-												h=edmHVal,
-												sampleName=dataName,
-												saveImg=True,
-												outputDir=ofl )
+# edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
+# 												h=edmHVal,
+# 												sampleName=dataName,
+# 												saveImg=True,
+# 												outputDir=ofl )
 
-labMap = Segment.segmentUsingWatershed( binaryMapToSeg=subVolumeBinMap,
-										edmMapForTopo=edmMap,
-										edmPeaksForSeed=edmPeaksMap,
-										sampleName=dataName,
-										saveImg=True,
-										outputDir=ofl,
-										addWatershedLine=False)
+# labMap = Segment.segmentUsingWatershed( binaryMapToSeg=subVolumeBinMap,
+# 										edmMapForTopo=edmMap,
+# 										edmPeaksForSeed=edmPeaksMap,
+# 										sampleName=dataName,
+# 										saveImg=True,
+# 										outputDir=ofl,
+# 										addWatershedLine=False)
 
-corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
-													pad=int(2),
-													areaLimit=700,
-													considerEdgeLabels=True,
-													checkForSmallParticles=True,
-													voxelVolumeThreshold=10,
-													radiusCheck=True,
-													radiusRatioLimit=radiusRatioVal,
-													sampleName=dataName,
-													saveImg=True,
-													outputDir=ofl )
+# corLabMap = Segment.fixErrorsInSegmentation( labelledMapForOSCorr=labMap,
+# 													pad=int(2),
+# 													areaLimit=700,
+# 													considerEdgeLabels=True,
+# 													checkForSmallParticles=True,
+# 													voxelVolumeThreshold=10,
+# 													radiusCheck=True,
+# 													radiusRatioLimit=radiusRatioVal,
+# 													sampleName=dataName,
+# 													saveImg=True,
+# 													outputDir=ofl )
 
-noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLabMap,
-											pad=0,
-											sampleName=dataName,
-											saveImg=True,
-											outputDir=ofl)
+# noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLabMap,
+# 											pad=0,
+# 											sampleName=dataName,
+# 											saveImg=True,
+# 											outputDir=ofl)
+
+noEdgeFileNameToRead = ofl + dataName + '-noEdgeCorrectedLabelMap.tif'
+noEdgeCorLabMap = tf.imread(noEdgeFileNameToRead)
 
 Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis = noEdgeCorLabMap,
 								getCaDia=True,
