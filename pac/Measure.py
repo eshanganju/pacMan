@@ -23,8 +23,7 @@ TESTING = True				# Keep if TESTING == True: Print('') while testing in function
 
 
 def getPSDAll( labelledMap , calibrationFactor=1.0, getEqsp=True, getCaMax=True,
-				getCaMed=True, getCaMin=True, getFeretMax=True, getFeretMin=True,
-				saveData=True, sampleName='', outputDir=''):
+				getCaMed=True, getCaMin=True, getFeretMax=True, getFeretMin=True,)			
 	"""This module returns the paricle size distribution for the 6 size
 	parameters commonly used to quantify particle size.
 
@@ -117,6 +116,7 @@ def getPSDAll( labelledMap , calibrationFactor=1.0, getEqsp=True, getCaMax=True,
 
 
 def getParticleSizeArray( labelledMapForParticleSizeAnalysis, calibrationFactor=1,
+							getCaDia=True,getFeretDia=True,
 							saveData=False, sampleName='', outputDir=''):
 	"""Computes particle size parameters for all the labels in the segmented data
 
@@ -134,9 +134,9 @@ def getParticleSizeArray( labelledMapForParticleSizeAnalysis, calibrationFactor=
 
 	Return:
 	particleSizeDataSummary : unsigned float ndarray
-	    Particle size array containing columns
-	    [0] Label index, [1] Volume, [2] Eqsp, [3] Centroidal - max,
-	    [4] Centroidal - med, [5] Centroidal - min, [6] Feret-max X, [7] Feret -min X
+		Particle size array containing columns
+		[0] Label index, [1] Volume, [2] Eqsp, [3] Centroidal - max,
+		[4] Centroidal - med, [5] Centroidal - min, [6] Feret-max X, [7] Feret -min X
 	"""
 	numberOfParticles = int( labelledMapForParticleSizeAnalysis.max() )
 
@@ -148,16 +148,17 @@ def getParticleSizeArray( labelledMapForParticleSizeAnalysis, calibrationFactor=
 		print( "Computing size of", particleNum, "/", numberOfParticles, "particle" )
 		particleSizeDataSummary[particleNum, 0] = particleNum
 
-		# Equivalent sphere diameter
+		# Equivalent sphere diameters
 		vol, eqspDia = getEqspDia( labelMap=labelledMapForParticleSizeAnalysis, label=int(particleNum) )
 		particleSizeDataSummary[particleNum, 1] = vol * (calibrationFactor**3)
 		particleSizeDataSummary[particleNum, 2] = eqspDia * calibrationFactor
 
 		# Centroidal axes lengths
-		caMax, caMed, caMin = getPrincipalAxesLengths( labelMap=labelledMapForParticleSizeAnalysis,label=int(particleNum) )
-		particleSizeDataSummary[particleNum, 3] = caMax * calibrationFactor
-		particleSizeDataSummary[particleNum, 4] = caMed * calibrationFactor
-		particleSizeDataSummary[particleNum, 5] = caMin * calibrationFactor
+		if getCaDia == True:
+			caMax, caMed, caMin = getPrincipalAxesLengths( labelMap=labelledMapForParticleSizeAnalysis,label=int(particleNum) )
+			particleSizeDataSummary[particleNum, 3] = caMax * calibrationFactor
+			particleSizeDataSummary[particleNum, 4] = caMed * calibrationFactor
+			particleSizeDataSummary[particleNum, 5] = caMin * calibrationFactor
 
 		# TODO: Fix the feret diameter issue
 		"""
@@ -165,17 +166,15 @@ def getParticleSizeArray( labelledMapForParticleSizeAnalysis, calibrationFactor=
 		"""
 
 		# Feret diameters
-		# feretMax, feretMin = getMinMaxFeretDia( labelMap=labelledMapForParticleSizeAnalysis,
+		# feretMax, feretMin = getMinMaxFeretDia( labelMap=labelled *-MapForParticleSizeAnalysis,
 		#                                         label=int(particleNum), numOrts=100, numRots=10)
 
-		feretDia = getFeretDiametersSPAM( lab=labelledMapForParticleSizeAnalysis,
-		                                  labelList=int(particleNum)  )
-
-		feretMax = feretDia [0,0]
-		feretMin = feretDia [0,1]
-
-		particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
-		particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
+		if getFeretDia == True:
+			feretDia = getFeretDiametersSPAM( lab=labelledMapForParticleSizeAnalysis, labelList=int(particleNum)  )
+			feretMax = feretDia [0,0]
+			feretMin = feretDia [0,1]
+			particleSizeDataSummary[particleNum, 6] = feretMax * calibrationFactor
+			particleSizeDataSummary[particleNum, 7] = feretMin * calibrationFactor
 
 	# Removing the extra zero in the summary (first row)
 	particleSizeDataSummary = np.delete( particleSizeDataSummary, 0, 0 )
@@ -314,7 +313,7 @@ def getPrincipalAxesLengths( labelMap, label ):
 
 
 # TODO: This is messy - needs to be cleaned
-def _getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass=None, numberOfOrientations=100,
+def getFeretDiametersSPAM(lab, labelList=None, boundingBoxes=None, centresOfMass=None, numberOfOrientations=100,
 							margin=0, interpolationOrder=0, returnOrts = False):
 	"""
 	Calculates (binary) feret diameters (caliper lengths) over a number of equally-spaced orientations
@@ -535,10 +534,10 @@ def getMinMaxFeretDia( labelMap, label, numOrts=100, numRots=10 ):
 	label : unsigned integer
 	
 	numOrts: unsigned integer
-	    number of orientations about which particle will be rotated
+		number of orientations about which particle will be rotated
 	
 	numRots: unsigned integer
-	    number of rotation angles about each orientation
+		number of rotation angles about each orientation
 	
 	Return
 	------

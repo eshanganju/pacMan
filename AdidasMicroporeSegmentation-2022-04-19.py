@@ -18,19 +18,19 @@ import tifffile as tf 	# image import
 #------------------------------------------------------------------------------------------------*
 
 # Input and output locations: 
-ifl = '/home/eg/Documents/Adidas-Microfoam-Analysis-2022-04-19/'
-ofl = '/home/eg/Documents/Adidas-Microfoam-Analysis-2022-04-19/output/'
+ifl = '/home/chawlahpc2adm/Desktop/eshanganju/'
+ofl = '/home/chawlahpc2adm/Desktop/eshanganju/outPut/'
 
 # FileNames and output file prefix
-fileName = 'microFoam_1_Bin.tif'								# Name of binarized tiff file
-dataName = 'microFoam1_H4_RR80'											# Prefix for output files - name it smartly
+fileName = 'microFoam_3_Bin_crop-fillHoles.tif'					# Name of binarized tiff file
+dataName = 'microFoam3_H2_RR80'									# Prefix for output files - name it smartly
 dataFile = ifl + fileName										# The file and location that will be read the bin data
 
 # Calibration
 calVal = 1														# mm/vox - keep this as 1 to get sizes in voxel units
 
 # Analysis parameters
-edmHVal = 4 													# Minimum peak size when locating local maxima in EDM
+edmHVal = 2 													# Minimum peak size when locating local maxima in EDM
 radiusRatioVal = 0.8											# Ratio of area radius to smaller particle radius
 
 #------------------------------------------------------------------------------------------------*
@@ -60,14 +60,15 @@ subVolumeBinMap = tf.imread(dataFile)//255
 
 edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=subVolumeBinMap,
 											scaleUp = int(1),
-											saveImg=False,
+											saveImg=True,
 											sampleName=dataName,
 											outputDir=ofl )
+
 
 edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
 												h=edmHVal,
 												sampleName=dataName,
-												saveImg=False,
+												saveImg=True,
 												outputDir=ofl )
 
 labMap = Segment.segmentUsingWatershed( binaryMapToSeg=subVolumeBinMap,
@@ -97,6 +98,8 @@ noEdgeCorLabMap = Segment.removeEdgeLabels( labelledMapForEdgeLabelRemoval=corLa
 											outputDir=ofl)
 
 Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis = noEdgeCorLabMap,
+								getCaDia=True,
+								getFeretDia=False,
 								calibrationFactor=calVal,
 								saveData=True,
 								sampleName=dataName,
@@ -124,6 +127,8 @@ Plot.plotOrientationsSPAM( ortsTable[:,1:],
 							figYSize = 4.8,
 							figFontSize = 15,
 							labelName = 'Number of particles')
+
+
 
 #------------------------------------------------------------------------------------------------*
 #--------------------------------------------CODE------------------------------------------------*
