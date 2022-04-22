@@ -319,7 +319,7 @@ def plotOrientationsSPAM(orientations_zyx,
 		norm = matplotlib.colors.Normalize( vmin=binValueMin, vmax=binValueMax )
 
 		ax3 = fig.add_axes([0.9, 0.1, 0.03, 0.8])
-		cb1 = matplotlib.colorbar.ColorbarBase( ax3, cmap=cmap, norm=norm )
+		cb1 = matplotlib.colorbar.ColorbarBase( ax3, cmap=cmap, norm=norm, ticks=[0,2,4,6,8,10,12,14,16,18,20])
 		cb1.set_label(label=labelName, size=figFontSize)
 		cb1.ax.tick_params(labelsize=figFontSize)
 
