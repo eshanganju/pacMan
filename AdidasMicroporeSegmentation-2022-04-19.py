@@ -96,22 +96,25 @@ print('Running analysis')
 # 											sampleName=dataName,
 # 											saveImg=True,
 # 											outputDir=ofl)
+# 
+# noEdgeFileNameToRead = ofl + dataName + '-noEdgeCorrectedLabelMap.tif'
+# noEdgeCorLabMap = tf.imread(noEdgeFileNameToRead)
 
-noEdgeFileNameToRead = ofl + dataName + '-noEdgeCorrectedLabelMap.tif'
-noEdgeCorLabMap = tf.imread(noEdgeFileNameToRead)
+# Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis = noEdgeCorLabMap,
+# 								getCaDia=True,
+# 								getFeretDia=False,
+# 								calibrationFactor=calVal,
+# 								saveData=True,
+# 								sampleName=dataName,
+# 								outputDir=ofl )
 
-Measure.getParticleSizeArray( labelledMapForParticleSizeAnalysis = noEdgeCorLabMap,
-								getCaDia=True,
-								getFeretDia=False,
-								calibrationFactor=calVal,
-								saveData=True,
-								sampleName=dataName,
-								outputDir=ofl )
+# ortsTable = Measure.getPrincipalAxesOrtTable( labelMapForParticleOrientation = noEdgeCorLabMap,
+# 												saveData=True,
+# 												sampleName=dataName,
+# 												outputDir=ofl)
 
-ortsTable = Measure.getPrincipalAxesOrtTable( labelMapForParticleOrientation = noEdgeCorLabMap,
-												saveData=True,
-												sampleName=dataName,
-												outputDir=ofl)
+ortsTableName = ofl + dataName + '-particleOrtList.csv'
+ortsTable = np.loadtxt( ortsTableName, delimiter=',' )
 
 Plot.plotOrientationsSPAM( ortsTable[:,1:],
 							projection="lambert",
@@ -119,8 +122,8 @@ Plot.plotOrientationsSPAM( ortsTable[:,1:],
 							binValueMin=0,
 							binValueMax=20,
 							binNormalisation=False,
-							numberOfRings=9,
-							pointMarkerSize=8,
+							numberOfRings=12,
+							pointMarkerSize=5,
 							cmap=matplotlib.pyplot.cm.Reds,
 							title="",
 							subtitle={"points":"","bins":""},
