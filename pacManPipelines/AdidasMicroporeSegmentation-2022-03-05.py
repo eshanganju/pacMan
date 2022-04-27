@@ -17,16 +17,23 @@ import matplotlib		# Color map - for orientation plots
 #------------------------------------------------------------------------------------------------*
 
 # Input and output locations: 
-ifl = ''
-ofl = ''
+ifl = '/home/eg/Desktop/SicData-2021-10-17/NewAnalysis/DES/'
+ofl = '/home/eg/pacOutput/FGM-3-2021-11-11-Analysis/DES/05_092_AllPtcl/'
 
 # FileNames and output file prefix
-fileName = ''													# Name of binarized tiff file
-dataName = 'Adidas-Microfoam'									# Prefix for output files - name it smartly
+fileName = 'SiC_2_CMASK.tif'									# Name of binarized tiff file
+dataName = 'FGM3-DES_3um_05h_rr092_all'							# Prefix for output files - name it smartly
 dataFile = ifl + fileName										# The file and location that will be read the bin data
 
 # Calibration
-calVal = 10.791													# mm/vox - keep this as 1 to get sizes in voxel units
+calVal = 1														# mm/vox - keep this as 1 to get sizes in voxel units
+
+# Subvolume extraction from scan
+globalZStart = 240 												# The upper end of the first slice in Z direction
+csStartX = 160													# Top-left corner X value - check from imageJ
+csStartY = 140 													# Top left corner Y value - check from imageJ
+
+subVolumeEdgeLength = 171									 	# Length (calibrated units) of the cubical subvolume
 
 # Analysis parameters
 edmHVal = 0.5 													# Minimum peak size when locating local maxima in EDM
@@ -42,24 +49,20 @@ radiusRatioVal = 0.92											# Ratio of area radius to smaller particle radiu
 print('Running analysis')
 
 
-# Inputting cropped image - from ImageJ
-gliMap = Read._readTiffStack(fileLoc='',
-								invImg=False,
-								downSample=False,
-								reduceBitDepth=False,
-								saveImg=False,
-								outputDir=ofl,
-								sampleName=dataName)
+subVolumeBinMap = Read.extractSubregionFromTiffFile(fileDir=dataFile,
+													Z=globalZStart,
+													Y=csStartY,
+													X=csStartX,
+													lngt=subVolumeEdgeLength,
+													calib=calVal,
+													zReference='low',
+													xyReference='topLeft',
+													invImg=False,
+													saveImg=True,
+													outputDir=ofl,
+													sampleName=dataName)
 
-# Bimodal distribution allows us to use OTSU's method
-binMap = Segment.binarizeAccordingToOtsu( gliMapToBinarize=gliMap,
-											returnThresholdVal=False,
-											sampleName=dataName,
-											saveImg=True,
-											saveData=True,
-											outputDir=ofl)
-
-edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=binMap,
+edmMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=subVolumeBinMap,
 											scaleUp = int(1),
 											saveImg=False,
 											sampleName=dataName,
@@ -71,7 +74,7 @@ edmPeaksMap = Segment.obtainLocalMaximaMarkers( edMapForPeaks=edmMap,
 												saveImg=False,
 												outputDir=ofl )
 
-labMap = Segment.segmentUsingWatershed( binaryMapToSeg=binMap,
+labMap = Segment.segmentUsingWatershed( binaryMapToSeg=subVolumeBinMap,
 										edmMapForTopo=edmMap,
 										edmPeaksForSeed=edmPeaksMap,
 										sampleName=dataName,
