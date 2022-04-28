@@ -19,6 +19,7 @@ import math
 from skimage.measure import marching_cubes, mesh_surface_area
 from stl import mesh
 import trimesh
+from numba import jit
 
 from pac import Measure
 
@@ -1017,7 +1018,7 @@ def _filterSizeShapeOrt(labMap, minSize=0, maxSize=0, minAR=0, maxAR=0, minIncl=
 		tf.imsave( saveFileName, filteredLabelMap )
 
 	return filteredLabelMap
-				
+
 
 def _resetLabelNumbering(labMap, sampleName='',saveImg=False, saveLabelKey=True, outputDir=''):
 	"""This function takes in a label map and resets the numbering of the labels to remove missing labels
@@ -1071,7 +1072,7 @@ def _resetLabelNumbering(labMap, sampleName='',saveImg=False, saveLabelKey=True,
 		dictionaryOfArrays[:,0] = originalLabelArray
 		dictionaryOfArrays[:,1] = currentLabelArray
 		fileSaveName = outputDir + sampleName + '-arrayKey.txt'
-		np.savetxt(fileSaveName,dictionaryOfArrays,delimiter=',')	
+		np.savetxt(fileSaveName,dictionaryOfArrays,delimiter=',')   
 	
 	return correctedLabelMap
 
@@ -1164,7 +1165,7 @@ def _generateAndSaveStlFile(labMap, label, padding=10, stepSize = 1, saveImg=Tru
 		return(0)
 	
 	loc = np.where(labMap == label)
-	croppedLabMap = labMap[	loc[0].min():loc[0].max()+1,\
+	croppedLabMap = labMap[ loc[0].min():loc[0].max()+1,\
 							loc[1].min():loc[1].max()+1,\
 							loc[2].min():loc[2].max()+1]
 							
@@ -1178,7 +1179,7 @@ def _generateAndSaveStlFile(labMap, label, padding=10, stepSize = 1, saveImg=Tru
 	mesh = trimesh.Trimesh(verts,faces)
 	
 	smoothMesh = trimesh.smoothing.filter_humphrey(mesh)
-    		
+			
 	sampleName = outputDir + sampleName + '-' + str(label) + '.stl'
 	smoothMesh.export(sampleName) 
 
@@ -1193,7 +1194,7 @@ def _generateInPlaceStlFile(labMap, stepSize = 1, saveImg=True, sampleName='', o
 	mesh = trimesh.Trimesh(verts,faces)
 	
 	smoothMesh = trimesh.smoothing.filter_humphrey(mesh)
-    		
+			
 	sampleName = outputDir + sampleName + '.stl'
 	smoothMesh.export(sampleName) 
 
@@ -1252,3 +1253,100 @@ def _hideParticlesAccordingToAspectRatioAndMakeSTLs(labMap, minAR=1, maxAR=5,  s
 		tf.imsave( fileNameCleaned,cleanedLabelMap )
 
 	generateInPlaceStlFile( labMap=unitCleanedLabelMap, stepSize = 1, saveImg=True, sampleName=(sampleName+'-AR'+str(minAR)+'-AR'+str(maxAR)), outputDir=outputDir )
+
+
+def _getProjectionTiffStacks(labelledMap, saveData=True, fileName='', outputDir='', size=250, normalize=True):
+	"""Abstracts 3D particles as 3-channel 2D projections for CNN training
+
+	Authors:
+	Eshan Ganju and Daniel Sinclair
+
+	Parameters
+	----------
+
+
+	Returns
+	-------
+
+	"""
+	numParticles = int( labelledMap.max() )
+
+	particleProjectionStack = np.zeros((1,size,size,3))
+
+	for label in range( 1, numParticles + 1 ):
+		print('Checking label:' + str(label) + '/' + str(numParticles))
+		
+		# extract volume around particle
+		paddedNormParticle = cropAndPadParticle( labelledMap,label,size,
+													saveData=True,
+													fileName=fileName,
+													outputDir=outputDir)
+
+		if TESTING == True:
+			saveFileName = outputDir + fileName + '-' + str(np.round(label)) +'-Image.tif'
+			tf.imwrite( saveFileName,paddedNormParticle.astype('float') )
+		
+		# get projections
+		particleProjectionStack = takeProjections( paddedNormParticle, 
+																	size=size,
+																	normalize=True )
+		
+		saveNameCurrent=outputDir + fileName + '-' + str(np.round(label)) +'-ImageStack.tif'
+		
+		tf.imwrite(saveNameCurrent,particleProjectionStack.astype('float'))
+
+
+@jit(nopython=True)
+def cropAndPadParticle(labelledMap,label,size, saveData=True,fileName='',outputDir=''):
+	"""
+	"""
+	loc = np.where(labelledMap == label)
+	dimZ = int(loc[0].max() - loc[0].min())
+	dimY = int(loc[1].max() - loc[1].min())
+	dimX = int(loc[2].max() - loc[2].min())
+		
+	padZ = int(np.round( ( size - dimZ ) / 2 ))
+	padY = int(np.round( ( size - dimY ) / 2 ))
+	padX = int(np.round( ( size - dimX ) / 2 ))
+	
+
+	croppedParticle = labelledMap[ loc[0].min() : loc[0].max()+1,
+									loc[1].min() : loc[1].max()+1,
+									loc[2].min() : loc[2].max()+1 ]
+
+	paddedParticle = np.zeros( ( size,size,size ) )
+	
+	paddedParticle[ padZ : dimZ+padZ+1, padY : dimY+padY+1, padX : dimX+padX+1] = croppedParticle
+
+	cleanedPaddedParticle = removeOtherLabels(paddedParticle, label)
+
+	# convert label number to ones
+	normalizedCleanedPaddedParticle = cleanedPaddedParticle//label
+
+	return normalizedCleanedPaddedParticle
+
+
+@jit(nopython=True)
+def removeOtherLabels(paddedParticle, label):
+	"""
+	"""
+	return np.where(np.logical_or(paddedParticle > label, paddedParticle < label), np.zeros_like(paddedParticle), paddedParticle)
+
+
+@jit(nopython=True)
+def takeProjections(paddedNormParticle,size,normalize):
+	"""
+	"""
+	particleProjectionParticle = np.zeros((1,size,size,3))
+
+	for direction in range(0,3):
+
+		proj = np.sum( paddedNormParticle, axis=direction)
+		
+		if normalize == True:
+			proj = proj/proj.max()
+		
+		particleProjectionParticle[:,:,:,direction] = proj
+
+
+	return particleProjectionParticle
