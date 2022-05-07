@@ -1337,7 +1337,7 @@ def removeOtherLabels(paddedParticle, label):
 def takeProjections(paddedNormParticle,size,normalize):
 	"""
 	"""
-	particleProjectionParticle = np.zeros((1,size,size,3))
+	particleProjectionParticle = np.zeros((size,size,3))
 
 	for direction in range(0,3):
 
@@ -1346,7 +1346,8 @@ def takeProjections(paddedNormParticle,size,normalize):
 		if normalize == True:
 			proj = proj/proj.max()
 		
-		particleProjectionParticle[:,:,:,direction] = proj
+		particleProjectionParticle[:,:,direction] = proj
 
 
 	return particleProjectionParticle
+
