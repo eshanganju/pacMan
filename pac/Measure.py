@@ -1751,4 +1751,8 @@ def getCroppedLabelMap(labelMap, label, pad=0):
 	return croppedLabMap
 
 
+def computeVolumeFractionsOfLabels(labelMap, labelList, saveData=True):
+	"""
+	"""
+
 

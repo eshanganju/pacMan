@@ -1199,7 +1199,7 @@ def _generateInPlaceStlFile(labMap, stepSize = 1, saveImg=True, sampleName='', o
 	smoothMesh.export(sampleName) 
 
 
-def _hideParticlesAccordingToSizeAndMakeSTLs(labMap, minSize=10, maxSize=100,  saveImg=True, sampleName='', outputDir=''):
+def _hideParticlesAccordingToSizeAndMakeSTLs(labMap, minSize=10, maxSize=100, saveImg=True, sampleName='', outputDir=''):
 	"""Checks Label map and hides the labels with size in the (minSize,maxSize) range
 
 	The output is a label map and an stl map with
@@ -1350,4 +1350,26 @@ def takeProjections(paddedNormParticle,size,normalize):
 
 
 	return particleProjectionParticle
+
+@jit(npython=True)
+def segmentUsingNoise(gliMap, bitdepth=16, patchsize=5, sdThreshold=0, saveImg=True, sampleName='', outputDir=''):
+		"""
+		"""
+		segmentationAcceptable = False
+
+		# Get segmentation from central region of the gli map and choose params
+
+			# Extract volume from the data with width = patch size
+
+			# For given patch size compute sd map
+
+			# Plot heatmap of the SD of the central slice overlain with the GLI cross-section to judge if the chosen thresholds are ok
+
+			# Plot segmentation of the central slice based on the chosen patch size and sdthreshold
+
+			# Compute the volume fractions using measure toolbox
+
+		# For chosen params, segment the entire image
+
+			# 
 
