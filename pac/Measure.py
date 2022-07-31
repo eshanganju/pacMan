@@ -1756,3 +1756,6 @@ def computeVolumeFractionsOfLabels(labelMap, labelList, saveData=True):
 	"""
 
 
+def computeGrainBoundayComparisonStatistics():
+	"""
+	"""
