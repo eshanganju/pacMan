@@ -17,7 +17,6 @@ import spam.label as slab
 import time
 import math
 from skimage.measure import marching_cubes, mesh_surface_area
-from stl import mesh
 import trimesh
 from numba import jit
 
@@ -1351,6 +1350,7 @@ def takeProjections(paddedNormParticle,size,normalize):
 
 	return particleProjectionParticle
 
+
 @jit(npython=True)
 def segmentUsingNoise(gliMap, bitdepth=16, patchsize=5, sdThreshold=0, saveImg=True, sampleName='', outputDir=''):
 		"""
@@ -1372,4 +1372,5 @@ def segmentUsingNoise(gliMap, bitdepth=16, patchsize=5, sdThreshold=0, saveImg=T
 		# For chosen params, segment the entire image
 
 			# 
+
 
