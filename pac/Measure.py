@@ -16,9 +16,10 @@ from uncertainties import unumpy as unp
 from uncertainties import ufloat
 from uncertainties.umath import *
 from pac import Segment
-from skimage.measure import marching_cubes, mesh_surface_area
+from skimage.measure import marching_cubes, mesh_surface_area, regionprops
+import tifffile as tf
 
-VERBOSE = True				# Show all the text when running the functions
+VERBOSE = False				# Show all the text when running the functions
 TESTING = True				# Keep if TESTING == True: Print('') while testing in function with "_" prefix 
 
 
@@ -1755,18 +1756,35 @@ def computeVolumeFractionsOfLabels(labelMap, labelList, saveData=True):
 	"""
 	"""
 
-#Todo: Clean this up. 
-def computeGrainBoundayDistances(referenceMap, gbMap, 
-									saveData=True, dataName='', outputDir ):
+#Todo: Test cleaned version
+def computeGrainBoundayDistanceStats(referenceMap, gbMap, erodeReference=False, erosionSteps=0,
+										saveData=True, dataName='', outputDir='' ):
+	"""This code assess how close the boundaries of a grain are to a reference grain
+
+	Parameters
+	----------
+	referenceMap: The grain boundary reference map
+	gbMap: The grain map that is being assessed
+
+	Returns
+	-------
+	multiMap: The multiplication of the EDM of reference map and gbMap
+	flatMultiMap: The 
+
 	"""
-	"""
+	if erodeReference == True:
+		referenceMap = erode(referenceMap,iterations=erosionSteps)
 
 	# Normalize values
-	referenceMap = referenceMap // referenceMap.max()
+	invertedReferenceMap = referenceMap // referenceMap.max()
+	referenceMap = np.zeros_like(invertedReferenceMap)
+	referenceMap[np.where(invertedReferenceMap == 0)] = 1
+
 	gbMap = (gbMap // gbMap.max()).astype('float')
 	
 	# Conversion done to prevent "too many zeros"
 	gbMap[np.where(gbMap == 0)] = np.nan
+
 
 	# Compute ED map of the reference map
 	edmReferenceMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=referenceMap, 
@@ -1778,36 +1796,65 @@ def computeGrainBoundayDistances(referenceMap, gbMap,
 	# Get multiplication of gb maps with ref maps
 	multiMap = (edmReferenceMap * gbMap).astype('float')
 
-	# Save multiplication of gb maps with ref maps
-	if saveData = True:
-		tf.imwrite(outputDir + dataName + 'multiMap.tif', multiMap.astype('float'))
-
-	# Get distance statistics
+	# Get distances
 	flatMultiMap = np.ndarray.flatten(multiMap)
-
 	flatMultiMap = flatMultiMap[~np.isnan(flatMultiMap)]
 
+	# Save multiMap and the flattenned map
 	if saveData == True:
 		np.savetxt( outputDir + dataName + '-GB_DIST.csv', flatMultiMap, delimiter=',')
+		tf.imwrite(outputDir + dataName + 'multiMap.tif', multiMap.astype('float'))
 
-	return flatMultiMap
+	# Compute dist statistics
+	minDist = np.nanmin(flatMultiMap)
+	maxDist = np.nanmax(flatMultiMap)
+	avgDist = np.nanmean(flatMultiMap) 
+	sdDist = np.nanstd(flatMultiMap)
+
+	return minDist, maxDist, avgDist, sdDist 
+
 	
+def compute2DEqcir(binMap):
+	"""Computes the equivalent circular diameter of the binary image
+	"""
+	binMap = binMap // binMap.max()
+	area = binMap.sum()
+	diameter = (4*area/math.pi)**0.5
+
+	return diameter
+
+
+def compute2DCentroid(binMap):
+	"""Centroid y and x location
+	"""
+	props = regionprops(label_image=binMap)
+	return props[0].centroid[0], props[0].centroid[1]
+
+
+def compute2DAR(binMap):
+	"""Compute the ratio of the major axes to the minor axis
+	"""
+	props = regionprops(label_image=binMap)
+	ar = props[0].axis_major_length/props[0].axis_minor_length
+	return ar 
 
 
 
-def compute2DEqsp():
+def computeIOU(binMap1, binMap2):
+	"""Simple computation for intersection over union of binary maps
 	"""
-	"""
+	binMap1=binMap1//binMap1.max()
+	binMap2=binMap2//binMap2.max()
 
-def compute2DFeretDiameters():
-	"""
-	"""
+	area1 = binMap1.sum()
+	area2 = binMap2.sum()
 
-def compute2DCASizes():
-	"""
-	"""
+	intersectionMap = (binMap1+binMap2)//2
 
-def computeIOU():
-	"""
-	"""
+	intersection = intersectionMap.sum()
+	union = area1 + area2 - intersection
+
+	iou = intersection/union
+
+	return iou
 

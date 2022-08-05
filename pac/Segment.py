@@ -23,7 +23,7 @@ from numba import jit
 from pac import Measure
 
 # This is to plot all the text when running the functions
-VERBOSE = True
+VERBOSE = False
 TESTING = True
 
 
@@ -380,7 +380,7 @@ def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1),
 	if scaleUp!=0 :
 		edMap =  edMap * scaleUp
 
-	print( "EDM Created" )
+	if VERBOSE: print( "EDM Created" )
 
 	if saveImg == True:
 		if VERBOSE: print('\nSaving EDM map...')
