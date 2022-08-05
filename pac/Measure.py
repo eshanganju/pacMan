@@ -1755,7 +1755,59 @@ def computeVolumeFractionsOfLabels(labelMap, labelList, saveData=True):
 	"""
 	"""
 
+#Todo: Clean this up. 
+def computeGrainBoundayDistances(referenceMap, gbMap, 
+									saveData=True, dataName='', outputDir ):
+	"""
+	"""
 
-def computeGrainBoundayComparisonStatistics():
+	# Normalize values
+	referenceMap = referenceMap // referenceMap.max()
+	gbMap = (gbMap // gbMap.max()).astype('float')
+	
+	# Conversion done to prevent "too many zeros"
+	gbMap[np.where(gbMap == 0)] = np.nan
+
+	# Compute ED map of the reference map
+	edmReferenceMap = Segment.obtainEuclidDistanceMap( binaryMapForEDM=referenceMap, 
+														scaleUp = int(1), 
+														saveImg=saveData, 
+														sampleName=dataName, 
+														outputDir=outputDir)
+
+	# Get multiplication of gb maps with ref maps
+	multiMap = (edmReferenceMap * gbMap).astype('float')
+
+	# Save multiplication of gb maps with ref maps
+	if saveData = True:
+		tf.imwrite(outputDir + dataName + 'multiMap.tif', multiMap.astype('float'))
+
+	# Get distance statistics
+	flatMultiMap = np.ndarray.flatten(multiMap)
+
+	flatMultiMap = flatMultiMap[~np.isnan(flatMultiMap)]
+
+	if saveData == True:
+		np.savetxt( outputDir + dataName + '-GB_DIST.csv', flatMultiMap, delimiter=',')
+
+	return flatMultiMap
+	
+
+
+
+def compute2DEqsp():
 	"""
 	"""
+
+def compute2DFeretDiameters():
+	"""
+	"""
+
+def compute2DCASizes():
+	"""
+	"""
+
+def computeIOU():
+	"""
+	"""
+
