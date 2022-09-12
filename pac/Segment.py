@@ -23,7 +23,7 @@ from numba import jit
 from pac import Measure
 
 # This is to plot all the text when running the functions
-VERBOSE = False
+VERBOSE = True
 TESTING = True
 
 
