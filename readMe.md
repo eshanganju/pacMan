@@ -1,6 +1,6 @@
-# pacMan
+# pac
 
-(ParticleAnalysisCodeMadebyAN)
+(ParticleAnalysisCode)
 
 This code is for the analysis of tomography data.
 
