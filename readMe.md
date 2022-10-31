@@ -7,8 +7,6 @@ This code is for the analysis of tomography data.
 The code can read, segment, and analyze tomography data from a multitude of
 sources.
 
-No oops just simple functional programming - might update in future.
-
 The main functionalities include:
 - Reading and cropping XCT data
 - Filtering the XCT data
