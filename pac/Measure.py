@@ -1839,7 +1839,6 @@ def compute2DAR(binMap):
 	return ar 
 
 
-
 def computeIOU(binMap1, binMap2):
 	"""Simple computation for intersection over union of binary maps
 	"""
@@ -1857,4 +1856,3 @@ def computeIOU(binMap1, binMap2):
 	iou = intersection/union
 
 	return iou
-
