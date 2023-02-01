@@ -1,9 +1,7 @@
 """
 """
 
-=======
 from pac import Measure
-
 from pac import Segment
 import numpy as np
 import tifffile as tf
@@ -11,7 +9,6 @@ from skimage.morphology import skeletonize
 import skimage.measure
 from scipy.spatial import ConvexHull
 from scipy import ndimage
-
 from skan import Skeleton, summarize
 import pandas as pd
 
@@ -71,7 +68,7 @@ def analyzeParticles(labMapLoc, sampleName='', saveData=True, outputDir='',):
 		print('\tCropping')
 		ptcl = Segment.cropAndPadParticle(labelledMap=clm,
 											label=ptclNo,
-											size= 500,
+											pad= 20,
 											saveData=True,
 											fileName= currFileName,
 											outputDir=ofl)

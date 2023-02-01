@@ -1296,11 +1296,7 @@ def _getProjectionTiffStacks(labelledMap, saveData=True, fileName='', outputDir=
 
 
 @jit(nopython=True)
-<<<<<<< HEAD
-def cropAndPadParticle(labelledMap,label,size=500, saveData=True,fileName='',outputDir=''):
-=======
-def cropAndPadParticle(labelledMap,label, pad=5, saveData=True,fileName='',outputDir=''):
->>>>>>> 4ec64947e7b58718163c43be369dfe9a13183132
+def cropAndPadParticle(labelledMap,label,pad, saveData=True,fileName='',outputDir=''):
 	"""
 	"""
 
