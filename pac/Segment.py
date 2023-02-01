@@ -17,14 +17,13 @@ import spam.label as slab
 import time
 import math
 from skimage.measure import marching_cubes, mesh_surface_area
-from stl import mesh
 import trimesh
 from numba import jit
 
 from pac import Measure
 
 # This is to plot all the text when running the functions
-VERBOSE = True
+VERBOSE = False
 TESTING = True
 
 
@@ -381,7 +380,7 @@ def obtainEuclidDistanceMap( binaryMapForEDM, scaleUp = int(1),
 	if scaleUp!=0 :
 		edMap =  edMap * scaleUp
 
-	print( "EDM Created" )
+	if VERBOSE: print( "EDM Created" )
 
 	if saveImg == True:
 		if VERBOSE: print('\nSaving EDM map...')
@@ -1187,7 +1186,7 @@ def _generateAndSaveStlFile(labMap, label, padding=10, stepSize = 1, saveImg=Tru
 def _generateInPlaceStlFile(labMap, stepSize = 1, saveImg=True, sampleName='', outputDir=''):
 	"""Generate in place stl
 	"""
-	print('Generating stl' )
+	print('\tGenerating stl' )
 	
 	verts, faces, normals, values = marching_cubes( labMap, step_size=stepSize)
 
@@ -1199,7 +1198,7 @@ def _generateInPlaceStlFile(labMap, stepSize = 1, saveImg=True, sampleName='', o
 	smoothMesh.export(sampleName) 
 
 
-def _hideParticlesAccordingToSizeAndMakeSTLs(labMap, minSize=10, maxSize=100,  saveImg=True, sampleName='', outputDir=''):
+def _hideParticlesAccordingToSizeAndMakeSTLs(labMap, minSize=10, maxSize=100, saveImg=True, sampleName='', outputDir=''):
 	"""Checks Label map and hides the labels with size in the (minSize,maxSize) range
 
 	The output is a label map and an stl map with
@@ -1297,7 +1296,11 @@ def _getProjectionTiffStacks(labelledMap, saveData=True, fileName='', outputDir=
 
 
 @jit(nopython=True)
+<<<<<<< HEAD
 def cropAndPadParticle(labelledMap,label,size=500, saveData=True,fileName='',outputDir=''):
+=======
+def cropAndPadParticle(labelledMap,label, pad=5, saveData=True,fileName='',outputDir=''):
+>>>>>>> 4ec64947e7b58718163c43be369dfe9a13183132
 	"""
 	"""
 
@@ -1305,19 +1308,18 @@ def cropAndPadParticle(labelledMap,label,size=500, saveData=True,fileName='',out
 	dimZ = int(loc[0].max() - loc[0].min())
 	dimY = int(loc[1].max() - loc[1].min())
 	dimX = int(loc[2].max() - loc[2].min())
-		
-	padZ = int(np.round( ( size - dimZ ) / 2 ))
-	padY = int(np.round( ( size - dimY ) / 2 ))
-	padX = int(np.round( ( size - dimX ) / 2 ))
 	
-
 	croppedParticle = labelledMap[ loc[0].min() : loc[0].max()+1,
 									loc[1].min() : loc[1].max()+1,
 									loc[2].min() : loc[2].max()+1 ]
 
-	paddedParticle = np.zeros( ( size,size,size ) )
+	sizeZ = dimZ + 2 * pad
+	sizeY = dimY + 2 * pad
+	sizeX = dimX + 2 * pad
+
+	paddedParticle = np.zeros( ( sizeZ,sizeY,sizeX ) )
 	
-	paddedParticle[ padZ : dimZ+padZ+1, padY : dimY+padY+1, padX : dimX+padX+1] = croppedParticle
+	paddedParticle[ pad : dimZ+pad+1, pad : dimY+pad+1, pad : dimX+pad+1] = croppedParticle
 
 	cleanedPaddedParticle = removeOtherLabels(paddedParticle, label)
 
@@ -1338,7 +1340,7 @@ def removeOtherLabels(paddedParticle, label):
 def takeProjections(paddedNormParticle,size,normalize):
 	"""
 	"""
-	particleProjectionParticle = np.zeros((1,size,size,3))
+	particleProjectionParticle = np.zeros((size,size,3))
 
 	for direction in range(0,3):
 
@@ -1347,7 +1349,33 @@ def takeProjections(paddedNormParticle,size,normalize):
 		if normalize == True:
 			proj = proj/proj.max()
 		
-		particleProjectionParticle[:,:,:,direction] = proj
+		particleProjectionParticle[:,:,direction] = proj
 
 
 	return particleProjectionParticle
+
+
+@jit(nopython=True)
+def getNumberOfBranchesOfSkeleton(skeletonImage):
+	"""A line segment has no branches but has 2 ends
+
+	This is terrible code ¯\_(ツ)_/¯
+	"""
+	numEnds=0
+
+	for z in range(2,skeletonImage.shape[0]-2):
+		
+		for y in range(2,skeletonImage.shape[1]-2):
+			
+			for x in range(2,skeletonImage.shape[2]-2):
+				
+				if skeletonImage[z,y,x] !=0:
+					
+					subVolume = skeletonImage[z-1:z+2,y-1:y+2,x-1:x+2]
+					
+					if subVolume.sum() == 2:
+					
+						numEnds = numEnds + 1
+
+	return max((numEnds-2),0)
+					

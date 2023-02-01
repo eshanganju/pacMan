@@ -248,7 +248,7 @@ def _filterUsingMedian(gli, bitDepth=16, pSize=3, outputDir='',sampleName='',sav
 		# Show the images and noise removed + noise removal parameters
 
 		# Prepare image for filtration
-		filrationIsGood = False
+	filrationIsGood = False
 
 		# Loop if filtrationIsGood == False
 
