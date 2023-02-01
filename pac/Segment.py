@@ -1297,9 +1297,10 @@ def _getProjectionTiffStacks(labelledMap, saveData=True, fileName='', outputDir=
 
 
 @jit(nopython=True)
-def cropAndPadParticle(labelledMap,label,size, saveData=True,fileName='',outputDir=''):
+def cropAndPadParticle(labelledMap,label,size=500, saveData=True,fileName='',outputDir=''):
 	"""
 	"""
+
 	loc = np.where(labelledMap == label)
 	dimZ = int(loc[0].max() - loc[0].min())
 	dimY = int(loc[1].max() - loc[1].min())
