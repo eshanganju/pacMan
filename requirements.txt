@@ -1,0 +1,12 @@
+numpy
+scipy
+statistics
+scikit-image
+tifffile
+uncertainties
+matplotlib
+spam
+glob
+numba
+tomopy
+
