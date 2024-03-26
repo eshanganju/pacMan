@@ -65,8 +65,8 @@ def filterUsingNlm(gli, bitDepth=16, pSize=3, pDistance=7, hVal=None, saveImg=Fa
 	numHistPtsMap = inputMap.shape[ 0 ] * inputMap.shape[ 1 ] * inputMap.shape[ 2 ]
 	his_x = np.arange( 0, gliMax + 1, 1 )
 
-	sigmaEstimateImage = restoration.estimate_sigma(inputImage, multichannel=False)
-	sigmaEstimateMap = restoration.estimate_sigma(inputMap, multichannel=False)
+	sigmaEstimateImage = restoration.estimate_sigma(inputImage)
+	sigmaEstimateMap = restoration.estimate_sigma(inputMap)
 
 	if hVal==None: hVal = 1.5*sigmaEstimateImage 
 
@@ -103,7 +103,6 @@ def filterUsingNlm(gli, bitDepth=16, pSize=3, pDistance=7, hVal=None, saveImg=Fa
 														patch_distance=pDistance,
 														preserve_range=True,
 														h=hVal,
-														multichannel=False,
 														fast_mode=True,
 														sigma=sigmaEstimateMap )
 
@@ -111,13 +110,15 @@ def filterUsingNlm(gli, bitDepth=16, pSize=3, pDistance=7, hVal=None, saveImg=Fa
 
 		listNoisy = inputImage.reshape( ( numHistPts, 1 ) )
 		listClean = filteredImage.reshape( ( numHistPts, 1 ) )
-
+		
+		"""
 		histNoisy = np.histogram(listNoisy, bins = gliMax + 1, range = ( 0, gliMax ) )
 		histClean = np.histogram(listClean, bins = gliMax + 1, range = ( 0, gliMax ) )
 		histNoisy = histNoisy / ( histNoisy[0].sum() ) * 100
 		histClean = histClean / ( histClean[0].sum() ) * 100
 		np.savetxt(outputDir+sampleName+'-histSliceNoisy.csv',histNoisy[0],delimiter=',',header='%')
 		np.savetxt(outputDir+sampleName+'-histSliceClean.csv',histClean[0],delimiter=',',header='%')
+		"""
 
 		plt.figure()
 		plt.imshow(inputImage, cmap= 'Greys_r' )
@@ -145,6 +146,7 @@ def filterUsingNlm(gli, bitDepth=16, pSize=3, pDistance=7, hVal=None, saveImg=Fa
 		plt.pause( 1 ) # show it for 5 seconds
 		plt.close()
 
+		"""
 		plt.figure()
 		plt.plot(his_x, histNoisy[ 0 ])
 		plt.plot(his_x, histClean[ 0 ])
@@ -154,7 +156,8 @@ def filterUsingNlm(gli, bitDepth=16, pSize=3, pDistance=7, hVal=None, saveImg=Fa
 		plt.savefig(nameofTempFile)
 		plt.pause( 1 ) # show it for 5 seconds
 		plt.close()
-
+		"""
+		
 		timeTakenThisLoop = ( time.time() - start_time )
 		print( "\n--- Time taken: %s seconds ---" %round( timeTakenThisLoop ) )
 
@@ -179,7 +182,6 @@ def filterUsingNlm(gli, bitDepth=16, pSize=3, pDistance=7, hVal=None, saveImg=Fa
 												patch_size=pSize,
 												patch_distance=pDistance,
 												h=hVal,
-												multichannel=False,
 												fast_mode=True,
 												sigma=sigmaEstimateMap)
 

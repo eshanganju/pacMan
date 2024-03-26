@@ -23,12 +23,11 @@ from numba import jit
 from pac import Measure
 
 # This is to plot all the text when running the functions
-VERBOSE = False
+VERBOSE = True
 TESTING = True
 
 
-def segmentUsingWatershed( binaryMapToSeg, edmMapForTopo, edmPeaksForSeed, addWatershedLine=False,
-							sampleName='', saveImg=True, outputDir='' ):
+def segmentUsingWatershed( binaryMapToSeg, edmMapForTopo, edmPeaksForSeed, addWatershedLine=False, sampleName='', saveImg=True, outputDir='' ):
 	"""Simple function that uses skimage watershed and saves a copy of the segmented image
 
 	Parameters
